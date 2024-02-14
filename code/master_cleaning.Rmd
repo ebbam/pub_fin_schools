@@ -1,0 +1,2772 @@
+---
+title: "descriptive_analysis"
+author: "Ebba Mark"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(here)
+library(tidyverse)
+library(janitor)
+library(gridExtra)
+library(readr)
+library(data.table)
+library(readxl)
+library(fixest)
+library(forcats)
+library(panelView)
+library(openxlsx)
+library(stargazer)
+library(usmap)
+
+
+source(here('code/dicts.R'))
+source(here('code/useful_functions.R'))
+
+```
+
+
+
+## Descriptive Statistics
+
+```{r cars, echo = FALSE}
+temp_cleaned <- readRDS(here("data/out/school_district_cleaned.RDS")) %>% 
+  filter(year >= 1970) %>% select(-SchLevCode)
+
+temp_cleaned %>% 
+  pivot_longer(cols = !c(FIPSid, year, FIPS_Code_State, fips, Enrollment), names_to = "item", values_to = "amount")
+
+temp_cleaned %>% 
+  select(FIPSid:Total_Revenue) %>% 
+  filter(Total_Revenue != 0) %>% 
+  complete(FIPSid, year) %>% 
+  filter(!is.na(Total_Revenue))
+
+```
+
+# Complete cases
+~ 10% missing values for the Total revenue category 
+
+```{r, echo = FALSE}
+temp_short <- temp_cleaned %>% 
+  filter(year >= 1997)
+
+complete_n <- temp_short %>% 
+  complete(FIPSid, year) %>% nrow()
+
+# 89% of all possible district-year pairs are reported
+nrow(temp_short)/complete_n
+
+# 58 observations in which enrollment is reported by no other revenue categories...keep for now
+temp_short[rowSums(temp_short[6:264], na.rm = TRUE) ==0,] 
+
+```
+
+
+```{r, echo = FALSE}
+
+retained_vars <- temp_short %>% 
+  complete(FIPSid, year) %>%
+  summarise(across(everything(), ~sum(. == 0 | is.na(.)))) %>% 
+  t() %>% as.data.frame() %>% 
+  tibble::rownames_to_column("cat") %>% 
+  mutate(prop_missing = round(V1/complete_n, digits = 2)) %>% 
+  filter(prop_missing < .3) %>% 
+  pull(cat) %>% 
+  union(., names(select(temp_short, contains("Ed", ignore.case = FALSE))))
+
+temp_short %>% select(all_of(retained_vars)) %>% select(-fips) -> temp_short
+
+```
+
+# Reporting
+```{r}
+
+temp_cleaned %>% 
+  filter(Total_Revenue != 0) %>% 
+  group_by(FIPSid) %>% 
+  summarise(years = n()) %>% 
+  ggplot() +
+  geom_histogram(aes(x = years), binwidth = 3) + 
+  ggtitle("Histogram of reported years over 31-year period between 1970-2021")
+
+temp_cleaned %>% 
+  filter(Total_Revenue != 0) %>% 
+  group_by(year) %>% 
+  summarise(reporting = n()) %>% 
+  ggplot() +
+  geom_bar(aes(x = year, weight = reporting)) + 
+  ggtitle("Reporting over 31-year period between 1970-2021")
+
+```
+
+
+# How many school districts per state
+```{r}
+temp_short %>% 
+  group_by(FIPS_Code_State) %>% 
+  summarise(n_dist = n_distinct(FIPSid)) %>% 
+  ggplot() +
+  geom_col(aes(x = fct_rev(fct_reorder(as.factor(FIPS_Code_State), n_dist)), y = n_dist)) +
+  labs(title = "Number of schools per state")
+
+temp_short %>% 
+  group_by(FIPS_Code_State) %>% 
+  summarise(n_dist = n_distinct(FIPSid)) %>% 
+  ggplot() +
+  geom_histogram(aes(n_dist), bins = 10) + 
+  labs(title = "Histogram of number of school districts per state")
+
+```
+
+# Completeness
+```{r}
+
+for(k in unique(temp_short$FIPS_Code_State)){
+  print(k)
+  print(get_state(k))
+  temp_short %>% 
+  filter(FIPS_Code_State == k) %>% 
+  panelview(Total_Revenue != 0 ~ 1, index = c("FIPSid","year"), xlab = "Year", ylab = "School District", display.all = TRUE, type = "missing")
+}
+
+
+```
+
+# State by state cleaning...
+```{r}
+
+av_states <- unique(temp_short$FIPS_Code_State)
+
+sum_state <- function(df, loc){
+  print(get_state(av_states[loc]))
+  
+  test <- temp_short %>% 
+  filter(FIPS_Code_State == av_states[loc]) %>% 
+  group_by(FIPSid) %>% 
+  summarise(n = n()) %>% 
+  filter(n != 25) %>% 
+  nrow(.)
+  
+  if(test == 0){
+    return(paste0(get_state(av_states[loc]), " is complete!"))
+    }
+
+  tmp <- df %>%  
+    filter(FIPS_Code_State == av_states[loc])
+  
+  pt_all <- tmp %>% panelview(Total_Revenue != 0 ~ 1, index = c("FIPSid","year"), xlab = "Year", ylab = "School District", display.all = TRUE, type = "missing", main = get_state(av_states[loc]))
+  pt_missing <- tmp %>% 
+    group_by(FIPSid) %>% 
+    filter(n() != 25) %>% 
+    panelview(Total_Revenue != 0 ~ 1, index = c("FIPSid","year"), xlab = "Year", ylab = "School District", display.all = TRUE, type = "missing", main = get_state(av_states[loc]))
+  
+  grid.arrange(pt_all, pt_missing)
+  
+  print(paste0("Unique school district codes: ", n_distinct(tmp$FIPSid)))
+  print(paste0("Incomplete school districts: ", test))
+  
+  return(tmp)
+}
+
+print_names <- function(state_df, incomplete = TRUE){
+  if(incomplete){
+    test <- state_df %>% 
+      group_by(FIPSid) %>% 
+      filter(n() != 25) %>% 
+      pull(FIPSid) %>% 
+      unique
+  }else{
+    test <- state_df %>% 
+      pull(FIPSid) %>% 
+      unique
+  }
+   
+  sch_names %>% 
+  filter(FIPSid %in% test) %>% 
+  select(FIPSid, fips, Name, year) %>% 
+  arrange(year) %>%  
+  pivot_wider(id_cols = c(FIPSid, fips), names_from = "year", values_from = "Name") %>%
+  arrange(fips) %>% print(n = 300)
+}
+ 
+
+```
+
+# Cleaning excel
+
+Creates excel in which notes about choices on how to handle missing data
+Only Delaware, Nevada, and Tennessee have complete panels for all school districts 1997-2021
+```{r}
+
+missing_dat <- tibble("state_code" = character(),
+                      "state" = character(), 
+                      "n_incomplete" = numeric(), 
+                      "n_total" = numeric(), 
+                      "FIPSid" = character(),
+                      "y_missing" = numeric(), 
+                      "y_earliest" = numeric(), 
+                      "y_latest" = numeric(), 
+                      "notes" = character(),
+                      "action" = character())
+
+for(k in av_states){
+  tmp <- temp_short %>% 
+    filter(FIPS_Code_State == k)
+    
+  missing_dat <- tmp %>% 
+    group_by(FIPSid) %>% 
+    filter(n() != 25) %>% 
+    summarise(y_missing = 25 - n(),
+              y_earliest = min(year),
+              y_latest = max(year), 
+              notes = NA, 
+              action = NA) %>% 
+    mutate(state_code = k, 
+         state = get_state(k),
+         n_incomplete = n(),
+         n_total = n_distinct(tmp$FIPSid), .before = 1) %>% 
+    rbind(missing_dat, .)
+}
+
+#missing_dat %>% write.xlsx(here('documentation/missing_data_cleaning.xlsx'))
+
+missing_dat2 <- read.xlsx(here("documentation/missing_data_cleaning.xlsx")) %>% 
+  tibble
+
+sch_names %>% 
+  select(FIPSid, Name) %>% 
+  left_join(missing_dat2, ., by = "FIPSid", multiple = "any") %>% 
+  relocate(Name.y, .after = Name.x) %>% 
+  select(-c(n_incomplete, n_total, y_earliest, y_latest)) %>% write.xlsx(here("documentation/vocational_sorting.xlsx"))
+
+```
+
+# Standardise School district names
+Duplicates remain....down from 19,026 duplicate entries to 4,955
+```{r}
+
+sch_dist_names <- readRDS(here("data/temp/names_school_level_info.RDS")) %>% 
+  filter(year >=1997) %>% 
+  mutate(Name = case_when(FIPSid =="00185067116455" ~ "KOKOMO CENTER TOWNSHIP CONSOLIDATED SCHOOL CORPORATION", 
+                          TRUE ~ Name))
+
+temp_short %>% pull(FIPSid) %>% n_distinct
+
+sch_names <- sch_dist_names %>% 
+  # First handle abbreviations
+  mutate(Name = 
+                     gsub("DIST$", "DISTRICT", 
+                     gsub("DIST ", "DISTRICT ",
+                     gsub("DIS$", "DISTRICT",
+                     gsub(" DST", " DISTRICT",
+                     gsub("^FT", "FORT", 
+                     gsub(" D$", " DISTRICT",
+                     gsub(" DI$", " DISTRICT",
+                     gsub(" DT$", " DISTRICT",
+                     gsub(" DT ", "DISTRICT",
+                     gsub("DISTR |DISTR$", "DISTRICT",
+                    # Handle mispellings
+                    gsub("DISRICT", "DISTRICT",
+                    gsub("DISTT", "DISTRICT",
+                    gsub("DISTRIC$", "DISTRICT",
+                    gsub(" SCOOL$", " SCHOOL",
+                    gsub(" SCOOL ", " SCHOOL ",
+                    gsub(" SCOOLS", " SCHOOLS",
+                    gsub(" Num", " ",
+                    gsub("#", "",
+                    gsub("  ", " ",
+                    str_trim(gsub("[.]", " ", Name), side = "right"))))))))))))))))))))) %>% 
+  mutate(Name = 
+           gsub(" JT ", " JOINT ",
+           gsub("ELEMENTARY SCHOOL DISTRICT", "SCHOOL DISTRICT",
+           gsub(" SCHOOLS$", " SCHOOL DISTRICT",
+           gsub(" SCH$", " SCHOOL DISTRICT",
+           gsub(" ED ", " EDUCATION ",
+           # Cooperative
+           gsub("COOP ", "COOPERATIVE ",
+           gsub(" COOP$", " COOPERATIVE",
+           gsub("CO-OP ", "COOPERATIVE ",
+           gsub("CO-OP$", "COOPERATIVE",
+           # Bi-county
+           gsub("BI-CO ", "BI-COUNTY ",
+           # Elementary, High
+           gsub("ELEM ", "ELEMENTARY ",
+           # Unified
+           gsub("UNIF ", "UNIFIED ",
+           # Consolidated Independent
+           gsub(" COMM CONSOLIDATED ", " COMMUNITY CONSOLIDATED ",
+           gsub(" CONS ", " CONSOLIDATED ",
+           gsub(" CONSOL ", "CONSOLIDATED ",
+           gsub(" CONSOLID ", "CONSOLIDATED ",
+           # Community Corporations
+           gsub(" CORP$", " CORPORATION",
+           gsub(" CORP ", " CORPORATION ",
+           gsub(" COLL ", " COLLEGE ",
+           gsub("CMTY", "COMMUNITY",
+           gsub("COMMNTY", "COMMUNITY",
+           gsub("CMNTY", "COMMUNITY",
+           gsub(" COMM ", " COMMUNITY ",
+           # Boards of Education
+           gsub("BOARD PUBLIC INS", "SCHOOL DISTRICT",
+           gsub("SCHOOL BOARD", "SCHOOL DISTRICT",
+           gsub("BOARD OF EDUC", "SCHOOL DISTRICT",
+           gsub("BOARD OF EDUCATION", "SCHOOL DISTRICT",
+           gsub(" BD", " BOARD", 
+           # School Districts
+           gsub(" SCHS", " SCHOOLS",
+           gsub(" PUB SCHS", " SCHOOLS",
+           gsub(" SCHOOLS DISTRICT", " SCHOOL DISTRICT",
+           gsub(" SCHS DISTRICT", " SCHOOL DISTRICT",
+           gsub(" S$", " SCHOOL DISTRICT",
+           gsub(" CO ", " COUNTY ",
+           gsub(" CTY ", " CITY ", 
+           gsub(" CY ", " CITY ",
+           gsub(" SCH ", " SCHOOL ", 
+           gsub(" SCH SCH ", " SCH ",
+           Name))))))))))))))))))))))))))))))))))))))) %>% 
+  # Mispelled words
+  mutate(Name = gsub("MOUNTIAN", "MOUNTAIN", 
+                     gsub("SCHOO ", "SCHOOL ", 
+                          gsub("LAMOTTE", "LA MOTTE", 
+                               gsub("SANDSPRINGS", "SAND SPRINGS", Name))))) %>% 
+  # Remove numerical values
+  mutate(Name = str_trim(gsub("[[:digit:]]", "", Name), side = "right")) #%>% 
+  # select(FIPSid, Name) %>% 
+  # distinct %>% 
+  # group_by(FIPSid) %>% 
+  # filter(n() > 1) %>% 
+  # arrange(FIPSid) %>% View()
+
+
+```
+
+```{r}
+
+for(k in 1:length(av_states)){
+  sum_state(temp_short, k)
+}
+
+```
+
+# Cleaning using vocational_sorting.xlsx
+```{r}
+
+# Different exclusions
+temp_all <- read.xlsx(here('documentation/vocational_sorting.xlsx')) %>% 
+  tibble %>% 
+  select(FIPSid, Regional, Vocational, Adult, Exclude) %>% 
+  left_join(temp_short, ., by = "FIPSid") %>% 
+   mutate(across(Regional:Exclude, ~as.logical(ifelse(is.na(.x),0,.x)))) %>% 
+  filter(!Exclude) 
+
+# Saves a dataset with all observations except explicitly excluded observations for issues detailed in missing_data_cleaning.xlsx
+temp_all %>% saveRDS(here("data/out/school_districts_all.RDS"))
+
+# Saves a dataset excluding vocational and adult education
+temp_all %>% 
+  filter(!Vocational | !Adult) %>% 
+  saveRDS(here("data/out/school_districts_no_vocational.RDS"))
+
+
+# Saves a dataset of only vocational education districts
+temp_all %>% filter(Vocational) %>% 
+  saveRDS(here('data/out/vocational_school_districts.RDS'))
+
+
+```
+
+# County-level datasets 
+```{r}
+
+county_all <- sch_dist_names %>% 
+  select(FIPSid, fips) %>% 
+  distinct %>% 
+  left_join(readRDS(here("data/out/school_districts_all.RDS")), ., by = "FIPSid") %>%
+  relocate(fips) %>% 
+  group_by(fips, year) %>% 
+  # group by counties
+  # Create dummy for whether a regional ESA serves the region and how much of expenditure is 
+  summarise(regional_ed = ifelse(any(Regional), TRUE, FALSE), across(where(is.numeric), .fns = list(~sum(., na.rm = TRUE), no_esa = ~sum(.*!(Regional), na.rm = TRUE), esa = ~sum(.*Regional, na.rm = TRUE)), .names = "{.col}_{.fn}")) %>% 
+  rename_with(~gsub("_1", "",.)) %>% 
+  ungroup %>% 
+  select(-c(Enrollment_no_esa, Enrollment_esa)) %>%
+  mutate(across(5:229, ~./Enrollment, .names = "{.col}_pp")) %>%
+  mutate(across(5:454, ~log(. + 1), .names = "log_{.col}"))
+
+
+county_no_voc <- sch_dist_names %>% 
+  select(FIPSid, fips) %>% 
+  distinct %>% 
+  left_join(readRDS(here("data/out/school_districts_no_vocational.RDS")), ., by = "FIPSid") %>%
+  relocate(fips) %>% 
+  group_by(fips, year) %>% 
+  # group by counties
+  # Create dummy for whether a regional ESA serves the region and how much of expenditure is 
+  summarise(regional_ed = ifelse(any(Regional), TRUE, FALSE), across(where(is.numeric), .fns = list(~sum(., na.rm = TRUE), no_esa = ~sum(.*!(Regional), na.rm = TRUE), esa = ~sum(.*Regional, na.rm = TRUE)), .names = "{.col}_{.fn}")) %>% 
+  rename_with(~gsub("_1", "",.)) %>% 
+  ungroup %>% 
+  select(-c(Enrollment_no_esa, Enrollment_esa)) %>%
+  mutate(across(5:229, ~./Enrollment, .names = "{.col}_pp")) %>%
+  mutate(across(5:454, ~log(. + 1), .names = "log_{.col}"))
+
+
+
+```
+
+
+# General notes from state-by-state cleaning
+45 states have established what are commonly known as Educational Service Agencies (ESA’s) or Regional Educational Service Agencies (RESA’s).
+In many states these agencies function at a regional level between the State Educational Agency and the local school district. It may serve as an extension of the State Educational Agency or it may operate as an independent agency from either state or local control. Still in other states, the RESA or ESA have specific duties and tasks assigned by the State. They are governed by an elected board, which has the authority to levy a tax, receive direct financial support and provide mandated services to local school districts.
+
+## Basic cleaning process and functions
+
+```{r}
+# missing_dat %>% 
+#   filter(state == "WY") %>% 
+#   left_join(., sch_names, by = "FIPSid", multiple = "any") %>% 
+#   select(FIPSid, Name) %>% View()
+# 
+# _<- c(
+#               )
+# 
+# temp_short %>% 
+#   #  rows removed
+#   filter(!(FIPSid %in% ...)) %>% 
+#   #  removed
+#   mutate(FIPSid = case_when(FIPSid == 
+#                             TRUE ~ FIPSid)) %>% 
+#   #  rows removed
+#   filter(!is.na(FIPSid)) %>% 
+#   group_by(FIPSid, year, FIPS_Code_State) %>% 
+#   summarise(across(where(is.numeric), ~sum(., na.rm = TRUE))) %>% 
+#   ungroup %>%  
+#   sum_state(., )
+# 
+# temp %>% filter(FIPSid %in% c("444", "00085125200468"
+# ,"00085125200469")) %>% 
+#   group_by(year) %>% 
+#   mutate(Total_Enrollment = sum(Enrollment, na.rm = TRUE)) %>% 
+#   ggplot() + 
+#   geom_line(aes(x = year, y = Enrollment, color = FIPSid)) + 
+#   geom_line(aes(x = year, y = Total_Enrollment))
+
+```
+
+
+
+## Alabama
+
+As Alabama developed demographically in the early 2000s and 2010s, several "City District" schools established themselves by separating from broader county school districts. The only changes made to the core dataset is to reincorporate (for data purposes) the city school districts into their original counties...potentially problematic?
+```{r}
+temp <- sum_state(temp_short, 1)
+print_names(temp, incomplete = FALSE) %>% View()
+
+temp_short %>% 
+  #  101 removed
+  mutate(FIPSid = case_when(FIPSid == "00015003250371" ~ "00015003100191",
+                            FIPSid == "00015073214161" ~ "00015073177907",
+                            FIPSid == "00015073218130" ~ "00015073177907",
+                            #"00015089212864",
+                            FIPSid == "00015095216807" ~ "00015095115639",
+                            FIPSid == "00015097223628" ~ "00015097183684",
+                            FIPSid == '00015097244263' ~ "00015097183684",
+                            FIPSid == "00015097244264" ~ "00015097183684",
+                            FIPSid == "00015101245785" ~ "00015101177917",
+                            FIPSid == "00015117247496" ~ "00015117100202",
+                            FIPSid == "00015117248437" ~ "00015117100202",
+                            TRUE ~ FIPSid)) %>% 
+  #  rows removed
+  filter(!is.na(FIPSid)) %>% 
+  group_by(FIPSid, year, FIPS_Code_State) %>% 
+  summarise(across(where(is.numeric), ~sum(., na.rm = TRUE))) %>% 
+  ungroup -> temp_short
+  #sum_state(., 1)
+
+```
+
+
+## Arizona
+
+Arizona has 14 Joint Technological Education Districts (JTEDs) that offers high schools career and technical education programs to partner school district. These will be excluded for now but should arguably be reconsidered for inclusion (would require either disaggregation of JTED data or aggregation of other county data) given public money supports them.
+```{r}
+
+temp <- sum_state(temp_short, 2)
+print_names(temp, incomplete = FALSE) %>% View()
+
+missing_dat %>% 
+  filter(state == "AZ") %>% 
+  left_join(., sch_names, by = "FIPSid", multiple = "any") %>% 
+  select(FIPSid, Name) %>% View()
+
+az_voc_tech <- c("00045003213773", # JTED
+                 "00045005213776", # JTED
+                 "00045007213554", # JTED
+                 "00045007213772", # JTED
+                 "00045015224775", # JTED
+                 "00045013215044", # JTED
+                 "00045013216513", # JTED
+                 "00045017214233", # JTED
+                 "00045017215045", # JTED
+                 "00045019223624", # JTED
+                 "00045021213774", # JTED
+                 "00045025213775", # JTED
+                 "00045025224774", # JTED
+                 "00045027248306", # JTED
+                 "00045007221148", # Community college, adult education
+                 "00045023198327") # Community college, adult education
+
+temp_short %>% 
+  filter(!(FIPSid %in% az_voc_tech)) %>% 
+  mutate(FIPSid = case_when(FIPSid == "00045011137181" ~ NA,
+                            # "00045003115654" # keep as is
+                            # "00045003198356" # keep as is
+                            # "00045003201338" # keep as is
+                            FIPSid == "11" ~ "00045003198356",
+                            FIPSid == "12" ~ "00045003198356",
+                            FIPSid == "13" ~ NA, # Enrollment is 0
+                            FIPSid == "15" ~ NA, # Enrollment is 0
+                            FIPSid == "16" ~ "00045011209963",
+                            FIPSid == "17" ~ NA,
+                            FIPSid == "19" ~ "00045015177965",
+                            FIPSid == "21" ~ "00045015177965",
+                            FIPSid == "31" ~ NA,
+                            TRUE ~ FIPSid)) %>%
+  #  rows removed
+  filter(!is.na(FIPSid)) %>% 
+  group_by(FIPSid, year, FIPS_Code_State) %>% 
+  summarise(across(where(is.numeric), ~sum(., na.rm = TRUE))) %>% 
+  ungroup  -> temp_short
+  # sum_state(., 2)
+
+```
+
+
+## Arkansas
+
+Arkansas' REA are called Education Service Cooperatives and open starting in 2007.
+
+Two issues: 
+There are observations for a Marion County School district which cannot be found online or via the NCES look-up tool. I have removed it here. Noted in the cleaning spreadsheet.
+
+Stephens County is dissolved in 2014 and reassigned to three separate school districts (nearly 100% to Magnolia and Camden Fairview. I have kept it as is for now but some thought could be put into reassigning them).
+```{r}
+
+temp <- sum_state(temp_short, 3)
+print_names(temp, incomplete = FALSE) %>% View()
+
+missing_dat %>% 
+  filter(state == "AR") %>% 
+  left_join(., sch_names, by = "FIPSid", multiple = "any") %>% 
+  select(FIPSid, Name) %>% View()
+
+ar_esc <- c("00055009178011", # Education Service Cooperative
+            "00055019123070", # Education Service Cooperative
+            "00055029178023", # Education Service Cooperative
+            "00055043178034", # Education Service Cooperative
+            "00055047183768", # Education Service Cooperative
+            "00055057178048", # Education Service Cooperative
+            "00055065178055", # Education Service Cooperative
+            "00055069115735", # Education Service Cooperative
+            "00055075178063", # Education Service Cooperative
+            "00055103115749", # Education Service Cooperative
+            "00055107115752", # Education Service Cooperative
+            "00055111115755", # Education Service Cooperative
+            "00055133100610", # Education Service Cooperative
+            "00055143178113", # Education Service Cooperative
+            "00055145115777") # Education Service Cooperative
+
+
+temp_short %>% 
+  # 225 rows removed
+  filter(!(FIPSid %in% ar_esc)) %>% 
+  #  removed
+  mutate(FIPSid = case_when(FIPSid == "00055119248427" ~ "00055119178095",
+                            # 00055113228279 keep as is
+                            FIPSid == "101" ~ "00055113228279",
+                            FIPSid == "102" ~ "00055063115731",
+                            FIPSid == "103" ~ "00055063202922",
+                            FIPSid == "106" ~ "00055063202922",
+                            FIPSid == "109" ~ "00055065100591",
+                            FIPSid == "112" ~ "00055067202924",
+                            FIPSid == "113" ~ "00055069178058",
+                            FIPSid == "121" ~ "00055101188137",
+                            FIPSid == "122" ~ "00055027115710",
+                            FIPSid == "123" ~ "00055073184419",
+                            FIPSid == "124" ~ "00055075178062",
+                            FIPSid == "126" ~ "00055075202926",
+                            FIPSid == "127" ~ "00055079115741",
+                            FIPSid == "128" ~ "00055041184417",
+                            FIPSid == "132" ~ "00055085201358",
+                            FIPSid == "133" ~ "00055101188137",
+                            FIPSid == "134" ~ "00055087178070",
+                            FIPSid == "135" ~ NA,
+                            FIPSid == "138" ~ "00055091201360",
+                            FIPSid == "145" ~ "00055095115743",
+                            FIPSid == "146" ~ "00055113210002",
+                            FIPSid == "150" ~ "00055057209988",
+                            FIPSid == "153" ~ "00055101178080",
+                            # 157 # keep as is for now - should be reassigned evenly to Magnolia and Camden Fairview
+                            FIPSid == "158" ~ "00055149178118",
+                            FIPSid == "159" ~ "00055107209999",
+                            FIPSid == "160" ~ "00055107100604",
+                            FIPSid == "162" ~ "00055109188138",
+                            FIPSid == "165" ~ "00055111123079",
+                            FIPSid == "166" ~ "00055113178089",
+                            FIPSid == "167" ~ "00055113228279",
+                            FIPSid == "168" ~ "00055113228279",
+                            FIPSid == "169" ~ "00055117178093",
+                            FIPSid == "170" ~ "00055021209982", #
+                            # 171 keep as incomplete time series...
+                            FIPSid == "172" ~ "00055035178029",
+                            FIPSid == "175" ~ "00055125115764",
+                            FIPSid == "177" ~ "00055129202929",
+                            FIPSid == "178" ~ "00055101100603",
+                            FIPSid == "179" ~ "00055129202929",
+                            FIPSid == "180" ~ "00055131202930",
+                            FIPSid == "183" ~ "00055133100609",
+                            FIPSid == "184" ~ "00055135202931",
+                            FIPSid == "186" ~ "171",
+                            FIPSid == "188" ~ "00055137202932",
+                            FIPSid == "190" ~ "00055137202932",
+                            FIPSid == "191" ~ "00055139115771",
+                            FIPSid == "193" ~ "00055139178108",
+                            FIPSid == "194" ~ "00055139178108",
+                            FIPSid == "195" ~ "00055139115769",
+                            FIPSid == "197" ~ "00055141178109",
+                            FIPSid == "198" ~ "00055141178109",
+                            FIPSid == "199" ~ "00055143100614",
+                            FIPSid == "202" ~ "00055145183731",
+                            FIPSid == "203" ~ "00055147194429",
+                            FIPSid == "205" ~ "00055149178118",
+                            FIPSid == "206" ~ "00055149178118",
+                            FIPSid == "37" ~ "00055001178001",
+                            FIPSid == "39" ~ "00055001178001",
+                            FIPSid == "40" ~ "00055003178003",
+                            FIPSid == "50" ~ "00055017178015",
+                            FIPSid == "57" ~ "00055023115709",
+                            FIPSid == "58" ~ "00055025100576",
+                            FIPSid == "60" ~ "157",
+                            FIPSid == "61" ~ "00055027115710",
+                            FIPSid == "63" ~ "00055027188130",
+                            FIPSid == "64" ~ "00055027188130",
+                            FIPSid == "73" ~ "00055035100580",
+                            FIPSid == "74" ~ "00055035100580",
+                            FIPSid == "75" ~ "00055037115715",
+                            FIPSid == "76" ~ "00055059100588",
+                            FIPSid == "77" ~ "00055103201362",
+                            FIPSid == "78" ~ "00055041115718",
+                            FIPSid == "79" ~ "00055041115718",
+                            FIPSid == "87" ~ "00055047115723",
+                            FIPSid == "88" ~ "00055033178028",
+                            FIPSid == "94" ~ "00055055178047",
+                            FIPSid == "99" ~ "00055061178050",
+                            TRUE ~ FIPSid)) %>% 
+  #  rows removed
+  filter(!is.na(FIPSid)) %>% 
+  group_by(FIPSid, year, FIPS_Code_State) %>% 
+  summarise(across(where(is.numeric), ~sum(., na.rm = TRUE))) %>% 
+  ungroup -> temp_short
+ # sum_state(., 3)
+
+```
+
+
+## TO MATCH MISSING: California
+
+California has two types of challenging data points to deal with which have both been removed as a rule:
+ROP: Regional Occupational Program which offers career classes for high school students - these have been remvoed as a rule
+JPA: Joint Power Authorities which in general seem to provide funding and services to multiple school districts (often in the form of transpotration, funding, administration, or professional training for staff)
+
+Additionally, other vocational training has been removed
+```{r}
+
+temp <- sum_state(temp_short, 4)
+print_names(temp, incomplete = FALSE) %>% View()
+
+missing_dat %>% 
+  filter(state == "CA") %>% 
+  left_join(., sch_dist_names, by = "FIPSid", multiple = "any") %>% 
+  select(FIPSid, Name) %>% View()
+
+ca_jpa_rop <- c("00065001234189",	#ROP JPAs are Regional occauptional programs which provide career technical education	Exclude for now
+                "00065001234191",	#ROP JPAs are Regional occauptional programs which provide career technical education	Exclude for now
+                "00065001234192",	#ROP JPAs are Regional occauptional programs which provide career technical education	Exclude for now
+                "00065013119407",	#Adult education	Exclude for now
+                "00065017123675",	#Community College	Remove
+                "00065017234195",	#ROP JPAs are Regional occauptional programs which provide career technical education	Exclude for now
+                "00065019123679",	#Community College	Remove
+                "00065019137077",	#Adult educaiton	Exclude for now
+                "00065019137591",	#ROP JPAs are Regional occauptional programs which provide career technical education	Exclude for now
+                "00065019184114",	#School transportation agency	Exclude for now
+                "00065019194551",	#Support services	Exclude for now
+                "00065019198478",	#ROP JPAs are Regional occauptional programs which provide career technical education	Exclude for now
+                "00065019234196",	#ROP JPAs are Regional occauptional programs which provide career technical education	Exclude for now
+                "00065025234197",	#ROP JPAs are Regional occauptional programs which provide career technical education	Exclude for now
+                "00065027245781",	#Career technical education	Exclude for now
+                "00065029234199",	#ROP JPAs are Regional occauptional programs which provide career technical education	Exclude for now
+                "00065031234188",	#ROP JPAs are Regional occauptional programs which provide career technical education	Exclude for now
+                "00065037119419",	#Adult education	Exclude for now
+                "00065037119420",	#Adult education	Exclude for now
+                "00065037178257",	#ROP JPAs are Regional occauptional programs which provide career technical education	Exclude for now
+                "00065037184547",	#Community College	Exclude for now
+                "00065037191981",	#ROP JPAs are Regional occauptional programs which provide career technical education	Exclude for now
+                "00065037213119",	#ROP JPAs are Regional occauptional programs which provide career technical education	Exclude for now
+                "00065037234170",	#ROP JPAs are Regional occauptional programs which provide career technical education	Exclude for now
+                "00065037234171",	#ROP JPAs are Regional occauptional programs which provide career technical education	Exclude for now
+                "00065037234172",	#ROP JPAs are Regional occauptional programs which provide career technical education	Exclude for now
+                "00065037234173",	#ROP JPAs are Regional occauptional programs which provide career technical education	Exclude for now
+                "00065037234174",	#ROP JPAs are Regional occauptional programs which provide career technical education	Exclude for now
+                "00065037234175",	#ROP JPAs are Regional occauptional programs which provide career technical education	Exclude for now
+                "00065037234176",	#School transportation agency	Exclude for now
+                "00065037234178",	#ROP JPAs are Regional occauptional programs which provide career technical education	Exclude for now
+                "00065037248755",	#ROP JPAs are Regional occauptional programs which provide career technical education	Exclude for now
+                "00065047234181",	#ROP JPAs are Regional occauptional programs which provide career technical education	Exclude for now
+                "00065053234182",	#ROP JPAs are Regional occauptional programs which provide career technical education	Exclude for now
+                "00065057178306",	#Transportation agency	Exclude for now
+                "00065057250017",	#ROP JPAs are Regional occauptional programs which provide career technical education	Exclude for now
+                "00065059115897",	#ROP JPAs are Regional occauptional programs which provide career technical education	Exclude for now
+                "00065059123692",	#Community College	Exclude for now
+                "00065059178315",	#Community College	Exclude for now
+                "00065059234200",	#ROP JPAs are Regional occauptional programs which provide career technical education	Exclude for now
+                "00065059234201",	#ROP JPAs are Regional occauptional programs which provide career technical education	Exclude for now
+                "00065059235782",	#ROP JPAs are Regional occauptional programs which provide career technical education	Exclude for now
+                "00065061137598",	#ROP JPAs are Regional occauptional programs which provide career technical education	Exclude for now
+                "00065061194549",	#Transportation JPA	Exclude for now
+                "00065065204108",	#Communtiy College district	Exclude for now
+                "00065067119428",	#Career technical education	Exclude for now
+                "00065071217776",	#Community College	Exclude for now
+                "00065071234203",	#ROP JPAs are Regional occauptional programs which provide career technical education	Exclude for now
+                "00065073123696",	#Community College	Exclude for now
+                "00065079115935",	#Finance JPA	Exclude for now
+                "00065083178401",	#ROP JPAs are Regional occauptional programs which provide career technical education	Exclude for now
+                "00065085123698",	#Communtiy College district	Exclude for now
+                "00065085178410",	#Transportation JPA	Exclude for now
+                "00065085178411",	#Transportation JPA	Exclude for now
+                "00065085234207",	#Education JPA	Exclude for now
+                "00065089234210",	#ROP JPAs are Regional occauptional programs which provide career technical education	Exclude for now
+                "00065097178449",	#Transportation JPA	Exclude for now
+                "00065099194550",	#ROP JPAs are Regional occauptional programs which provide career technical education	Exclude for now
+                "00065111119446",	#Adult & continuing education	Exclude for now
+                "00065111234212",	#School business services JPA	Exclude for now
+                "210",	#ROP JPAs are Regional occauptional programs which provide career technical education	Exclude for now
+                "211",	#ROPS are regional collectives	Exclude for now
+                "212",	#ROPS are regional collectives	Exclude for now
+                "213",	#ROPS are regional collectives	Exclude for now
+                "214",	#ROPS are regional collectives	Exclude for now
+                "221",	#ROPS are regional collectives	Exclude for now
+                "246",	#ROPS are regional collectives	Exclude for now
+                "265",	#Transportation JPA	Exclude for now
+                "266",	#ROPS are regional collectives	Exclude for now
+                "267",	#Vocational training	Exclude for now
+                "268",	#ROPS are regional collectives	Exclude for now
+                "278",	#ROPS are regional collectives	Exclude for now
+                "279",	#ROPS are regional collectives	Exclude for now
+                "280",	#ROPS are regional collectives	Exclude for now
+                "281",	#ROPS are regional collectives	Exclude for now
+                "282",	#ROPS are regional collectives	Exclude for now
+                "283",	#ROPS are regional collectives	Exclude for now
+                "284",	#ROPS are regional collectives	Exclude for now
+                "307",	#ROPS are regional collectives	Exclude for now
+                "308",	#Special education	Exclude for now
+                "319",	#ROPS are regional collectives	Exclude for now
+                "320",	#ROPS are regional collectives	Exclude for now
+                "321",	#ROPS are regional collectives	Exclude for now
+                "340",	#ROPS are regional collectives	Exclude for now
+                "341",	#ROPS are regional collectives	Exclude for now
+                "358",	# ROPS are regional collectives	Exclude for now
+                "365",	#JPA are pre-professional training programs	Exclude for now
+                "372",	# ROPS are regional collectives	Exclude for now
+                "384",	# JPA are pre-professional training programs	Exclude for now
+                "397",	# JPA	Exclude for now
+                "416",	# Vocational education	Exclude for now
+                "422")	# Short time series and zero enrollment	Exclude for now
+# 
+# 00065007115797		
+# 00065007210013		
+# 00065019183989		
+# 00065019234185		
+# 00065021178175		
+# 00065023178189		
+# 00065027228281		
+# 00065029115842		
+# 00065033245780		
+# 00065039183990		
+# 00065039219969		
+# 00065041115875		
+# 00065045218108		
+# 00065053137596		
+# 00065057245365		
+# 00065073198361		
+# 00065077101305		
+# 00065077210081		
+# 00065079137604		
+# 00065079191982		
+# 00065087137608		
+# 00065087137609		
+# 00065093223606		
+# 00065097137611		
+# 00065097137613		
+# 00065099115988		
+# 00065099137615		
+# 00065099137619		
+# 00065099137620		
+# 00065099212998		
+# 00065107137624		
+# 00065107178494		
+# 217		
+# 218		
+# 222		
+# 226		
+# 227		
+# 229		
+# 248		
+# 249		
+# 250		
+# 252		
+# 253		
+# 257		
+# 258		
+# 259		
+# 263		
+# 269		
+# 270		
+# 271		
+# 287		
+# 288		
+# 291		
+# 293		
+# 295		
+# 296		
+# 305		
+# 306		
+# 311	
+# 312		
+# 322		
+# 323		
+# 324		
+# 331		
+# 332		
+# 333	
+# 342		
+# 343		
+# 345		
+# 346		
+# 350		
+# 351		
+# 352		
+# 353		
+# 355		
+# 356		
+# 360		
+# 361		
+# 362		
+# 363		
+# 364		
+# 366		
+# 367		
+# 376		
+# 377		
+# 379		
+# 382		
+# 383		
+# 387		
+# 388		
+# 389		
+# 390		
+# 391		
+# 392		
+# 393		
+# 394		
+# 395		
+# 396	
+# 398		
+# 399		
+# 400		
+# 401		
+# 402		
+# 406		
+# 407		
+# 408		
+# 409		
+# 410		
+# 412		
+# 413		
+# 414		
+# 415		
+# 417		
+# 420		
+
+temp_short %>% 
+  # 225 rows removed
+  filter(!(FIPSid %in% ca_jpa_rop)) %>% 
+  ungroup -> temp_short  
+
+```
+
+## Colorado
+
+Colorado's "educational service agencies" are called BOCES (Board of Cooperative Educational Services). As in the other cases, excluded for now. There was one reorganisation in 2000 from two districts each splitting into two further districs (2 -> 4). Could not find evidence of how the original split was made so I kept the new districts grouped as per the original school districts. 
+
+```{r}
+
+temp <- sum_state(temp_short, 5)
+print_names(temp, incomplete = FALSE) %>% View()
+
+missing_dat %>% 
+  filter(state == "CO") %>% 
+  left_join(., sch_names, by = "FIPSid", multiple = "any") %>% 
+  select(FIPSid, Name) %>% View()
+
+co_boces <- c("00085001178508", # BOCES
+              "00085003178510",  # BOCES
+              "00085013178518",  # BOCES
+              "00085019178520",  # BOCES
+              "00085031101662",  # BOCES
+              "00085041116029",  # BOCES
+              "00085041245782",  # BOCES
+              "00085065116036",  # BOCES
+              "00085067116038",  # BOCES
+              "00085073178552",  # BOCES
+              "00085077137705",  # BOCES
+              "00085089124035",  # BOCES
+              "00085095116045",  # BOCES
+              "00085099116047",  # BOCES
+              "00085101188179",  # BOCES
+              "00085103116048",  # BOCES
+              "00085107116050",  # BOCES
+              "00085113137706",  # BOCES
+              "00085119215390",  # BOCES
+              "427",  # BOCES
+              "429",  # BOCES
+              "436"  # BOCES
+              )
+
+temp_short %>% 
+  # 284 rows removed
+  filter(!(FIPSid %in% co_boces)) %>% 
+  #  101 removed
+  mutate(FIPSid = case_when(FIPSid == "00085005119510" ~ NA, #Adult education
+                            FIPSid ==  "00085029188176" ~ NA, #Adult education
+                            FIPSid == "00085031119512" ~ NA, #Adult education
+                            FIPSid == "00085125200466" ~ "445",
+                            FIPSid == "00085125200467" ~ "445",
+                            FIPSid == "00085125200468" ~ "444",
+                            FIPSid == "00085125200469" ~ "444",
+                            FIPSid == "433" ~ NA, #Adult education
+                            FIPSid == "441" ~ NA, #Adult education
+                            # 444 # keep as the above are becoming part of it
+                            # 445 # keep as the above are becoming part of it
+                            TRUE ~ FIPSid)) %>% 
+  #  rows removed
+  filter(!is.na(FIPSid)) %>% 
+  group_by(FIPSid, year, FIPS_Code_State) %>% 
+  summarise(across(where(is.numeric), ~sum(., na.rm = TRUE))) %>% 
+  ungroup -> temp_short
+ # sum_state(., 5)
+
+```
+
+## Connecticut 
+
+Connecticut has cooperative educations services that form in 2007-2016. In 2016, there is a recoding of districts although all retain the same names...unclear what the difference is. Just seems there is a mismatching of FIPSids which were easily connected again. Might be something else underlying this?
+```{r}
+
+temp <- sum_state(temp_short, 6)
+print_names(temp, incomplete = FALSE) %>% View()
+
+ct_ces <- c("00095001178583", # Cooperative education services (CES)
+            "00095003178585", # Cooperative education services (CES)/regional ed service
+            "00095005101805", # Regional education service/development education
+            "00095005178586", # Committee for shared services (CES)
+            "00095009178589", # CES
+            "00095011178591", # Project oceanology...marine non-profit ed
+            "00095011184689", # Regional education center...exclude
+            "00095015116089", # Regional education service center (CES)
+            "00095110178585", # Capitol region education council
+            "00095120178583", # CES
+            "00095130184689", # LEARN CES
+            "00095150116089", # CES
+            "00095160101805", # CES
+            "00095160178586", # Committee for shared services (CES)
+            "00095170178589", # AREA COOPERATIVE EDUCATIONAL SERVICES
+            "00095180178591") # Project oceanology
+
+            
+temp_short %>% 
+  #  rows removed
+  filter(!(FIPSid %in% ct_ces)) %>% 
+  #  removed
+  mutate(FIPSid = case_when(FIPSid == "00095001178584" ~ "00095120178584", # Regional school district 9 # Regional school district 9
+                            FIPSid == "00095003184688" ~ "00095160184688", # Regional school district 10 # Regional school district 10
+                            FIPSid == "00095005101806" ~ "00095160101806", # Regional school district 6 # Regional school district 6
+                            FIPSid == "00095005101807" ~ "00095160101807", # Regional school district 12 # Regional school district 12
+                            FIPSid == "00095005178587" ~ "00095160178587", # Regional high school district 7 # Regional high school district 7
+                            FIPSid == "00095005210138" ~ "00095160210138", # Regional school district 1 # Regional school district 1
+                            FIPSid == "00095005210139" ~ "00095140210139", # Regional school district 14 # Regional school district 14
+                            FIPSid == "00095007101808" ~ "00095130101808", # Regional school district 17 # Regional school district 17
+                            FIPSid == "00095007124142" ~ "00095130124142", # Regional school dsitrict 13 # Regional school district 13
+                            FIPSid == "00095007178588" ~ "00095130178588", # regional school district 4 # Regional school district 4
+                            FIPSid == "00095009101809" ~ "00095170101809", # Regional school district 5 # Regional school district 5
+                            FIPSid == "00095009101810" ~ "00095140101810", # Regional school district 16 # Regional school district 16
+                            FIPSid == "00095009178590" ~ "00095140178590", # Regional school district 15 # Regional school district 15
+                            FIPSid == "00095011116088" ~ "00095130116088", # Regional school district 18 # Regional school district 18
+                            FIPSid == "00095013178592" ~ "00095110178592", # Regional high school district 19 # Regional high school district 19
+                            FIPSid == "00095013210140" ~ "00095110210140", # Regional school district 8 # Regional school district 8
+                            FIPSid == "00095015178593" ~ "00095150178593", # Regional school district 11 # Regional school district 11
+                            TRUE ~ FIPSid)) %>% 
+  #  rows removed
+  filter(!is.na(FIPSid)) %>% 
+  group_by(FIPSid, year, FIPS_Code_State) %>% 
+  summarise(across(where(is.numeric), ~sum(., na.rm = TRUE))) %>% 
+  ungroup -> temp_short
+```
+
+## Florida
+```{r}
+
+temp <- sum_state(temp_short, 7)
+print_names(temp, incomplete = FALSE) %>% View()
+
+fl_voc_tech <- missing_dat %>% 
+  filter(state == "FL") %>% 
+  left_join(., sch_names, by = "FIPSid", multiple = "any") %>% 
+  pull(FIPSid)
+
+temp_short %>% 
+  # 143 rows removed
+  filter(!(FIPSid %in% fl_voc_tech)) %>% 
+  ungroup ->  temp_short
+
+```
+
+## Illinois
+A few school redistrictings to handle. For the most part however, there were vocational schools, special education cooperatives, and some "regional delivery systems" that serve multiple school districts. removed for now.
+```{r}
+
+temp <- sum_state(temp_short, 8)
+print_names(temp, incomplete = FALSE) %>% View()
+
+missing_dat %>% 
+  filter(state == "IL") %>% 
+  left_join(., sch_names, by = "FIPSid", multiple = "any") %>% 
+  select(FIPSid, Name) %>% View()
+
+il_voc_spec_ed <- c("00175001103585", # Special education
+                    "00175001103586", # Vocational school
+                    "00175001178728", # Vocational school
+                    "00175003178729", # Vocational school
+                    "00175011116155", # Special education
+                    "00175015178750", # Vocational school
+                    "00175017183651", # Vocational school
+                    "00175019178758", # Vocational school
+                    "00175019188201", # Special education
+                    "00175021178765", # Special education
+                    "00175021250761", # Special education
+                    "00175025178769", # Vocational school
+                    "00175029103601", # Special education
+                    "00175029178775", # Vocational school
+                    "00175031103617", # Special education
+                    "00175031116207", # Regional education service
+                    "00175031116210", # Vocational school
+                    "00175031116213", # Vocational school
+                    "00175031116214", # Special education
+                    "00175031116215", # Special education
+                    "00175031125939", # Vocational school
+                    "00175031125940", # Adult education/community college
+                    "00175031178824", # Special education
+                    "00175031178828", # Special education school
+                    "00175031178829", # Vocational school - regional career prep service
+                    "00175031178830", # Vocational school - regional career prep service
+                    "00175031178831", # Vocational school - regional career prep service
+                    "00175031178837", # Special education
+                    "00175031178838", # Special education
+                    "00175031178839", # Special education
+                    "00175031188205", # Special education
+                    "00175031224855", # Special education
+                    "00175037116221", # Special education
+                    "00175037178853", # Vocational school
+                    "00175037178854", # Vocational school
+                    "00175043103633", # Special education
+                    "00175043116233", # Special education
+                    "00175043138016", # Special education
+                    "00175043178877", # Vocational school
+                    "00175051116241", # Vocational school
+                    "00175051178884", # Vocational school
+                    "00175053116242", # Special education
+                    "00175053214301", # Special education
+                    "00175055103637", # Vocational school
+                    "00175055116245", # Special education
+                    "00175063116254", # Special education
+                    "00175063178912", # Vocational school
+                    "00175073116260", # Special education
+                    "00175075188211", # Regional financial support for schools
+                    "00175077125947", # Vocational - regional delivery service for employment preparation
+                    "00175077178931", # Special education
+                    "00175079178932", # Special education
+                    "00175081116273", # Vocational school
+                    "00175081178940", # Vocational school
+                    "00175083178942", # Vocational school
+                    "00175085178945", # Vocational school
+                    "00175089116276", # Vocational school
+                    "00175089178954", # Vocational school
+                    "00175089178955", # Vocational school
+                    "00175089188212", # Special education
+                    "00175091125949", # Vocational school
+                    "00175091178959", # Special education
+                    "00175091178960", # Vocational center
+                    "00175093138021", # Outdoor education center
+                    "00175093178964", # Special education
+                    "00175095116283", # Special education
+                    "00175095178969", # Vocational school
+                    "00175097103666", # Vocational school
+                    "00175097116297", # Special education
+                    "00175097178987", # Special education
+                    "00175097228285", # Remove because only contains 2 obs and likely a technical/vocational school
+                    "00175099116306", # Vocational school
+                    "00175099179005", # Vocational school
+                    "00175099179006", # Special education
+                    "00175101179008", # Vocational school
+                    "00175103179011", # Special education
+                    "00175105116315", # Vocational school
+                    "00175105213571", # Special education
+                    "00175105224856", # Vocational school
+                    "00175107116318", # Vocational school
+                    "00175107179025", # Vocational school
+                    "00175109179031", # Special education
+                    "00175109224857", # Vocational school
+                    "00175111179041", # Vocational school
+                    "00175111213558", # Special education
+                    "00175113179050", # Vocational school
+                    "00175113179051", # Vocational school
+                    "00175113194303", # Special education
+                    "00175115116329", # Special education
+                    "00175115179056", # Vocational school
+                    "00175117179063", # Special education
+                    "00175119116337", # Special education
+                    "00175119179068", # Vocational school - regional career pre service
+                    "00175119179069", # Special education
+                    "00175121179078", # Special education
+                    "00175121179079", # Vocational school - regional
+                    "00175133103696", # Vocational school 
+                    "00175133201309", # Vocational school 
+                    "00175137116351", # Special education
+                    "00175141179103", # Special education
+                    "00175143179112", # Special education
+                    "00175143179113", # Vocational school - regional career pre service
+                    "00175153179121", # Special education
+                    "00175157103703", # Special education
+                    "00175157116367", # Vocational school
+                    "00175161103705", # Special education
+                    "00175161138029", # Vocational school
+                    "00175161179135", # Vocational school
+                    "00175163116374", # Special education
+                    "00175163138030", # Vocational school
+                    "00175163179146", # Seems to be a regional umbrella organisation
+                    "00175163224853", # Fairly certain this is special education...
+                    "00175167116382", # Special education
+                    "00175167116384", # Vocational school
+                    "00175167119981", # Vocational school
+                    "00175167214308", # Vocational school
+                    "00175177185224", # Special education
+                    "00175177214300", # Vocational school
+                    "00175179103721", # Vocational school
+                    "00175179116397", # Special education
+                    "00175183179188", # Special education
+                    "00175183179189", # Vocational school
+                    "00175185179190", # Vocational school
+                    "00175187185225", # Vocational school
+                    "00175193116412", # Special education
+                    "00175195116416", # Vocational school
+                    "00175195179206", # Special education
+                    "00175197103730", # Vocational school
+                    "00175197103732", # Special education
+                    "00175197179219", # Vocational school
+                    "00175197179220", # Special education
+                    "00175197192028", # Special education
+                    "00175199179223", # Special education
+                    "00175199245783", # Vocational school
+                    "00175201103735", # Vocational school
+                    "00175201116427", # Special education
+                    "00175203116429", # Special education
+                    "00175203179233", # Vocational school - regional
+                    "485", # Special education
+                    "499", # Special education....?
+                    "520", # Vocational school
+                    "533", # Regional center
+                    "534", # Special education
+                    "535", # Special education
+                    "536", # Special education
+                    "541", # Special education
+                    "604", # Special education....?
+                    "709", # Special education
+                    "712", # Vocational school
+                    "715", # Special education
+                    "718", # Special education
+                    "719", # Vocational school
+                    "769", # Vocational school
+                    "771", # Special education
+                    "806", # Special education
+                    "847") # Vocational center- regional
+
+temp_short %>% 
+  # 2,000 rows removed
+  filter(!(FIPSid %in% il_voc_spec_ed)) %>% 
+  #  removed
+  mutate(FIPSid = case_when(FIPSid == "00175011188199" ~ "00175099178993",
+                            # 00175015219845 keep as is - other schools consolidate in 2005
+                            # 00175031103611 keep as is -only missing 2 observations
+                            # 00175031103615 keep as is -only missing 1 observation
+                            # 00175031178777 keep as is - only missing 3 observations
+                            FIPSid == "00175031178825" ~ NA, # Zero enrollment
+                            # 00175055184004 keep as is - other schools consolidate
+                            # 00175057178903 keep as is - other schools consolidate
+                            FIPSid == "00175067223629" ~ "00175067116256", # Rename this and the below under Carthage
+                            FIPSid == "00175067178917" ~ "00175067116256", # Rename this and the above under Carthage
+                            # 00175069178918 keep as is - only missing 1 obs
+                            # 00175075245458 keep as is
+                            # 00175081178941 keep as is - only missing one obs
+                            # 00175081246995 keep as is - other schools consolidate
+                            # 00175081247007 keep as is - other schools consolidate
+                            # 00175085116275 keep as is - only missing 1 observation
+                            # 00175091213008 keep as is - only missing one observation
+                            # 00175095245457 keep as is
+                            # 00175097178975 keep as is - only missing 1 obs
+                            # 00175097178982 keep as is - only missing 1 obs
+                            # 00175103203099 keep as is - only missing 1 obs
+                            # 00175103210239 keep as is - only missing 1 obs
+                            # 00175111198373 keep as is - other schools consolidate
+                            # 00175111203100 keep as is - only missing 1 obs
+                            # 00175117228286 keep as is - other schools consolidate
+                            # 00175119179067 keep as is - only missing one observation
+                            # 00175121103692 keep as is - only missing one observation
+                            # 00175137203107 keep as is - only missing one observation
+                            # 00175139198885 keep as is - other schools consolidate
+                            # 00175141116353 keep as is - only missing one observation
+                            # 00175163116373 keep as is - only missing 1 observation
+                            # 00175163179144 keep as is - only missing 1 observation
+                            # 00175165179150 keep as is - only missing 1 observation
+                            # 00175165190097 keep as is - only missing 1 observation
+                            # 00175173183649 keep as is - other schools consolidate
+                            # 00175181194305 keep as is - only missing 1 observation
+                            # 00175195245456 keep as is - other schools consolidated
+                            FIPSid == "489" ~ "00175011178736",
+                            FIPSid == "492" ~ "00175073178921", 
+                            FIPSid == "504" ~ "00175015219845",
+                            FIPSid == "505" ~ "00175015219845",
+                            FIPSid == "506" ~ "00175015219845",
+                            FIPSid == "512" ~ "00175019178756",
+                            FIPSid == "537" ~ NA, # only has one year of data and pertains to early childhood development
+                            FIPSid == "539" ~ "00175037178848",
+                            FIPSid == "550" ~ "00175043178862",
+                            FIPSid == "555" ~ NA, # Remove - only one observation and is counted in another school district
+                            FIPSid == "562" ~ "00175055184004",
+                            FIPSid == "563" ~ "00175055184004",
+                            FIPSid == "565" ~ "00175055185215",
+                            FIPSid == "567" ~ "00175055178892",
+                            FIPSid == "569" ~ "00175095245457",
+                            FIPSid == "571" ~ "00175057178903",
+                            FIPSid == "572" ~ "00175057178903",
+                            FIPSid == "573" ~ "00175057178903",
+                            FIPSid == "574" ~ "00175057178903",
+                            FIPSid == "601" ~ "00175071211319",
+                            FIPSid == "607" ~ "00175075178925",
+                            FIPSid == "609" ~ "00175075245458",
+                            FIPSid == "610" ~ "00175075245458",
+                            FIPSid == "612" ~ "00175075245458",
+                            FIPSid == "618" ~ "00175081247007",
+                            FIPSid == "619" ~ "00175081178934",
+                            FIPSid == "622" ~ "00175081247007",
+                            FIPSid == "623" ~ "00175081246995",
+                            FIPSid == "624" ~ "00175081246995",
+                            FIPSid == "632" ~ "00175095245457",
+                            FIPSid == "650" ~ "00175099203095",
+                            FIPSid == "651" ~ "00175099116300",
+                            FIPSid == "656" ~ "00175099203098",
+                            FIPSid == "672" ~ "00175195245456", 
+                            FIPSid == "675" ~ "00175105116311",
+                            FIPSid == "679" ~ "00175105179016",
+                            FIPSid == "691" ~ NA, # 0 enrollment
+                            FIPSid == "694" ~ "00175169103716",
+                            FIPSid == "695" ~ "00175109116319",
+                            FIPSid == "697" ~ "00175111198373",
+                            FIPSid == "699" ~ "00175111198373",
+                            FIPSid == "702" ~ NA, # Exclude because only one observation and likely an Educ for Emp service
+                            FIPSid == "705" ~ "00175105103673",
+                            FIPSid == "706" ~ "00175203179228",
+                            FIPSid == "713" ~ "00175117228286",
+                            FIPSid == "714" ~ "00175117228286",
+                            FIPSid == "716" ~ "00175117116331",
+                            FIPSid == "720" ~ "00175121103692",
+                            FIPSid == "742" ~ "00175131179091",
+                            FIPSid == "743" ~ "00175135116348",
+                            FIPSid == "744" ~ "00175139198885",
+                            FIPSid == "745" ~ "00175041211524",
+                            FIPSid == "753" ~ NA, # Exclude for now and only one observation
+                            FIPSid == "760" ~ "00175041211524",
+                            FIPSid == "764" ~ "00175149188224",
+                            FIPSid == "767" ~ "00175159116368",
+                            FIPSid == "768" ~ NA, # Regional education delivery system  and only 1 observation
+                            FIPSid == "772" ~ "00175167103713",
+                            FIPSid == "773" ~ "00175115203102",
+                            FIPSid == "776" ~ "00175173183649",
+                            FIPSid == "777" ~ "00175139198885",
+                            FIPSid == "778" ~ "00175173183649",
+                            FIPSid == "780" ~ "00175021116163",
+                            FIPSid == "781" ~ "00175021116163",
+                            FIPSid == "782" ~ "00175021116163",
+                            FIPSid == "792" ~ "00175183179184",
+                            FIPSid == "807" ~ "00175187179193",
+                            FIPSid == "808" ~ "00175187188229",
+                            FIPSid == "809" ~ "00175187179193",
+                            FIPSid == "812" ~ "00175189116406",
+                            FIPSid == "822" ~ "00175191116408",
+                            FIPSid == "834" ~ "00175195245456",
+                            FIPSid == "837" ~ "00175195116415",
+                            TRUE ~ FIPSid)) %>% 
+  #  rows removed
+  filter(!is.na(FIPSid)) %>% 
+  group_by(FIPSid, year, FIPS_Code_State) %>% 
+  summarise(across(where(is.numeric), ~sum(., na.rm = TRUE))) %>% 
+  ungroup -> temp_short
+
+```
+
+## Indiana
+```{r}
+
+temp <- sum_state(temp_short, 9)
+print_names(temp, incomplete = FALSE) %>% View()
+
+missing_dat %>% 
+  filter(state == "IN") %>% 
+  left_join(., sch_names, by = "FIPSid", multiple = "any") %>% 
+  select(FIPSid, Name) %>% View()
+
+voc_spec_ed_in <- c("00185019179241", # Education service center
+                    "00185027116434", # Vocational/tech service center for high school students
+                    "00185027185350", # Special education cooperative
+                    "00185041188234", # Education service center
+                    "00185055179264",  # Special education cooperative
+                    "00185069188236", # Education service center
+                    "00185077116457", # Special education service consultant - provide workspaces for testing, etc
+                    "00185081104281",  # Vocational tech school for high school students
+                    "00185081179280", # Special education services coop
+                    "00185089138181", # Education service center
+                    "00185089179293", # Special education services coop
+                    "00185097179303", # Education service center
+                    "00185097249465", # Special education services 
+                    "00185117228291", # Vocational tech school for high school students
+                    "00185127179321", # Special education services 
+                    "00185133188239", # Education service center
+                    "00185133228292",# Vocational tech school for high school students
+                    "00185133228293", # Special education services 
+                    "00185135179326", # Special education services 
+                    "00185137179328", # Vocational school - not exclusively for high school students also adults
+                    "00185137244266", # Special education services 
+                    "00185145179333", # Vocational tech school for high school students
+                    "00185167179344", # Special education services 
+                    "00185169179346", # Vocational tech school for high school students
+                    "00185175104302", # Special education services    
+                    "881", # Special education services 
+                    "890", # Special education services
+                    "904", # Special education services 
+                    "906") # Special education services
+
+temp_short %>% 
+  #  360 rows removed
+  filter(!(FIPSid %in% voc_spec_ed_in)) %>% 
+  #  63 rows removed
+  mutate(FIPSid = case_when(
+                              # 00185019116431 keep as is
+                              # 00185091228290 # keep as is - other townships absorb into this school district
+                              # 00185121244259 # keep as is - other schools consolidate into it
+                              FIPSid == "880" ~ NA, #Remove because enrollment is 0 for 5-year period and am unable to find information about its consolidation history
+                              FIPSid == "886" ~ "00185091228290",
+                              FIPSid == "887" ~ "00185091228290",
+                              FIPSid ==  "888" ~ "00185091228290",
+                              FIPSid ==  "889" ~ "00185091228290",
+                              FIPSid ==  "894" ~ "00185121244259",
+                              FIPSid ==  "895" ~ "00185121244259",
+                              FIPSid ==  "901" ~ "00185129104297",
+                              TRUE ~ FIPSid)) %>% 
+  filter(!is.na(FIPSid)) %>% 
+  group_by(FIPSid, year, FIPS_Code_State) %>% 
+  summarise(across(where(is.numeric), ~sum(., na.rm = TRUE))) %>% 
+  ungroup -> temp_short
+
+```
+
+## Kansas
+
+Removed regional education delivery centers (largely fund professional development for teachers), vocational/technical adult colleges/schools, and special education cooperatives serving multiple school districts.
+```{r}
+
+temp <- sum_state(temp_short, 10)
+print_names(temp, incomplete = FALSE) %>% View()
+
+missing_dat %>% 
+  filter(state == "KS") %>% 
+  left_join(., sch_names, by = "FIPSid", multiple = "any") %>% 
+  select(FIPSid, Name) %>% View()
+
+ks_reg_sp_ed <- c("00205000224962", #	Community college /adult education	Remove
+        "00205001105265", #		Special education	Exclude for now
+        "00205013105269", #		Special education	Exclude for now
+        "00205015179520", #		Special education	Exclude for now
+        "00205037105280", #		Special education	Exclude for now
+        "00205037138448", #		Regional education delivery service	Exclude for now
+        "00205041116597", #		Regional education delivery service	Exclude for now
+        "00205043179541", #		Special education	Exclude for now
+        "00205045179542", #		Special education	Exclude for now
+        "00205057179548", #		Special education	Exclude for now
+        "00205067105285", #		Special education	Exclude for now
+        "00205079138449", #		Special education	Exclude for now
+        "00205081179559", #		Regional education delivery service for staff development	Exclude
+        "00205087116613", #		Regional education delivery service	Exclude
+        "00205109213173", #		Regional education delivery service	Exclude
+        "00205111120127", #		Technical college	Exclude
+        "00205115185581", #		Special education	Exclude for now
+        "00205123120128", #		Technical college	Exclude
+        "00205125179591", #		Special education	Exclude for now
+        "00205147179602", #		Special education	Exclude for now
+        "00205151127542", #		Special education	Exclude for now
+        "00205155105306", #		Special education	Exclude for now
+        "00205155179609", #		Regional education delivery service	Exclude for now
+        "00205161188917", #		Technical college	Exclude
+        "00205169120131", #		Technical college	Exclude
+        "00205169188263", #		Regional education delivery service	Exclude for now
+        "00205173116650", #		Regional education delivery service	Exclude for now
+        "00205173179624", #		Special education	Exclude for now
+        "00205173224962", #		Vocational/adult education	Remove
+        "00205177116652", #		Special education	Exclude for now
+        "00205181191926", #		Vocational/adult education	Remove
+        "00205191190347", #		Special education	Exclude for now
+        "1040",	# Technical college	
+        "1086", # Vocational school - closed in 2012
+        "1068", # technical school
+        "1081") # technical school
+
+temp_short %>% 
+  # 222 rows removed
+  filter(!(FIPSid %in% ks_reg_sp_ed)) %>% 
+  mutate(FIPSid = case_when(FIPSid == "1041" ~ "00205053201826",		
+                            # 00205079179557	- keep as is - only missing two observations
+                            # 00205089219888	- keep as is - other schools merge
+                            # 00205157219890	- keep as is - other schools merge
+                            # 00205201219889	- keep as is - other schools merge
+                            FIPSid == "1044" ~ "00205179210362",		
+                            FIPSid == "1045" ~ "00205043116598",		
+                            FIPSid == "1046" ~ "00205043105281",	
+                            FIPSid == "1047"	~ NA,	# unable to find historical record of this district
+                            FIPSid == "1050" ~ "00205083211536",		
+                            FIPSid == "1052" ~ "00205089219888",		
+                            FIPSid == "1053" ~ "00205123116629", 
+                            FIPSid == "1054" ~ "00205089219888",	
+                            FIPSid == "1063" ~ "00205097203194",		
+                            FIPSid == "1065" ~ "00205131179594",	
+                            FIPSid == "1069" ~ "00205131116632",		
+                            FIPSid == "1072" ~ "00205135210356",	
+                            FIPSid == "1073" ~ "00205135210356",	
+                            FIPSid == "1074" ~ "00205137201833",		
+                            FIPSid == "1076" ~ "00205183179629",		
+                            FIPSid == "1077" ~ "00205153179605",		
+                            FIPSid == "1079" ~ "00205157219890",		
+                            FIPSid == "1080" ~ "00205157219890",				
+                            FIPSid == "1084" ~ "00205201219889",		
+                            FIPSid == "1085" ~ "00205201219889",
+                            TRUE ~ FIPSid)) %>% 
+  filter(!is.na(FIPSid)) %>% 
+  group_by(FIPSid, year, FIPS_Code_State) %>% 
+  summarise(across(where(is.numeric), ~sum(., na.rm = TRUE))) %>% 
+  ungroup -> temp_short
+
+```
+
+## TO DO: Maine
+```{r}
+
+temp <- sum_state(temp_short, 11)
+print_names(temp, incomplete = FALSE) %>% View()
+# 
+# missing_dat %>% 
+#   filter(state == "ME") %>% 
+#   left_join(., sch_dist_names, by = "FIPSid", multiple = "any") %>% 
+#   select(FIPSid, Name) %>% View()
+# 
+# _<- c(
+#               )
+# 
+# temp_short %>% 
+#   #  rows removed
+#   filter(!(FIPSid %in% ...)) %>% 
+#   #  removed
+#   mutate(FIPSid = case_when(FIPSid == 
+#                             TRUE ~ FIPSid)) %>% 
+#   #  rows removed
+#   filter(!is.na(FIPSid)) %>% 
+#   group_by(FIPSid, year, FIPS_Code_State) %>% 
+#   summarise(across(where(is.numeric), ~sum(., na.rm = TRUE))) %>% 
+#   ungroup %>%  
+#   sum_state(., )
+
+```
+
+## Massachusetts
+The state has regional full-time public vocational/tech high schools...have excluded the ones with too short time spans for now. But a few with suffiicient time series were retained.
+```{r}
+
+temp <- sum_state(temp_short, 12)
+print_names(temp, incomplete = FALSE) %>% View()
+
+ma_excl <- c("00255005120822", # Full-time Vocational school - time series too short
+            "00255005120823", # Adult technical community college
+            "00255017120824", # Full-time Vocational school - time series too short
+            "00255021185857") # Full-time Vocational school - time series too short
+
+temp_short %>% 
+  filter(!(FIPSid %in% ma_excl)) %>% 
+  mutate(FIPSid = case_when(FIPSid == "00255001120821" ~ "00255001106241",
+                            # 00255001244261 keep as is
+                            # 00255005235769 keep as is
+                            # 00255009198344 keep as is
+                            # 00255009210407 keep as is
+                            # 00255017235871 keep as is
+                            FIPSid == "1143" ~ NA,
+                            FIPSid == "1145" ~ NA,
+                            FIPSid == "1152" ~ NA,
+                            TRUE ~ FIPSid)) %>% 
+  #  rows removed
+  filter(!is.na(FIPSid)) %>% 
+  group_by(FIPSid, year, FIPS_Code_State) %>% 
+  summarise(across(where(is.numeric), ~sum(., na.rm = TRUE))) %>% 
+  ungroup -> temp_short
+
+```
+
+## TO MATCH MISSING: Michigan
+MIchigan's regional educations ervice agency's are called Intermediate School Districts: they have been removed here.
+Zero enrollment because they provide regional support. 
+
+Source: https://www.gomaisa.org/value-of-isds/
+```{r}
+
+temp <- sum_state(temp_short, 13)
+print_names(temp, incomplete = FALSE) %>% View()
+
+
+mi_isd <- c("00265005192091",#	Education service agency	Exclude for now
+            "00265015194324",#	ESA: Intermediate school districts	Exclude for now
+            "00265017106646",#	ESA: Intermediate school districts	Exclude for now
+            "00265021106652",#	ESA: Intermediate school districts	Exclude for now
+            "00265023106653",#	ESA: Intermediate school districts	Exclude for now
+            "00265025179819",#	ESA: Intermediate school districts	Exclude for now
+            "00265027179822",#	ESA: Intermediate school districts	Exclude for now
+            "00265029116868",#	ESA: Intermediate school districts	Exclude for now
+            "00265031179826",#	ESA: Intermediate school districts	Exclude for now
+            "00265033179829",#	ESA: Intermediate school districts	Exclude for now
+            "00265035179830",#	ESA: Intermediate school districts	Exclude for now
+            "00265037179832",#	ESA: Intermediate school districts	Exclude for now
+            "00265041179836",#	ESA: Intermediate school districts	Exclude for now
+            "00265043179839",#	ESA: Intermediate school districts	Exclude for now
+            "00265045179842",#	ESA: Intermediate school districts	Exclude for now
+            "00265049179853",#	ESA: Intermediate school districts	Exclude for now
+            "00265055116888",#	ESA: Intermediate school districts	Exclude for now
+            "00265057213027",#	ESA: Intermediate school districts	Exclude for now
+            "00265059106668",#	ESA: Intermediate school districts	Exclude for now
+            "00265061116896",#	ESA: Intermediate school districts	Exclude for now
+            "00265063128621",#	ESA: Intermediate school districts	Exclude for now
+            "00265065179876",#	ESA: Intermediate school districts	Exclude for now
+            "00265067188309",#	ESA: Intermediate school districts	Exclude for now
+            "00265069179883",#	ESA: Intermediate school districts	Exclude for now
+            "00265075138594",#	ESA: Intermediate school districts	Exclude for now
+            "00265077179890",#	ESA: Intermediate school districts	Exclude for now
+            "00265081188311",#	ESA: Intermediate school districts	Exclude for now
+            "00265087106683",#	ESA: Intermediate school districts	Exclude for now
+            "00265091116923",#	ESA: Intermediate school districts	Exclude for now
+            "00265093213180",#	ESA: Intermediate school districts	Exclude for now
+            "00265099116933",#	ESA: Intermediate school districts	Exclude for now
+            "00265101179922",#	ESA: Intermediate school districts	Exclude for now
+            "00265103116939",#	ESA: Intermediate school districts	Exclude for now
+            "00265105213028",#	ESA: Intermediate school districts	Exclude for now
+            "00265107179927",#	ESA: Intermediate school districts	Exclude for now
+            "00265109106692",#	ESA: Intermediate school districts	Exclude for now
+            "00265111179932",#	Education service agency	Exclude for now
+            "00265115116947",#	ESA: Intermediate school districts	Exclude for now
+            "00265117116949",#	ESA: Intermediate school districts	Exclude for now
+            "00265121212740",#	ESA: Intermediate school districts	Exclude for now
+            "00265123179945",#	ESA: Intermediate school districts	Exclude for now
+            "00265125116961",#	ESA: Intermediate school districts	Exclude for now
+            "00265131179959",#	ESA: Intermediate school districts	Exclude for now
+            "00265139179963",#	ESA: Intermediate school districts	Exclude for now
+            "00265143179965",#	ESA: Intermediate school districts	Exclude for now
+            "00265145179970",#	ESA: Intermediate school districts	Exclude for now
+            "00265147179972",#	ESA: Intermediate school districts	Exclude for now
+            "00265149179976",#	ESA: Intermediate school districts	Exclude for now
+            "00265151116974",#	ESA: Intermediate school districts	Exclude for now
+            "00265155179984",#	Education service agency	Exclude for now
+            "00265157185992",#	ESA: Intermediate school districts	Exclude for now
+            "00265159179992",#	ESA: Intermediate school districts	Exclude for now
+            "00265161188320",#	ESA: Intermediate school districts	Exclude for now
+            "00265163116997",#	ESA: Intermediate school districts	Exclude for now
+            "00265163137102",#	Community college /adult education	Exclude for now
+            "00265165117000",#	ESA: Intermediate school districts	Exclude for now
+            "1234")#	ESA: Intermediate school districts	Exclude for now) 
+
+
+# 00265007106644		
+# 00265011179799	
+# 00265053128620
+# 00265061116894
+# 00265061179862		
+# 00265061203273		
+# 00265063106670	
+# 00265079116913	
+# 00265163138597		
+# 00265163248502		
+# 1157		
+# 1159		
+# 1165		
+# 1168		
+# 1176		
+# 1183		
+# 1184		
+# 1197		
+# 1212		
+# 1221		
+# 1228		
+# 1238		
+# 1241		
+# 1246		
+# 1251		
+# 1252	
+
+temp_short %>% 
+  filter(!(FIPSid %in% mi_isd)) %>% 
+  ungroup -> temp_short
+
+```
+
+## TO DO: Minnesota
+```{r}
+
+temp <- sum_state(temp_short, 14)
+print_names(temp, incomplete = FALSE) %>% View()
+
+                
+mn_spec_csa <- c("00275003244536",#		Exclude for now
+                "00275005107278",#		Exclude for now
+                "00275007107280",#		Exclude for now
+                "00275007117001",#		Exclude for now
+                "00275013117004",#		Exclude for now
+                "00275021138718",#		Exclude for now
+                "00275023107289",#		Exclude
+                "00275025180044",#		Exclude for now
+                "00275027117011",#		Exclude for now
+                "00275035198300",#		Exclude for now
+                "00275037180061",#		Exclude for now
+                "00275039107300",#		Exclude for now
+                "00275041180067",#		Exclude for now
+                "00275049117028",#		Exclude for now
+                "00275053117033",#		Exclude for now
+                "00275053117034",#		Exclude for now
+                "00275053244537",#		Exclude for now
+                "00275059180108",#		Exclude for now
+                "00275059186149",#		Exclude for now
+                "00275059225503",#		Exclude for now
+                "00275061228303",#		Exclude for now
+                "00275083180133",#		Exclude for now
+                "00275083188329",#		Exclude for now
+                "00275085138744",#		Exclude fornow
+                "00275089180142",#		Exclude for now
+                "00275091180147",#		Exclude for now
+                "00275097117058",#		Exclude for now
+                "00275099224779",#		Exclude for now
+                "00275099248765",#		Exclude for now
+                "00275103138755",#		Exclude for now
+                "00275103180161",#		Exclude for now
+                "00275105228304",#		Exclude for now
+                "00275109180170",#		Exclude for now
+                "00275109188332",#		Exclude for now
+                "00275111117068",#		Exclude for now
+                "00275111138760",#		Exclude for now
+                "00275113107342",#		Exclude for now
+                "00275123183745",#		Exclude for now
+                "00275123194336",#		Exclude for now
+                "00275125117081",#		Exclude for now
+                "00275125129241",#		Exclude for now
+                "00275131248764",#		Exclude for now
+                "00275137107361",#		Exclude for now
+                "00275137117086",#		Exclude for now
+                "00275137180220",#		Exclude for now
+                "00275137198301",#		Exclude for now
+                "00275137248795",#		Exclude for now
+                "00275139245829",#		Exclude for now
+                "00275145117093",#		Exclude for now
+                "00275145117094",#		Exclude for now
+                "00275145180242",#		Exclude for now
+                "00275145180243",#		Exclude for now
+                "00275149117097",#		Exclude for now
+                "00275153117100",#		Exclude for now
+                "00275153188338",#		Exclude for now
+                "00275163244539",#		Exclude for now
+                "00275169180269",#		Exclude for now
+                "00275171180272",#		Exclude for now
+                "00275171186156",#		Exclude for now
+                "00275171248312",#		Exclude for now
+                "00275173107377",#		Exclude for now
+                "1274",#		Exclude for now
+                "1279",#		Exclude for now
+                "1313",#		Exclude for now
+                "1338",#		Exclude for now
+                "1372",#	Exclude for now
+                "1394",#	Exclude for now
+                "1486") #	Exclude for now
+
+                
+                # 00275005184010
+                # 00275011183640	
+                # 00275041247149	
+                # 00275043117025	
+                # 00275047183642	
+                # 00275063192106	
+                # 00275105247150	
+                # 00275117219846	
+                # 00275123244538	
+                # 00275125247006	
+                # 00275127212744	
+                # 00275129180207	
+                # 00275135180212
+                # 00275137180218	
+                # 00275137203320	
+                # 00275137249216	
+                # 00275143117088	
+                # 00275145180238	
+                # 00275145180240	
+                # 00275149247005	
+                # 00275153138793	
+                # 1256	
+                # 1257	
+                # 1261	
+                # 1264	
+                # 1293	
+                # 1299	
+                # 1300	
+                # 1305	
+                # 1306	
+                # 1311	
+                # 1323	
+                # 1324	
+                # 1326	
+                # 1334	
+                # 1340	
+                # 1341	
+                # 1343	
+                # 1354	
+                # 1359	
+                # 1362	
+                # 1366	
+                # 1367	
+                # 1368	
+                # 1370	
+                # 1371
+                # 1381	
+                # 1500	
+                # 1514	
+
+temp_short %>% 
+  filter(!(FIPSid %in% mn_spec_csa)) %>% 
+  ungroup -> temp_short
+
+```
+
+
+## TO DO: Mississippi
+```{r}
+
+temp <- sum_state(temp_short, 15)
+print_names(temp, incomplete = FALSE) %>% View()
+
+```
+
+## Missouri
+
+Missouri had several small school districts dissolve during our time horizon. I am unable to track 2, Stet (very few students were spread across neighboring districts according to a local news report) and Normandy school district was re-established as the Normany SChools Collaborative in 2016 but does not reenter the dataset under this new name. In the case of Normany, could check the changes in enrollment in other districts in the same county (fips = 29189) to try to figure out where it was reabsorbed?
+```{r}
+
+temp <- sum_state(temp_short, 16)
+print_names(temp, incomplete = FALSE) %>% View()
+
+missing_dat %>% 
+  filter(state == "MO") %>% 
+  left_join(., sch_names, by = "FIPSid", multiple = "any") %>% 
+  select(FIPSid, Name) %>% View()
+
+mo_voc_tech <- c("00295001212327", # Vocational or adult education
+                "00295019121151", # Vocational or adult education
+                "00295023108046", # Vocational or adult education
+                "00295029212330", # Vocational or adult education
+                "00295031121152", # Vocational or adult education
+                "00295071121156", # Vocational or adult education
+                "00295083212329", # Vocational or adult education
+                "00295091209747", # Vocational or adult education
+                "00295097121158", # Vocational or adult education
+                "00295107189175", # Vocational or adult education
+                "00295117121160", # Vocational or adult education
+                "00295161186333", # Vocational or adult education
+                "00295163121164", # Vocational or adult education
+                "00295169121165", # Vocational or adult education
+                "00295189137107", # Vocational or adult education
+                "00295195121170", # Vocational or adult education
+                "00295201189177", # Vocational or adult education
+                "1681") # Vocational or adult education
+
+
+temp_short %>% 
+  # 60 rows removed
+  filter(!(FIPSid %in% mo_voc_tech)) %>% 
+  # 96 removed
+  mutate(FIPSid = case_when(FIPSid == "1602" ~ "00295045203344",
+                            FIPSid =="1603" ~ "00295045203344",
+                            FIPSid == "1604" ~ "00295045203344",
+                            FIPSid == "1671" ~ NA,
+                                # 1679
+                            FIPSid == "1680" ~ "1679",
+                            FIPSid == "1692" ~ "00295199117241",
+                              #00295009180348 only missing one observation
+                            TRUE ~ FIPSid)) %>% 
+  #  rows removed
+  filter(!is.na(FIPSid)) %>% 
+  group_by(FIPSid, year, FIPS_Code_State) %>% 
+  summarise(across(where(is.numeric), ~sum(., na.rm = TRUE))) %>% 
+  ungroup -> temp_short
+  #sum_state(., 16)
+
+
+```
+
+## TO DO: Montana
+ARCGIS resource to Montana district boundaries: https://arcg.is/0qrv4y
+
+For the most part have exclude special education districts that serve multiple districts
+
+There are several eleentary school districts that were closed in the early 2000s that served very few pupils. Will need to take a look at these when aggregating in the next phase. For now will keep them as they are apart from a few that I have managed to find histories for.
+
+```{r}
+
+temp <- sum_state(temp_short, 17)
+print_names(temp, incomplete = FALSE) %>% View()
+
+missing_dat %>% 
+  filter(state == "MT") %>% 
+  left_join(., sch_names, by = "FIPSid", multiple = "any") %>% 
+  select(FIPSid, Name) %>% View()
+
+mt_spec_ed <- c("00305005117258", #	Special education cooperative	Exclude for now
+        "00305013117267", #	Special education cooperative	Exclude for now
+        "00305015108249", #	Special education cooperative	Exclude for now
+        "00305017117275", #	Special education cooperative	Exclude for now
+        "00305017204883", #	Adult education/communtiy college	Exclude for now
+        "00305021180546", #	Special education cooperative	Exclude for now
+        "00305021180547", #	Adult education/communtiy college	Exclude for now
+        "00305027186366", #	Special education cooperative	Exclude for now
+        "00305029139011", #	Adult education/communtiy college	Exclude for now
+        "00305029180561", #	Special education cooperative	Exclude for now
+        "00305031180571", #	Special education cooperative	Exclude for now
+        "00305049180599", #	Special education cooperative	Exclude for now
+        "00305063108305", #	Special education cooperative	Exclude for now
+        "00305067108310", #	Special education cooperative	Exclude for now
+        "00305073188370", #	Special education cooperative	Exclude for now
+        "00305075180636", #	Special education cooperative	Exclude for now
+        "00305077117348", #	Special education cooperative	Exclude for now
+        "00305081180647", #	Special education cooperative	Exclude for now
+        "00305085117357", #	Special education cooperative	Exclude for now
+        "00305089108331", #	Special education cooperative	Exclude for now
+        "00305091180663", #	Special education cooperative	Exclude for now
+        "00305095130165", #	Special education cooperative	Exclude for now
+        "00305111117386", #	Special education cooperative	Exclude for now
+        "00305111188375"	#Special education cooperative	Exclude for now
+              )
+
+
+
+
+# 1709		
+# 1714		
+# 1725		
+# 1727		
+# 1729		
+# 1735		
+# 1739		
+# 1740		
+# 1742		
+# 1743		
+# 1762		
+# 1773		
+# 1775		
+# 1776		
+# 1777		
+# 1782		
+# 1792		
+# 1793		
+# 1860		
+# 1861		
+# 1864		
+# 1890		
+# 1898		
+# 1914		
+# 1916		
+# 1924		
+# 1928		
+# 1931		
+# 1941		
+# 1949		
+# 1952		
+# 1962		
+# 1981		
+# 2000		
+# 2004		
+# 2008		
+# 2046		
+# 2047		
+# 2049		
+# 2053		
+# 2064		
+# 2076		
+
+
+temp_short %>%
+  #  rows removed
+  filter(!(FIPSid %in% mt_spec_ed)) %>%
+  #  removed
+  mutate(FIPSid = case_when(FIPSid == "00305049180598" ~ "00305049249185", #	Becomes East Helena K-School distric	Merge with 
+                              # "00305017117274"	only missing two observations	keep as is
+                              # "00305031228309"	ophir elementary is incorporated	keep as is
+                              # "00305041117308"	Only missing 1 observation	keep as is
+                              # "00305049249185"	Comes from East helena elementary district	Keep as is
+                              # "00305051117321"	Only missing 1 observation	keep as is
+                              # "00305063248772"	Missoula elementary and high school districts merge	Keep as is
+                              FIPSid ==  "00305067180623" ~ "00305097108340", # Joint district shares funding with sweet grass county	Merge with 
+                              # "00305087139064"	Only missing 1 observation	keep as is
+                               #"00305089180661"	Only missing 1 observation	keep as is
+                              # "00305091139071"	Only missing 1 observation	keep as is
+                              # "00305091180662"	Only missing 1 observation	keep as is
+                              # "00305107117378"	Only missing 4 obs (Closes)	Keep as is
+                              FIPSid == "00305111117383" ~ "00305111249184",	# Absorbed into Lockwood k_school district	Merge with 
+                              # "00305111249184"	Other schools merge	Keep as is
+                              FIPSid == "1804" ~ "00305021180543",	#	Merge with 00305021180543
+                              FIPSid == "1810" ~ NA,	#Missing too many observations	Remove
+                              FIPSid == "1817" ~ NA,	#Missing too many observations	Remove
+                              FIPSid == "1820" ~ NA,	#Missing too many observations	Remove
+                              FIPSid == "1855" ~ "00305031228309", #	Merge with 00305031228309
+                              FIPSid == "1960" ~ "00305063248772", #		Merge with 00305063248772
+                              FIPSid == "1961" ~ "00305063248772", #		Merge with 00305063248772
+                              FIPSid == "1980" ~ NA, #	Missing too many observations	Remove
+                              FIPSid == "2013" ~ NA, #	Missing too many observations	Remove
+                              FIPSid == "2057" ~ NA, #	Missing too many observations	Remove
+                              FIPSid == "2110" ~ "00305107180684",	#	Merge with 00305107180684
+                              TRUE ~ FIPSid)) %>%
+  #  rows removed
+  filter(!is.na(FIPSid)) %>%
+  group_by(FIPSid, year, FIPS_Code_State) %>%
+  summarise(across(where(is.numeric), ~sum(., na.rm = TRUE))) %>%
+  ungroup -> temp_short
+
+```
+
+## TO DO: Nebraska
+```{r}
+
+temp <- sum_state(temp_short, 18)
+print_names(temp, incomplete = FALSE) %>% View()
+
+```
+
+## TO DO: New Jersey
+```{r}
+
+temp <- sum_state(temp_short, 19)
+print_names(temp, incomplete = FALSE) %>% View()
+
+```
+
+## TO DO: New York
+```{r}
+
+temp <- sum_state(temp_short, 20)
+print_names(temp, incomplete = FALSE) %>% View()
+
+```
+
+## TO DO: North Dakota
+```{r}
+
+temp <- sum_state(temp_short, 21)
+print_names(temp, incomplete = FALSE) %>% View()
+
+```
+
+## TO DO: Ohio
+```{r}
+
+temp <- sum_state(temp_short, 22)
+
+print_names(temp) %>% View()
+
+```
+
+## TO DO: Oklahoma
+```{r}
+
+temp <- sum_state(temp_short, 23)
+print_names(temp, incomplete = FALSE) %>% View()
+
+```
+
+## Pennsylvania
+Two special categories to deal with: 
+Intermediate school units: excluded because they are like the regional education agencies in other states. Should revisit including them.
+
+Area Vocational Technical Schools (AVTS): these are more important to consider as they serve 9-12 grade but multiple school districts at the same time. Possible to combine the school districts included and make the AVTS the spatial scale in those cases.
+
+Possible argument for excluding AVTS: this is money toward vocational training rather than foundational educational equality through standard public schools.
+
+```{r}
+
+temp <- sum_state(temp_short, 24)
+print_names(temp, incomplete = FALSE) %>% View()
+
+pa_int_avts <- c("00425001182487", #- INTERMEDIATE
+                 "00425003118433", # - AVTS?
+                "00425003140178", # - AVTS?
+                "00425003182500", # - INTERMEDIATE
+                "00425003182504", # - AVTS?
+                "00425003182505", # - AVTS?
+                "00425005118434", # - AVTS?
+                "00425005121956", # - AVTS?
+                "00425007118438", # - INTERMEDIATE
+                "00425007188527", # - AVTS?
+                "00425009134375", # - AVTS?
+                "00425011112743", # - AVTS?
+                "00425011118444", # - INTERMEDIATE
+                "00425011188528", # - AVTS?
+                "00425013112744", # - AVTS?
+                "00425013118452", # - AVTS?
+                "00425015118455", # - AVTS?
+                "00425015121957", # - AVTS?
+                "00425017118458", # - AVTS?
+                "00425017182529", # - AVTS?
+                "00425017182534", # - AVTS?
+                "00425017187424", # - INTERMEDIATE
+                "00425019112748", # - AVTS?
+                "00425021112751", # - INTERMEDIATE
+                "00425021112754", # - AVTS?
+                "00425021182545", # - AVTS?
+                "00425025182547", # - AVTS?
+                "00425027112757", # - AVTS?
+                "00425027182549", # - INTERMEDIATE
+                "00425027182550", # - AVTS?
+                "00425029118465", # - AVTS?
+                "00425029182552", # - INTERMEDIATE
+                "00425031112759", # - INTERMEDIATE
+                "00425031121960", # - AVTS?
+                "00425031187426", # - AVTS?
+                "00425033118471", # - AVTS?
+                "00425033212416", # - AVTS?
+                "00425037118474", # - AVTS?
+                "00425039118477", # - AVTS?
+                "00425039121961", # - AVTS?
+                "00425041182569", # - INTERMEDIATE
+                "00425041188531", # - AVTS?
+                "00425043118481", # - AVTS?
+                "00425045112767", # - INTERMEDIATE
+                "00425045182579", # - AVTS?
+                "00425045212415", # - AVTS?
+                "00425049118488", # - INTERMEDIATE
+                "00425049118489", # - AVTS?
+                "00425051118490", # - AVTS?
+                "00425051121963", # - AVTS?
+                "00425051182591", # - AVTS?
+                "00425055118494", # - AVTS?
+                "00425055121964", # - AVTS?
+                "00425057182594", # - AVTS?
+                "00425059134379", # - AVTS?
+                "00425059212417", # - AVTS?
+                "00425061118500", # - AVTS?
+                "00425061213739", # - AVTS?
+                "00425063182601", # - INTERMEDIATE
+                "00425063212774", # - AVTS?
+                "00425065118505", # - AVTS?
+                "00425065189402", # - AVTS?
+                "00425069112773", # - AVTS?
+                "00425069121965", # - AVTS?
+                "00425069182606", # - INTERMEDIATE
+                "00425071112774", # - AVTS?
+                "00425071121966", # - AVTS?
+                "00425071182613", # - INTERMEDIATE
+                "00425073112777", # - AVTS?
+                "00425075188535", # - AVTS?
+                "00425075212411", # - AVTS?
+                "00425077112780", # - INTERMEDIATE
+                "00425077182625", # - AVTS?
+                "00425079112782", # - AVTS?
+                "00425079118519", # - AVTS?
+                "00425079182630", # - INTERMEDIATE
+                "00425079182631", # - AVTS?
+                "00425079189403", # - AVTS?
+                "00425081112783", # - AVTS?
+                "00425081118522", # - INTERMEDIATE
+                "00425083182637", # - INTERMEDIATE
+                "00425083182638", # - AVTS?
+                "00425085112786", # - AVTS?
+                "00425085121968", # - AVTS?
+                "00425085182643", # - INTERMEDIATE
+                "00425087182645", # - INTERMEDIATE
+                "00425087212420", # - AVTS?
+                "00425089182648", # - AVTS?
+                "00425091118536", # - AVTS?
+                "00425091118537", # - AVTS?
+                "00425091121969", # - AVTS?
+                "00425091182654", # - INTERMEDIATE
+                "00425091182656", # - Vocational training center
+                "00425091191472", # - AVTS?
+                "00425093121970", # - AVTS?
+                "00425095118540", # - AVTS?
+                "00425095182660", # - INTERMEDIATE
+                "00425095182661", # - AVTS?
+                "00425097118543", # - AVTS?
+                "00425107112793", # - AVTS?
+                "00425107118551", # - INTERMEDIATE
+                "00425107182678", # - AVTS?
+                "00425111118557", # - AVTS?
+                "00425115182684", # - AVTS?
+                "00425115213740", # - AVTS?
+                "00425119112795", # - AVTS?
+                "00425119118560", # - INTERMEDIATE
+                "00425121118562", # - AVTS?
+                "00425121189404", # - AVTS?
+                "00425125112799", # - AVTS?
+                "00425125121973", # - AVTS?
+                "00425125182693", # - INTERMEDIATE
+                "00425125182698", # - AVTS?
+                "00425129112803", # - INTERMEDIATE
+                "00425129112804", # - AVTS?
+                "00425129118567", # - AVTS?
+                "00425129182708", # - AVTS?
+                "00425133134384", # - AVTS?
+                "00425133189405", # - AVTS?
+                "4250", # - INTERMEDIATE
+                "4312", # - INTERMEDIATE
+                "4311") # - AVTS?
+
+temp_short %>% 
+  # 1508 rows removed
+  filter(!(FIPSid %in% pa_int_avts)) %>% 
+  #  101 removed
+  mutate(FIPSid = case_when(FIPSid == "00425021112750" ~ NA,
+                            # 00425029188530 keep as is
+                            FIPSid == "00425029212421" ~ NA,
+                            # 00425045194748 keep as is
+                            FIPSid == "00425071140180" ~ NA,
+                            FIPSid == "4245" ~ NA, # too few observations
+                            FIPSid == "4246" ~ NA, # too few observations
+                            FIPSid == "4247" ~ NA, # too few observations
+                            FIPSid == "4248" ~ NA, # too few observations
+                            FIPSid == "4256" ~ "00425007203657",
+                            FIPSid == "4288" ~ NA, # too few observations and a technical school for adults and HS students
+                            FIPSid == "4289" ~ "00425101118545",
+                            FIPSid == "4320" ~ 	"00425133210913",
+                            TRUE ~ FIPSid)) %>% 
+  #  rows removed
+  filter(!is.na(FIPSid)) %>% 
+  group_by(FIPSid, year, FIPS_Code_State) %>% 
+  summarise(across(where(is.numeric), ~sum(., na.rm = TRUE))) %>% 
+  ungroup -> temp_short
+  #sum_state(., 24)
+
+```
+
+## TO DO: South Carolina
+```{r}
+
+temp <- sum_state(temp_short, 25)
+print_names(temp, incomplete = FALSE) %>% View()
+
+```
+
+## TO DO: South Dakota
+```{r}
+
+temp <- sum_state(temp_short, 26)
+print_names(temp, incomplete = FALSE) %>% View()
+
+```
+
+## Texas
+
+Texas has been cleaned - in 2007 the State establisehd 20 Regional Education Service Centers which serve to s upport school districts. These have now been removed from the dataset but could be examined more closely for whether they should be retained as individual units or whether their revenues can be attributed to the school districts that they serve (would require data about uptake of their services). https://tea.texas.gov/about-tea/other-services/education-service-centers
+
+```{r}
+
+temp <- sum_state(temp_short, 27)
+
+# 20 Regional Education Service Centers were opened in 2007 that serve to support school districts - they have been removed for now but should be investigated further
+tx_region_ed_service_ctr <- c("00485029188559", 
+                            "00485113188565",
+                            "00485141118723",
+                            "00485183182968",
+                            "00485201118753",
+                            "00485215182997",
+                            "00485245118776", 
+                            "00485303183052",
+                            "00485309140572",
+                            "00485329191709",
+                            "00485355118825",
+                            "00485375118839",
+                            "00485439118861",
+                            "00485441183140",
+                            "00485449114261",
+                            "00485451183148",
+                            "00485453183149",
+                            "00485469183163",
+                            "00485471183165",
+                            "00485485118877")
+
+temp_short %>% 
+  filter(!(FIPSid %in% tx_region_ed_service_ctr)) %>% 
+  mutate(FIPSid = case_when(FIPSid == "4525" ~ "00485503183188",
+                    FIPSid == "4527" ~ NA, # remove
+                    FIPSid == "4541" ~ "00485343211467",
+                    FIPSid == "4544" ~ "00485077114175",
+                    FIPSid == "4547" ~ "00485083118694",
+                    FIPSid == "4551" ~ "00485087203734",
+                    FIPSid == "4554" ~  "00485113182908",
+                    FIPSid == "4556" ~  "00485127213212",
+                    FIPSid == "4566" ~  "00485157118729",
+                    FIPSid == "4568" ~  "00485167182952",
+                    FIPSid == "4574" ~ "00485191202671",
+                    FIPSid == "4577" ~ "00485201211001",
+                    FIPSid == "4579" ~ "00485207114211",
+                    FIPSid == "4597" ~ "00485275203770",
+                    FIPSid == "4600" ~ "00485279183041",
+                    FIPSid == "4613" ~ "00485333211041",
+                    FIPSid == "4633" ~ NA, # remove
+                    FIPSid == "4638" ~ "00485445118863",
+                    FIPSid == "4648" ~ "00485479118872",
+                    FIPSid == "4652" ~ "00485483114273",
+                    # "00485015182844" ~ # only missing one in 2017 - to be supplemented with mislabelled obersvation in Brazos Ind School District below  "00485041245830"
+                    # "00485029118671" ~ 
+                    # "00485029118672" ~ 
+                    # "00485029188559" ~ 
+                    # "00485029210952" ~ 
+                    FIPSid == "00485041245830" ~ "00485015182844",
+                    # "00485061140569" ~ 
+                    FIPSid == "00485061182879" ~ NA,
+                    # "00485113188565" ~ 
+                    # "00485141118723" ~ 
+                    # "00485183182968" ~  
+                    # "00485201118753" ~ 
+                    # "00485215182997" ~ 
+                    # "00485245118776" ~ 
+                    # "00485277183039" ~ 
+                    # "00485295118800" ~ 
+                    # "00485303183052" ~ 
+                    # "00485309140572" ~ 
+                    # "00485329191709" ~ 
+                    # "00485329211039" ~ 
+                    # "00485355118825" ~ 
+                    # "00485359211050" ~ 
+                    # "00485375118839" ~ 
+                    # "00485439118861" ~ 
+                    # "00485441183140" ~ 
+                    # "00485449114261" ~ 
+                    FIPSid == "00485449183145" ~ "00485449203802",
+                    # "00485451183148" ~ 
+                    # "00485453183149" ~ 
+                    # "00485469183163" ~ 
+                    # "00485471183165" ~ 
+                    # "00485485118877" 
+                    TRUE ~ FIPSid)) %>% 
+  # 19 rows removed
+  filter(!is.na(FIPSid)) %>% 
+  group_by(FIPSid, year, FIPS_Code_State) %>% 
+  summarise(across(where(is.numeric), ~sum(., na.rm = TRUE))) %>% 
+  ungroup -> temp_short  
+  ##sum_state(., 27)
+
+#print_names(temp, incomplete = FALSE) %>% View()
+
+```
+
+## TO DO: Vermont
+```{r}
+
+temp <- sum_state(temp_short, 28)
+print_names(temp, incomplete = FALSE) %>% View()
+
+```
+
+## West Virginia
+Required adding 3 newly established tehcnical training centers to their relevant school districts. Excluded 9 Regional Education Service Agencies for now. Could be reinvestigated.
+```{r}
+
+temp <- sum_state(temp_short, 29)
+#print_names(temp, incomplete = FALSE) %>% View()
+
+wv_reg_service_ctr <- c("00545003249131", 
+                        "00545011183454",
+                        "00545003183452",
+                        "00545039140775",
+                        "00545049183463",
+                        "00545067119069",
+                        "00545069183467",
+                        "00545081183469",
+                        "00545107140776")
+
+temp_short %>% 
+  # 66 rows removed
+  filter(!(FIPSid %in% wv_reg_service_ctr)) %>% 
+  # 32 removed
+  mutate(FIPSid = case_when(FIPSid == "00545003122402" ~ NA,
+                            FIPSid == "00545011122403" ~ NA,
+                            FIPSid == "00545035220572" ~ NA,
+                            FIPSid == "00545039249133" ~ NA,
+                            FIPSid == "00545045122405" ~ "00545045115015",
+                            FIPSid == "00545061137129" ~ "00545061213279",
+                            FIPSid == "00545081122408" ~ "00545081203865",
+                            FIPSid == "00545081249132" ~ NA,
+                            FIPSid == "00545097201295" ~ NA,
+                            FIPSid == "00545107122410" ~ NA,
+                            TRUE ~ FIPSid)) %>% 
+  #  rows removed
+  filter(!is.na(FIPSid)) %>% 
+  group_by(FIPSid, year, FIPS_Code_State) %>% 
+  summarise(across(where(is.numeric), ~sum(., na.rm = TRUE))) %>% 
+  ungroup -> temp_short
+  #sum_state(., 29)
+
+
+```
+
+## TO DO: Wisconsin
+```{r}
+
+temp <- sum_state(temp_short, 30)
+print_names(temp, incomplete = FALSE) %>% View()
+
+```
+
+## TO DO: Georgia
+```{r}
+
+temp <- sum_state(temp_short, 32)
+print_names(temp, incomplete = FALSE) %>% View()
+
+```
+
+## TO DO: Idaho
+```{r}
+
+temp <- sum_state(temp_short, 33)
+print_names(temp, incomplete = FALSE) %>% View()
+
+```
+
+## TO DO: Iowa
+```{r}
+
+temp <- sum_state(temp_short, 34)
+print_names(temp, incomplete = FALSE) %>% View()
+
+```
+
+## Kentucky
+A few school districts incorporated into others due to low enrollment numbers. two districts merged in later years (2019 and 2021) and therefore have full time series in the dataset. In the dataset, one with extremely low enrollment numbers was merged whereas the other was allowed to stay its own observation in the dataset.
+```{r}
+
+temp <- sum_state(temp_short, 35)
+print_names(temp, incomplete = FALSE) %>% View()
+
+temp_short %>% 
+  #  62 removed
+  mutate(FIPSid = case_when(FIPSid == "00215037203216" ~ "00215037116669",
+                              # 00215093116678
+                              FIPSid == "1099" ~ "00215167210381",
+                              FIPSid == "1105" ~ "00215231188274",
+                              FIPSid == "1106" ~ "00215233105583",
+                            TRUE ~ FIPSid)) %>% 
+  #  rows removed
+  filter(!is.na(FIPSid)) %>% 
+  group_by(FIPSid, year, FIPS_Code_State) %>% 
+  summarise(across(where(is.numeric), ~sum(., na.rm = TRUE))) %>% 
+  ungroup -> temp_short  
+  #sum_state(., 35)
+
+
+```
+
+## TO DO: Louisiana
+```{r}
+
+temp <- sum_state(temp_short, 36)
+print_names(temp, incomplete = FALSE) %>% View()
+
+```
+
+## TO DO: New Hampshire
+```{r}
+
+temp <- sum_state(temp_short, 38)
+print_names(temp, incomplete = FALSE) %>% View()
+
+```
+
+## TO DO: New Mexico
+```{r}
+
+temp <- sum_state(temp_short, 39)
+print_names(temp, incomplete = FALSE) %>% View()
+
+```
+
+## TO DO: Oregon
+```{r}
+
+temp <- sum_state(temp_short, 40)
+print_names(temp, incomplete = FALSE) %>% View()
+
+```
+
+## Rhode Island
+Total of 8 school districts represented in the dataset. 4 school districts appear starting in 2013-2014. They have 0 reported enrollment (likely an error) and school district revenue is very low compared to the other four districts. Decide to remove these four school districts. The remaining four have complete time series
+```{r}
+
+temp <- sum_state(temp_short, 41)
+print_names(temp, incomplete = FALSE) %>% View()
+
+# Action: Remove the following four districts
+temp_short %>% 
+  filter(!(FIPSid %in% c("00445003112831", "00445005182715", "00445007182716", "00445007112832"))) -> temp_short
+
+```
+
+## TO DO: Utah
+```{r}
+
+temp <- sum_state(temp_short, 43)
+print_names(temp, incomplete = FALSE) %>% View()
+
+```
+
+
+## Virginia
+Only onre school district reported "Eastern VA Medical School" - for now removed. Need to investigate why VA reports no school district revenues....
+```{r}
+
+temp <- sum_state(temp_short, 44)
+print_names(temp, incomplete = FALSE) %>% View()
+
+# Remove
+temp_short %>% filter(FIPSid != "00515710140687") -> temp_short
+
+
+
+```
+
+
+## Washington
+Only one observation was reassigned as it was closed and absorbed by another school district in 2007. 9 education service centers exist in Washington from 2008. As in Texas, they have been excluded for now with the possibility of including later pending data on how resources are divided across school districts. 
+```{r}
+
+temp <- sum_state(temp_short, 45)
+print_names(temp, incomplete = FALSE) %>% View()
+
+wa_service_ctr <- c("00535007183370",
+                    "00535011183376",
+                    "00535033183398",
+                    "00535035213094",
+                    "00535057183425",
+                    "00535063119050",
+                    "00535067183441",
+                    "00535071183443",
+                    "00535077119067")
+
+
+temp_short %>% 
+  filter(!(FIPSid %in% wa_service_ctr)) %>% 
+  mutate(FIPSid = case_when(FIPSid == "4724" ~ "00535015183378",
+                    TRUE ~ FIPSid)) %>% 
+  # 136 rows removed
+  filter(!is.na(FIPSid)) %>% 
+  group_by(FIPSid, year, FIPS_Code_State) %>% 
+  summarise(across(where(is.numeric), ~sum(., na.rm = TRUE))) %>% 
+  ungroup -> temp_short
+  #sum_state(., 45)
+
+```
+
+
+## Wyoming
+Concern: There are several school district codes (with different reported figures) that have the same school district name...
+
+```{r}
+
+temp <- sum_state(temp_short, 46)
+print_names(temp, incomplete = FALSE) %>% View()
+
+missing_dat %>% 
+  filter(state == "WY") %>% 
+  left_join(., sch_names, by = "FIPSid", multiple = "any") %>% 
+  select(FIPSid, Name) %>% View()
+
+wy_remove <- c("4796", # only one observation and unattributable to other counties
+        "4812")# BOCES
+
+temp_short %>% 
+  #  2 rows removed
+  filter(!(FIPSid %in% wy_remove)) -> temp_short
+  # No need to regroup because nothing is reclassified only removed
+  #sum_state(., 46)
+
+```
+
+```{r}
+
+temp_short %>% 
+  saveRDS(here('data/temp/temp_short_25_01_23.RDS'))
+
+```
+
+
+```{r}
+
+temp_short <- readRDS(here('data/temp/temp_short_25_01_23.RDS'))
+
+sum_df <- temp_short %>% 
+  filter(Enrollment != 0) %>% 
+  select(FIPSid, year, FIPS_Code_State, Enrollment, Total_Revenue:State_IGR_Education, Total_Educ_Total_Exp) %>% 
+  mutate(across(c(Total_Revenue:Total_Educ_Total_Exp), ~./Enrollment, .names = "{col}_pp")) 
+
+
+# Why are there negative values?
+sum_df %>% 
+  filter(Total_Taxes_pp >= 0) %>%  
+  select(year, Enrollment, Total_Educ_Total_Exp_pp, Total_Revenue_pp, Total_Taxes_pp, Property_Tax_pp, State_IGR_Education_pp) %>% 
+  data.frame() %>% 
+  stargazer(digits = 1)
+
+sum_df %>% 
+  filter(Total_Taxes_pp >= 0 & year >= 2011) %>%  
+  select(year, Enrollment, Total_Educ_Total_Exp_pp, Total_Revenue_pp, Total_Taxes_pp, Property_Tax_pp, State_IGR_Education_pp) %>% 
+  data.frame() %>% 
+  stargazer(digits = 1)
+
+sum_df %>%
+  ggplot() + 
+  geom_line(aes(x = year, y = Enrollment, color = FIPSid))
+
+sum_df %>%
+  filter(year == 2018) %>% 
+  select(FIPSid, FIPS_Code_State, Total_Revenue_pp, Total_Rev_Own_Sources_pp, Total_Taxes_pp, Total_Educ_Total_Exp_pp) %>% 
+  pivot_longer(cols = !c(FIPSid, FIPS_Code_State)) %>% 
+  ggplot() + 
+  geom_histogram(aes(log(value), fill = as.factor(FIPS_Code_State)), position = "identity", bins = 50, show.legend = FALSE) +
+  facet_wrap(~name, scales = "free") +
+  theme_minimal() 
+
+
+sum_df %>% 
+  filter(year == 2018) %>% 
+  data.frame 
+
+```
+
+
+# Population estimates county-level
+46113 South Dakota is reclassified to 46102
+```{r}
+# pop <- read_csv(paste0("https://www2.census.gov/programs-surveys/popest/datasets/2000-2009/counties/totals/co-est2009-alldata.csv")) %>% 
+#   mutate(COUNTY = ifelse(STATE == "46" & COUNTY == "113", "102", COUNTY)) %>% 
+#   full_join(., read_csv(paste0("https://www2.census.gov/programs-surveys/popest/datasets/2010-2019/counties/totals/co-est2019-alldata.csv")), by = c("SUMLEV", "REGION", "DIVISION", "STATE", "COUNTY", "STNAME")) %>% 
+#   full_join(., read_csv(paste0("https://www2.census.gov/programs-surveys/popest/datasets/2020-2022/counties/totals/co-est2022-alldata.csv")), by = c("SUMLEV", "REGION", "DIVISION", "STATE", "COUNTY", "STNAME"))
+
+age_grps <- tibble(AGEGRP = 0:18, age_group = c("total",
+                   "Age 0 to 4 years",
+                   "Age 5 to 9 years",
+                   "Age 10 to 14 years",
+                   "Age 15 to 19 years",
+                   "Age 20 to 24 years",
+                   "Age 25 to 29 years",
+                   "Age 30 to 34 years",
+                   "Age 35 to 39 years",
+                   "Age 40 to 44 years",
+                   "Age 45 to 49 years",
+                   "Age 50 to 54 years",
+                   "Age 55 to 59 years",
+                   "Age 60 to 64 years",
+                   "Age 65 to 69 years",
+                   "Age 70 to 74 years",
+                   "Age 75 to 79 years",
+                   "Age 80 to 84 years",
+                   "Age 85 years and older")) %>% 
+  mutate(age_group = gsub(" ", "_", gsub("Age | years| and| to", "", age_group)))
+
+         
+# https://www.census.gov/data/datasets/time-series/demo/popest/intercensal-2000-2010-counties.html
+# https://www2.census.gov/programs-surveys/popest/technical-documentation/file-layouts/2000-2010/intercensal/county/co-est00int-agesex-5yr.pdf
+
+# Contains two fips codes that do not match later years: 02270, 51515
+pop_age_00_09 <- read_csv("https://www2.census.gov/programs-surveys/popest/datasets/2000-2010/intercensal/county/co-est00int-agesex-5yr.csv") %>% 
+  select(STATE, COUNTY, SEX, AGEGRP, contains("POPESTIMATE")) %>% 
+  filter(SEX == 0) %>% 
+  select(-SEX) %>% 
+  mutate(COUNTY = ifelse(STATE == "46" & COUNTY == "113", "102", COUNTY)) %>% 
+  pivot_longer(cols = contains("POPESTIMATE"), names_prefix = "POPESTIMATE", names_transform = as.numeric, names_to = "YEAR", values_to = "pop") %>% 
+  left_join(., age_grps, by = "AGEGRP") %>% # mutate(AGEGRP = as.integer(AGEGRP)) %>% select(AGEGRP, age_group) %>% distinct %>% identical(age_grps)
+  select(-AGEGRP) %>% 
+  pivot_wider(id_cols = c(STATE, COUNTY, YEAR), values_from = pop, names_from = age_group, names_glue = "pop_{age_group}") %>% 
+  # Remove 2010 as more updated figures available in next dataset
+  filter(YEAR != 2010)
+
+# KEY: https://www2.census.gov/programs-surveys/popest/technical-documentation/file-layouts/2010-2019/cc-est2019-alldata.pdf
+# Contains one fips codes that do not match later years: 02158
+pop_age_10_19 <- read_csv("https://www2.census.gov/programs-surveys/popest/datasets/2010-2019/counties/asrh/cc-est2019-alldata.csv") %>% 
+  filter(YEAR %in% 3:12) %>% 
+  mutate(YEAR = YEAR + 2007) %>% 
+  select(STATE, COUNTY, YEAR, AGEGRP, TOT_POP) %>% 
+  # pivot_wider(id_cols = c(STATE, COUNTY, AGEGRP), names_from = YEAR, values_from = TOT_POP) %>% 
+  left_join(., age_grps, by = "AGEGRP") %>%  # mutate(AGEGRP = as.integer(AGEGRP)) %>% select(AGEGRP, age_group) %>% distinct %>% identical(age_grps)
+  select(-AGEGRP) %>% 
+  pivot_wider(id_cols = c(STATE, COUNTY, YEAR), values_from = TOT_POP, names_from = age_group, names_glue = "pop_{age_group}")
+
+# KEY: https://www2.census.gov/programs-surveys/popest/technical-documentation/file-layouts/2020-2022/cc-est2022-alldata.pdf
+# missing 02261 from previous years
+# There is also a change in county codes in Connecticut around 2020 in which 8 counties are transformed into 9 counties
+pop_age_20_22 <- read_csv("https://www2.census.gov/programs-surveys/popest/datasets/2020-2022/counties/asrh/cc-est2022-all.csv") %>% 
+  filter(YEAR %in% 2:4) %>% 
+  mutate(YEAR = YEAR + 2018) %>% 
+  select(STATE, COUNTY, YEAR, AGEGRP, TOT_POP) %>% 
+  left_join(., age_grps, by = "AGEGRP") %>% #mutate(AGEGRP = as.integer(AGEGRP)) %>% select(AGEGRP, age_group) %>% distinct %>% identical(age_grps)
+  select(-AGEGRP) %>% 
+  pivot_wider(id_cols = c(STATE, COUNTY, YEAR), values_from = TOT_POP, names_from = age_group, names_glue = "pop_{age_group}")
+
+
+# Connecticut county crosswalk
+# Source: https://www.census.gov/programs-surveys/geography/technical-documentation/county-changes/2020.html
+ct_crosswalk <-read_excel(here("data/out/ct_cou_to_cousub_crosswalk.xlsx"), n_max = 175) %>% 
+  select(2,4) %>% 
+  rename(old_fips = 1, new_fips = 2) 
+
+
+tmp <- ct_crosswalk %>% 
+  group_by(old_fips, new_fips) %>% 
+  summarise(n = n()) %>% 
+  group_by(old_fips) %>% 
+  filter(n == max(n)) #%>% 
+  #pull(new_fips) %>% setdiff(ct_crosswalk$new_fips, .)
+
+ct_cross <- as.list(tmp$old_fips)
+names(ct_cross) <- as.list(tmp$new_fips)
+ct_cross <- unlist(ct_cross)
+
+pop_age_20_22 %>% 
+  rbind(pop_age_10_19, pop_age_00_09) %>% 
+  filter(STATE == "09") %>% 
+  mutate(COUNTY = ifelse(COUNTY %in% names(ct_cross), ct_cross[COUNTY], COUNTY)) %>%
+  group_by(COUNTY, YEAR) %>% 
+  summarise(across(where(is.numeric), ~sum(.x, na.rm = TRUE))) %>%
+  ggplot(aes(x = YEAR, y = pop_total, color = COUNTY)) + 
+  geom_line()
+
+pop <- rbind(pop_age_00_09, pop_age_10_19, pop_age_20_22) %>% 
+  mutate(fips = paste0(STATE, COUNTY)) %>% 
+  relocate(fips) %>% 
+  rename(year = YEAR, state = STATE) %>% 
+  select(-COUNTY) %>% 
+  mutate(pop_school_age = pop_5_9 + pop_10_14 + pop_15_19)
+
+
+#pop %>% saveRDS(here("data/temp/population_age_controls.RDS"))
+
+```
+
+
+# County-level data
+```{r}
+county_df <- sch_dist_names %>% 
+  select(FIPSid, fips) %>% 
+  distinct %>% 
+  left_join(temp_short, ., by = "FIPSid") %>%
+  relocate(fips) %>% 
+  group_by(fips, year) %>% 
+  summarise(across(where(is.numeric), ~sum(., na.rm = TRUE))) %>% 
+  ungroup %>% 
+  mutate(across(3:78, ~./Enrollment, .names = "{.col}_pp")) %>% 
+  mutate(across(3:154, log, .names = "log_{.col}"))
+
+# Confirmed no NA values - all school district IDs get a FIPS code
+county_df %>% filter(is.na(fips)) %>% nrow == 0
+ 
+# incomplete panel objects
+test_incomplete <- county_df %>% 
+  group_by(fips) %>% 
+  summarise(n = n()) %>% 
+  filter(n != 25) %>% 
+  pull(fips)
+
+county_df %>% filter(fips %in% test_incomplete) %>% 
+  ggplot(aes(x = year, y = Enrollment, group = fips)) +
+  geom_line()
+
+```
+
+
+## Create map of expenditure per pupil
+```{r}
+
+plot_usmap(data = filter(county_df, year == 2020), color = "white", values = "log_Total_Revenue_pp", regions = "counties", exclude = c("AK", "HI")) +
+    labs(title = "U.S. County Public School Enrollment") + 
+  scale_fill_continuous(low = "white", high = "blue", name = "Log Revenue per pupil") + 
+  theme(panel.background=element_blank())
+
+
+```
+
+
+## Create map of pupil per county
+```{r}
+# Check completeness of population data in relation to available school expenditure data
+county_df %>% filter(!(fips %in% unique(pop$fips))) %>% nrow(.) == 0
+
+county_df %>% 
+  left_join(., pop, by = c("fips", "year")) %>% 
+  filter(year >= 2000) %>% 
+  mutate(enrollment_diff = pop_school_age- Enrollment,
+         enrollment_share = Enrollment/pop_school_age) %>% 
+  ggplot() +
+  geom_histogram(aes(x= enrollment_diff))
+
+
+county_df %>% 
+  left_join(., pop, by = c("fips", "year")) %>% 
+  filter(year >= 2000) %>% 
+  # Correct missing Connecticut states
+  mutate(state = ifelse(is.na(state), substr(fips, 1, 2), state)) %>% 
+  group_by(state, year) %>% 
+  summarise(enrollment = sum(Enrollment, na.rm = TRUE), pop_school_age = 0.95*sum(pop_school_age, na.rm = TRUE)) %>% 
+  pivot_longer(cols = c(enrollment, pop_school_age)) %>% 
+  ggplot(aes(y = value, x = as.factor(year), fill = name)) +
+  geom_bar(position = "fill", stat = "identity")+
+  facet_wrap(~state, scales = "free")
+  
+  mutate(enrollment_diff = pop_school_age- Enrollment,
+         enrollment_share = Enrollment/pop_school_age) %>% 
+  ggplot() +
+  geom_histogram(aes(x= enrollment_diff))
+
+```
+
+

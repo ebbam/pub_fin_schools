@@ -1,0 +1,306 @@
+---
+title: "descriptive_analysis"
+author: "Ebba Mark"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(here)
+library(tidyverse)
+library(janitor)
+library(gridExtra)
+library(readr)
+library(data.table)
+library(readxl)
+library(fixest)
+library(forcats)
+library(panelView)
+library(openxlsx)
+library(stargazer)
+library(usmap)
+library(fixest)
+library(datasets)
+
+source(here('code/dicts.R'))
+source(here('code/useful_functions.R'))
+
+```
+
+
+## Descriptive Statistics
+
+```{r cars, echo = FALSE}
+temp_cleaned <- readRDS(here("data/out/school_district_cleaned.RDS")) %>% 
+  filter(year >= 1970) %>% select(-SchLevCode)
+
+temp_cleaned %>% 
+  pivot_longer(cols = !c(FIPSid, year, FIPS_Code_State, fips, Enrollment), names_to = "item", values_to = "amount")
+
+temp_cleaned %>% 
+  select(FIPSid:Total_Revenue) %>% 
+  filter(Total_Revenue != 0) %>% 
+  complete(FIPSid, year) %>% 
+  filter(!is.na(Total_Revenue))
+
+```
+
+# Complete cases
+~ 10% missing values for the Total revenue category 
+
+```{r, echo = FALSE}
+temp_short <- temp_cleaned %>% 
+  filter(year >= 1997)
+
+complete_n <- temp_short %>% 
+  complete(FIPSid, year) %>% nrow()
+
+# 89% of all possible district-year pairs are reported
+nrow(temp_short)/complete_n
+
+# 58 observations in which enrollment is reported by no other revenue categories...keep for now
+temp_short[rowSums(temp_short[6:264], na.rm = TRUE) ==0,] 
+
+```
+
+
+```{r, echo = FALSE}
+
+retained_vars <- temp_short %>% 
+  complete(FIPSid, year) %>%
+  summarise(across(everything(), ~sum(. == 0 | is.na(.)))) %>% 
+  t() %>% as.data.frame() %>% 
+  tibble::rownames_to_column("cat") %>% 
+  mutate(prop_missing = round(V1/complete_n, digits = 2)) %>% 
+  filter(prop_missing < .3) %>% 
+  pull(cat) %>% 
+  union(., names(select(temp_short, contains("Ed", ignore.case = FALSE))))
+
+temp_short %>% select(all_of(retained_vars)) %>% select(-fips) -> temp_short
+
+```
+
+# Reporting
+```{r}
+
+temp_cleaned %>% 
+  filter(Total_Revenue != 0) %>% 
+  group_by(FIPSid) %>% 
+  summarise(years = n()) %>% 
+  ggplot() +
+  geom_histogram(aes(x = years), binwidth = 3) + 
+  ggtitle("Histogram of reported years over 31-year period between 1970-2021")
+
+temp_cleaned %>% 
+  filter(Total_Revenue != 0) %>% 
+  group_by(year) %>% 
+  summarise(reporting = n()) %>% 
+  ggplot() +
+  geom_bar(aes(x = year, weight = reporting)) + 
+  ggtitle("Reporting over 31-year period between 1970-2021")
+
+```
+
+
+# How many school districts per state
+```{r}
+temp_short %>% 
+  group_by(FIPS_Code_State) %>% 
+  summarise(n_dist = n_distinct(FIPSid)) %>% 
+  ggplot() +
+  geom_col(aes(x = fct_rev(fct_reorder(as.factor(FIPS_Code_State), n_dist)), y = n_dist)) +
+  labs(title = "Number of schools per state")
+
+temp_short %>% 
+  group_by(FIPS_Code_State) %>% 
+  summarise(n_dist = n_distinct(FIPSid)) %>% 
+  ggplot() +
+  geom_histogram(aes(n_dist), bins = 10) + 
+  labs(title = "Histogram of number of school districts per state")
+
+```
+
+# Completeness
+```{r}
+
+for(k in unique(temp_short$FIPS_Code_State)){
+  print(k)
+  print(get_state(k))
+  temp_short %>% 
+  filter(FIPS_Code_State == k) %>% 
+  panelview(Total_Revenue != 0 ~ 1, index = c("FIPSid","year"), xlab = "Year", ylab = "School District", display.all = TRUE, type = "missing")
+}
+
+
+```
+
+# Data
+```{r}
+
+sch_dist_names <- readRDS(here("data/temp/names_school_level_info.RDS")) %>% 
+  filter(year >=1997) %>% 
+  mutate(Name = case_when(FIPSid =="00185067116455" ~ "KOKOMO CENTER TOWNSHIP CONSOLIDATED SCHOOL CORPORATION", 
+                          TRUE ~ Name))
+
+temp_short <- readRDS(here('data/temp/temp_short_25_01_23.RDS'))
+
+pop <- readRDS(here("data/temp/population_age_controls.RDS"))
+```
+
+
+
+```{r}
+
+sum_df <- temp_short %>% 
+  filter(Enrollment != 0) %>% 
+  select(FIPSid, year, FIPS_Code_State, Enrollment, Total_Revenue:State_IGR_Education, Total_Educ_Total_Exp) %>% 
+  mutate(across(c(Total_Revenue:Total_Educ_Total_Exp), ~./Enrollment, .names = "{col}_pp")) 
+
+
+# Why are there negative values?
+sum_df %>% 
+  filter(Total_Taxes_pp >= 0) %>%  
+  select(year, Enrollment, Total_Educ_Total_Exp_pp, Total_Revenue_pp, Total_Taxes_pp, Property_Tax_pp, State_IGR_Education_pp) %>% 
+  data.frame() %>% 
+  stargazer(digits = 1)
+
+sum_df %>% 
+  filter(Total_Taxes_pp >= 0 & year >= 2011) %>%  
+  select(year, Enrollment, Total_Educ_Total_Exp_pp, Total_Revenue_pp, Total_Taxes_pp, Property_Tax_pp, State_IGR_Education_pp) %>% 
+  data.frame() %>% 
+  stargazer(digits = 1)
+
+sum_df %>%
+  ggplot() + 
+  geom_line(aes(x = year, y = Enrollment, color = FIPSid))
+
+sum_df %>%
+  filter(year == 2018) %>% 
+  select(FIPSid, FIPS_Code_State, Total_Revenue_pp, Total_Rev_Own_Sources_pp, Total_Taxes_pp, Total_Educ_Total_Exp_pp) %>% 
+  pivot_longer(cols = !c(FIPSid, FIPS_Code_State)) %>% 
+  ggplot() + 
+  geom_histogram(aes(log(value), fill = as.factor(FIPS_Code_State)), position = "identity", bins = 50, show.legend = FALSE) +
+  facet_wrap(~name, scales = "free") +
+  theme_minimal() 
+
+```
+
+
+
+# County-level data
+```{r}
+county_df <- sch_dist_names %>% 
+  select(FIPSid, fips) %>% 
+  distinct %>% 
+  left_join(temp_short, ., by = "FIPSid") %>%
+  relocate(fips) %>% 
+  group_by(fips, year) %>% 
+  summarise(across(where(is.numeric), ~sum(., na.rm = TRUE))) %>% 
+  ungroup %>% 
+  mutate(across(3:78, ~./Enrollment, .names = "{.col}_pp")) %>% 
+  mutate(across(3:154, log, .names = "log_{.col}")) %>% 
+  left_join(., pop, by = c("fips", "year")) 
+
+# Confirmed no NA values - all school district IDs get a FIPS code
+county_df %>% filter(is.na(fips)) %>% nrow == 0
+ 
+# incomplete panel objects
+test_incomplete <- county_df %>% 
+  group_by(fips) %>% 
+  summarise(n = n()) %>% 
+  filter(n != 25) %>% 
+  pull(fips)
+
+county_df %>% filter(fips %in% test_incomplete) %>% 
+  ggplot(aes(x = year, y = Enrollment, group = fips)) +
+  geom_line()
+
+```
+
+
+## Create map of expenditure per pupil
+```{r}
+
+plot_usmap(data = filter(county_df, year == 2020), color = "white", values = "log_Total_Revenue_pp", regions = "counties", exclude = c("AK", "HI")) +
+    labs(title = "U.S. County Public School Enrollment") + 
+  scale_fill_continuous(low = "white", high = "blue", name = "Log Revenue per pupil") + 
+  theme(panel.background=element_blank())
+
+
+```
+
+
+## Create map of pupil per county
+```{r}
+# Check completeness of population data in relation to available school expenditure data
+county_df %>% filter(!(fips %in% unique(pop$fips))) %>% nrow(.) == 0
+
+county_df %>% 
+  filter(year >= 2000) %>% 
+  mutate(enrollment_diff = pop_school_age- Enrollment,
+         enrollment_share = Enrollment/pop_school_age) %>% 
+  ggplot() +
+  geom_histogram(aes(x= enrollment_diff))
+
+
+county_df %>% 
+  left_join(., pop, by = c("fips", "year")) %>% 
+  filter(year >= 2000) %>% 
+  # Correct missing Connecticut states
+  mutate(state = ifelse(is.na(state), substr(fips, 1, 2), state)) %>% 
+  group_by(state, year) %>% 
+  summarise(enrollment = sum(Enrollment, na.rm = TRUE), pop_school_age = 0.95*sum(pop_school_age, na.rm = TRUE)) %>% 
+  pivot_longer(cols = c(enrollment, pop_school_age)) %>% 
+  ggplot(aes(y = value, x = as.factor(year), fill = name)) +
+  geom_bar(position = "fill", stat = "identity")+
+  facet_wrap(~state, scales = "free")
+  
+
+```
+
+
+## Test with mine closure data
+```{r}
+
+mines_data <- readRDS(here('data/temp/allcomp_cap_prod.RDS')) %>% 
+  select(-c("state.x", "state.y", "fipstate.x", "county.y", "county_name"))
+
+
+county_df %>% filter(!fips %in% unique(mines_data$fips)) %>% pull(fips) %>% unique
+
+county_df <- county_df %>% 
+  left_join(., mines_data, by = c("year", "fips")) %>% 
+  group_by(fips) %>%
+  mutate(diff_Property_Tax_pp = Property_Tax_pp - lag(Property_Tax_pp),
+         diff_Property_Tax_pp_l1 = lag(diff_Property_Tax_pp, 1),
+         diff_Property_Tax_pp_l2 = lag(diff_Property_Tax_pp, 2))
+
+#feols(Total_Taxes_pp ~ mines_diff + lag_diff + lag_diff2 + realgdp_pc | fips + year, data = county_df)
+feols(Total_Taxes_pp ~ diff_total_active_prod + l1_diff_total_active_prod + l2_diff_total_active_prod + realgdp_pc | fips + year, data = county_df)
+
+#feols(Total_Educ_Current_Exp_pp ~ mines_diff + lag_diff + lag_diff2 + realgdp_pc | fips + year, data = county_df)
+feols(Total_Educ_Current_Exp_pp ~ diff_total_active_prod + l1_diff_total_active_prod + l2_diff_total_active_prod + realgdp_pc | fips + year, data = county_df)
+
+#feols(Property_Tax_pp ~ mines_diff + lag_diff + lag_diff2 + realgdp_pc | fips + year, data = county_df)
+feols(Property_Tax ~ diff_total_active_prod + l1_diff_total_active_prod + l2_diff_total_active_prod + realgdp | fips + year, data = county_df)
+feols(Total_Educ_Current_Exp_pp ~ I(diff_total_active_prod/pop_1000) + I(l1_diff_total_active_prod/pop_1000) + I(l2_diff_total_active_prod/pop_1000) + realgdp | fips + year, data = county_df)
+
+#feols(diff_Property_Tax_pp ~ mines_diff + lag_diff + lag_diff2 + realgdp_pc | fips + year, data = county_df)
+feols(diff_Property_Tax_pp ~ diff_total_active_prod + l1_diff_total_active_prod + l2_diff_total_active_prod + realgdp_pc | fips + year, data = county_df)
+
+iv_est <- feols(Total_Educ_Current_Exp_pp ~ realgdp_pc |  fips + year | diff_total_active_prod + l1_diff_total_active_prod + l2_diff_total_active_prod ~ diff_Property_Tax_pp + diff_Property_Tax_pp_l1 + diff_Property_Tax_pp_l2 , data = county_df)
+summary(iv_est, stage = 1)
+
+
+```
+
+```{r}
+library(educationdata)
+data <- get_education_data(level = "school-districts",
+    source = "edfacts",
+    topic = "assessments",
+    filters = list(year = 2014, grade_edfacts = 8))
+```
+
