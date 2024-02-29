@@ -4,6 +4,11 @@ get_state <- function(st){
   fips_codes %>% filter(state_code == st) %>% pull(state) %>% unique %>% return(.)
 }
 
+states <- data.frame(state.abb, state.region)
+get_region <- function(st){
+  states %>% filter(state.abb == st) %>% pull(state.region) %>% unique %>% return(.)
+}
+
 get_code <- function(st_abb){
   fips_codes %>% filter(state == st_abb) %>% pull(state_code) %>% unique %>% return(.)
 }
