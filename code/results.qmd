@@ -1,6 +1,10 @@
 ---
 title: "Descriptive Analysis & Preliminary Results"
-format: html
+format: 
+  html:
+    theme: cosmo
+    toc: true
+    toc_float: true
 editor: visual
 ---
 
