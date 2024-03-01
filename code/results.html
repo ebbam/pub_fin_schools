@@ -1,0 +1,2374 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.2.335">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>Descriptive Analysis &amp; Preliminary Results</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1.6em;
+  vertical-align: middle;
+}
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+    color: #aaaaaa;
+  }
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+code span.at { color: #7d9029; } /* Attribute */
+code span.bn { color: #40a070; } /* BaseN */
+code span.bu { color: #008000; } /* BuiltIn */
+code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+code span.ch { color: #4070a0; } /* Char */
+code span.cn { color: #880000; } /* Constant */
+code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+code span.dt { color: #902000; } /* DataType */
+code span.dv { color: #40a070; } /* DecVal */
+code span.er { color: #ff0000; font-weight: bold; } /* Error */
+code span.ex { } /* Extension */
+code span.fl { color: #40a070; } /* Float */
+code span.fu { color: #06287e; } /* Function */
+code span.im { color: #008000; font-weight: bold; } /* Import */
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+code span.op { color: #666666; } /* Operator */
+code span.ot { color: #007020; } /* Other */
+code span.pp { color: #bc7a00; } /* Preprocessor */
+code span.sc { color: #4070a0; } /* SpecialChar */
+code span.ss { color: #bb6688; } /* SpecialString */
+code span.st { color: #4070a0; } /* String */
+code span.va { color: #19177c; } /* Variable */
+code span.vs { color: #4070a0; } /* VerbatimString */
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+</style>
+
+
+<script src="results_files/libs/clipboard/clipboard.min.js"></script>
+<script src="results_files/libs/quarto-html/quarto.js"></script>
+<script src="results_files/libs/quarto-html/popper.min.js"></script>
+<script src="results_files/libs/quarto-html/tippy.umd.min.js"></script>
+<script src="results_files/libs/quarto-html/anchor.min.js"></script>
+<link href="results_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="results_files/libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="results_files/libs/bootstrap/bootstrap.min.js"></script>
+<link href="results_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="results_files/libs/bootstrap/bootstrap.min.css" rel="stylesheet" id="quarto-bootstrap" data-mode="light">
+
+
+</head>
+
+<body class="fullcontent">
+
+<div id="quarto-content" class="page-columns page-rows-contents page-layout-article">
+
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Descriptive Analysis &amp; Preliminary Results</h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    
+  
+    
+  </div>
+  
+
+</header>
+
+<div class="cell">
+
+</div>
+<div class="cell">
+
+</div>
+<section id="data" class="level1">
+<h1>Data</h1>
+<p>County-level revenue and expenditure data for public education: [Willamette University’s Government Finance Database]{https://willamette.edu/mba/research-impact/public-datasets/index.html}</p>
+<p>GDP Controls: US Bureau of Economic Analysis</p>
+<p>Economic Diversity: [Chmura Analytics]{https://www.chmura.com/blog/chmura-economic-diversity}. This is time-invariant.</p>
+<p>Coal mine activity and production levels: Mine Safety and Health Administration</p>
+<p>Note: GDP controls and economic diversity indicators from the original “main_county/pub_fin/data/temp” and cleaned from Willamette_Scoping.Rmd.</p>
+<p>The below summary tables display descriptive statistics for all indicators used in regression results below. The table is divided in two (pre- and post-2007) as the establishment of Educational Service Agencies started taking place around 2007.</p>
+
+<table style="text-align:center">
+<tbody><tr>
+<td colspan="6" style="border-bottom: 1px solid black">
+</td>
+</tr>
+<tr>
+<td style="text-align:left">
+Statistic
+</td>
+<td>
+N
+</td>
+<td>
+Mean
+</td>
+<td>
+St.&nbsp;Dev.
+</td>
+<td>
+Min
+</td>
+<td>
+Max
+</td>
+</tr>
+<tr>
+<td colspan="6" style="border-bottom: 1px solid black">
+</td>
+</tr>
+<tr>
+<td style="text-align:left">
+esa
+</td>
+<td>
+41,100
+</td>
+<td>
+0
+</td>
+<td>
+0
+</td>
+<td>
+0
+</td>
+<td>
+1
+</td>
+</tr>
+<tr>
+<td style="text-align:left">
+voc_adult
+</td>
+<td>
+41,100
+</td>
+<td>
+0
+</td>
+<td>
+0
+</td>
+<td>
+0
+</td>
+<td>
+1
+</td>
+</tr>
+<tr>
+<td style="text-align:left">
+Enrollment
+</td>
+<td>
+41,100
+</td>
+<td>
+14,647
+</td>
+<td>
+49,905
+</td>
+<td>
+2
+</td>
+<td>
+1,646,297
+</td>
+</tr>
+<tr>
+<td style="text-align:left">
+Total_Revenue
+</td>
+<td>
+41,100
+</td>
+<td>
+182,943
+</td>
+<td>
+655,387
+</td>
+<td>
+103
+</td>
+<td>
+25,052,197
+</td>
+</tr>
+<tr>
+<td style="text-align:left">
+Total_Taxes
+</td>
+<td>
+41,100
+</td>
+<td>
+71,541
+</td>
+<td>
+277,446
+</td>
+<td>
+0
+</td>
+<td>
+7,909,195
+</td>
+</tr>
+<tr>
+<td style="text-align:left">
+Property_Tax
+</td>
+<td>
+41,100
+</td>
+<td>
+68,328
+</td>
+<td>
+273,220
+</td>
+<td>
+0
+</td>
+<td>
+7,909,195
+</td>
+</tr>
+<tr>
+<td style="text-align:left">
+Total_IG_Revenue
+</td>
+<td>
+41,100
+</td>
+<td>
+101,889
+</td>
+<td>
+392,890
+</td>
+<td>
+13
+</td>
+<td>
+18,363,473
+</td>
+</tr>
+<tr>
+<td style="text-align:left">
+Total_Fed_IG_Revenue
+</td>
+<td>
+41,100
+</td>
+<td>
+1,066
+</td>
+<td>
+4,418
+</td>
+<td>
+0
+</td>
+<td>
+136,623
+</td>
+</tr>
+<tr>
+<td style="text-align:left">
+Total_Expenditure
+</td>
+<td>
+41,100
+</td>
+<td>
+186,281
+</td>
+<td>
+669,221
+</td>
+<td>
+132
+</td>
+<td>
+23,008,245
+</td>
+</tr>
+<tr>
+<td style="text-align:left">
+Total_Interest_on_Debt
+</td>
+<td>
+41,100
+</td>
+<td>
+5,764
+</td>
+<td>
+27,915
+</td>
+<td>
+0
+</td>
+<td>
+1,005,978
+</td>
+</tr>
+<tr>
+<td style="text-align:left">
+Total_Revenue_pp
+</td>
+<td>
+41,100
+</td>
+<td>
+13
+</td>
+<td>
+6
+</td>
+<td>
+2
+</td>
+<td>
+191
+</td>
+</tr>
+<tr>
+<td style="text-align:left">
+Total_Taxes_pp
+</td>
+<td>
+41,100
+</td>
+<td>
+5
+</td>
+<td>
+6
+</td>
+<td>
+0
+</td>
+<td>
+165
+</td>
+</tr>
+<tr>
+<td style="text-align:left">
+Property_Tax_pp
+</td>
+<td>
+41,100
+</td>
+<td>
+4
+</td>
+<td>
+5
+</td>
+<td>
+0
+</td>
+<td>
+165
+</td>
+</tr>
+<tr>
+<td style="text-align:left">
+Total_IG_Revenue_pp
+</td>
+<td>
+41,100
+</td>
+<td>
+8
+</td>
+<td>
+3
+</td>
+<td>
+0
+</td>
+<td>
+116
+</td>
+</tr>
+<tr>
+<td style="text-align:left">
+Total_Fed_IG_Revenue_pp
+</td>
+<td>
+41,100
+</td>
+<td>
+0
+</td>
+<td>
+1
+</td>
+<td>
+0
+</td>
+<td>
+13
+</td>
+</tr>
+<tr>
+<td style="text-align:left">
+Total_Expenditure_pp
+</td>
+<td>
+41,100
+</td>
+<td>
+13
+</td>
+<td>
+7
+</td>
+<td>
+2
+</td>
+<td>
+186
+</td>
+</tr>
+<tr>
+<td style="text-align:left">
+Total_Interest_on_Debt_pp
+</td>
+<td>
+41,100
+</td>
+<td>
+0
+</td>
+<td>
+0
+</td>
+<td>
+0
+</td>
+<td>
+10
+</td>
+</tr>
+<tr>
+<td style="text-align:left">
+pop_total
+</td>
+<td>
+41,100
+</td>
+<td>
+99,236
+</td>
+<td>
+331,237
+</td>
+<td>
+256
+</td>
+<td>
+10,105,708
+</td>
+</tr>
+<tr>
+<td style="text-align:left">
+pop_school_age
+</td>
+<td>
+41,100
+</td>
+<td>
+19,682
+</td>
+<td>
+65,986
+</td>
+<td>
+45
+</td>
+<td>
+2,111,641
+</td>
+</tr>
+<tr>
+<td style="text-align:left">
+gdp_total
+</td>
+<td>
+41,100
+</td>
+<td>
+5,342,156
+</td>
+<td>
+22,737,941
+</td>
+<td>
+5,758
+</td>
+<td>
+836,162,805
+</td>
+</tr>
+<tr>
+<td style="text-align:left">
+gdp_priv_ind
+</td>
+<td>
+41,100
+</td>
+<td>
+4,699,250
+</td>
+<td>
+20,544,234
+</td>
+<td>
+3,931
+</td>
+<td>
+752,485,500
+</td>
+</tr>
+<tr>
+<td style="text-align:left">
+gdp_govt
+</td>
+<td>
+41,100
+</td>
+<td>
+642,905
+</td>
+<td>
+2,369,819
+</td>
+<td>
+855
+</td>
+<td>
+83,677,305
+</td>
+</tr>
+<tr>
+<td style="text-align:left">
+gdp_o_g_mining_quarr_21
+</td>
+<td>
+41,100
+</td>
+<td>
+107,819
+</td>
+<td>
+639,364
+</td>
+<td>
+0
+</td>
+<td>
+27,694,036
+</td>
+</tr>
+<tr>
+<td style="text-align:left">
+year…2007
+</td>
+<td>
+41,100
+</td>
+<td>
+0
+</td>
+<td>
+0
+</td>
+<td>
+0
+</td>
+<td>
+0
+</td>
+</tr>
+<tr>
+<td colspan="6" style="border-bottom: 1px solid black">
+</td>
+</tr>
+
+</tbody></table>
+<table style="text-align:center">
+<tbody><tr>
+<td colspan="6" style="border-bottom: 1px solid black">
+</td>
+</tr>
+<tr>
+<td style="text-align:left">
+Statistic
+</td>
+<td>
+N
+</td>
+<td>
+Mean
+</td>
+<td>
+St.&nbsp;Dev.
+</td>
+<td>
+Min
+</td>
+<td>
+Max
+</td>
+</tr>
+<tr>
+<td colspan="6" style="border-bottom: 1px solid black">
+</td>
+</tr>
+<tr>
+<td style="text-align:left">
+esa
+</td>
+<td>
+19,180
+</td>
+<td>
+0
+</td>
+<td>
+0
+</td>
+<td>
+0
+</td>
+<td>
+1
+</td>
+</tr>
+<tr>
+<td style="text-align:left">
+voc_adult
+</td>
+<td>
+19,180
+</td>
+<td>
+0
+</td>
+<td>
+0
+</td>
+<td>
+0
+</td>
+<td>
+1
+</td>
+</tr>
+<tr>
+<td style="text-align:left">
+Enrollment
+</td>
+<td>
+19,180
+</td>
+<td>
+14,314
+</td>
+<td>
+50,629
+</td>
+<td>
+3
+</td>
+<td>
+1,723,961
+</td>
+</tr>
+<tr>
+<td style="text-align:left">
+Total_Revenue
+</td>
+<td>
+19,180
+</td>
+<td>
+127,857
+</td>
+<td>
+465,277
+</td>
+<td>
+77
+</td>
+<td>
+16,977,736
+</td>
+</tr>
+<tr>
+<td style="text-align:left">
+Total_Taxes
+</td>
+<td>
+19,180
+</td>
+<td>
+46,497
+</td>
+<td>
+178,712
+</td>
+<td>
+0
+</td>
+<td>
+5,004,752
+</td>
+</tr>
+<tr>
+<td style="text-align:left">
+Property_Tax
+</td>
+<td>
+19,180
+</td>
+<td>
+44,605
+</td>
+<td>
+176,357
+</td>
+<td>
+0
+</td>
+<td>
+5,004,752
+</td>
+</tr>
+<tr>
+<td style="text-align:left">
+Total_IG_Revenue
+</td>
+<td>
+19,180
+</td>
+<td>
+72,675
+</td>
+<td>
+288,615
+</td>
+<td>
+0
+</td>
+<td>
+13,790,435
+</td>
+</tr>
+<tr>
+<td style="text-align:left">
+Total_Fed_IG_Revenue
+</td>
+<td>
+19,180
+</td>
+<td>
+859
+</td>
+<td>
+3,470
+</td>
+<td>
+0
+</td>
+<td>
+110,038
+</td>
+</tr>
+<tr>
+<td style="text-align:left">
+Total_Expenditure
+</td>
+<td>
+19,180
+</td>
+<td>
+130,886
+</td>
+<td>
+480,336
+</td>
+<td>
+78
+</td>
+<td>
+18,060,337
+</td>
+</tr>
+<tr>
+<td style="text-align:left">
+Total_Interest_on_Debt
+</td>
+<td>
+19,180
+</td>
+<td>
+3,434
+</td>
+<td>
+13,940
+</td>
+<td>
+0
+</td>
+<td>
+414,664
+</td>
+</tr>
+<tr>
+<td style="text-align:left">
+Total_Revenue_pp
+</td>
+<td>
+19,180
+</td>
+<td>
+9
+</td>
+<td>
+3
+</td>
+<td>
+4
+</td>
+<td>
+85
+</td>
+</tr>
+<tr>
+<td style="text-align:left">
+Total_Taxes_pp
+</td>
+<td>
+19,180
+</td>
+<td>
+3
+</td>
+<td>
+3
+</td>
+<td>
+0
+</td>
+<td>
+80
+</td>
+</tr>
+<tr>
+<td style="text-align:left">
+Property_Tax_pp
+</td>
+<td>
+19,180
+</td>
+<td>
+3
+</td>
+<td>
+3
+</td>
+<td>
+0
+</td>
+<td>
+80
+</td>
+</tr>
+<tr>
+<td style="text-align:left">
+Total_IG_Revenue_pp
+</td>
+<td>
+19,180
+</td>
+<td>
+5
+</td>
+<td>
+2
+</td>
+<td>
+0
+</td>
+<td>
+25
+</td>
+</tr>
+<tr>
+<td style="text-align:left">
+Total_Fed_IG_Revenue_pp
+</td>
+<td>
+19,180
+</td>
+<td>
+0
+</td>
+<td>
+0
+</td>
+<td>
+0
+</td>
+<td>
+13
+</td>
+</tr>
+<tr>
+<td style="text-align:left">
+Total_Expenditure_pp
+</td>
+<td>
+19,180
+</td>
+<td>
+9
+</td>
+<td>
+3
+</td>
+<td>
+3
+</td>
+<td>
+110
+</td>
+</tr>
+<tr>
+<td style="text-align:left">
+Total_Interest_on_Debt_pp
+</td>
+<td>
+19,180
+</td>
+<td>
+0
+</td>
+<td>
+0
+</td>
+<td>
+0
+</td>
+<td>
+2
+</td>
+</tr>
+<tr>
+<td style="text-align:left">
+pop_total
+</td>
+<td>
+19,180
+</td>
+<td>
+90,665
+</td>
+<td>
+306,793
+</td>
+<td>
+285
+</td>
+<td>
+9,793,263
+</td>
+</tr>
+<tr>
+<td style="text-align:left">
+pop_school_age
+</td>
+<td>
+19,180
+</td>
+<td>
+19,477
+</td>
+<td>
+67,205
+</td>
+<td>
+80
+</td>
+<td>
+2,219,357
+</td>
+</tr>
+<tr>
+<td style="text-align:left">
+gdp_total
+</td>
+<td>
+16,440
+</td>
+<td>
+3,607,407
+</td>
+<td>
+14,982,169
+</td>
+<td>
+4,418
+</td>
+<td>
+497,032,624
+</td>
+</tr>
+<tr>
+<td style="text-align:left">
+gdp_priv_ind
+</td>
+<td>
+16,440
+</td>
+<td>
+3,159,842
+</td>
+<td>
+13,443,040
+</td>
+<td>
+3,120
+</td>
+<td>
+445,080,218
+</td>
+</tr>
+<tr>
+<td style="text-align:left">
+gdp_govt
+</td>
+<td>
+16,440
+</td>
+<td>
+447,565
+</td>
+<td>
+1,635,473
+</td>
+<td>
+837
+</td>
+<td>
+51,952,406
+</td>
+</tr>
+<tr>
+<td style="text-align:left">
+gdp_o_g_mining_quarr_21
+</td>
+<td>
+16,440
+</td>
+<td>
+59,220
+</td>
+<td>
+332,884
+</td>
+<td>
+0
+</td>
+<td>
+17,125,844
+</td>
+</tr>
+<tr>
+<td style="text-align:left">
+year…2007
+</td>
+<td>
+19,180
+</td>
+<td>
+1
+</td>
+<td>
+0
+</td>
+<td>
+1
+</td>
+<td>
+1
+</td>
+</tr>
+<tr>
+<td colspan="6" style="border-bottom: 1px solid black">
+</td>
+</tr>
+
+</tbody></table>
+</section>
+<section id="panel-series-per-county-of-expenditure-and-expenditure-per-pupil" class="level1">
+<h1>Panel series per county of expenditure and expenditure per pupil</h1>
+<div class="cell">
+<div class="cell-output-display">
+<p><img src="results_files/figure-html/unnamed-chunk-5-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+</section>
+<section id="panel-series-per-county-of-expenditure-and-expenditure-per-pupil-1" class="level1">
+<h1>Panel series per county of expenditure and expenditure per pupil</h1>
+<div class="cell">
+<div class="cell-output-display">
+<p><img src="results_files/figure-html/unnamed-chunk-6-1.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Picking joint bandwidth of 0.0409</code></pre>
+</div>
+<div class="cell-output-display">
+<p><img src="results_files/figure-html/unnamed-chunk-6-2.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Picking joint bandwidth of 0.0759</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning: Removed 2740 rows containing non-finite values
+(`stat_density_ridges()`).</code></pre>
+</div>
+<div class="cell-output-display">
+<p><img src="results_files/figure-html/unnamed-chunk-6-3.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+</section>
+<section id="descriptive-statistics" class="level1">
+<h1>Descriptive Statistics</h1>
+<section id="county" class="level2">
+<h2 class="anchored" data-anchor-id="county">County</h2>
+<div class="cell">
+<div class="cell-output-display">
+<p><img src="results_files/figure-html/unnamed-chunk-7-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+</section>
+<section id="state" class="level2">
+<h2 class="anchored" data-anchor-id="state">State</h2>
+<div class="cell">
+<div class="cell-output-display">
+<p><img src="results_files/figure-html/unnamed-chunk-8-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+</section>
+<section id="national" class="level2">
+<h2 class="anchored" data-anchor-id="national">National</h2>
+<div class="cell">
+<div class="cell-output-display">
+<p><img src="results_files/figure-html/unnamed-chunk-9-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<section id="esas" class="level3">
+<h3 class="anchored" data-anchor-id="esas">ESAs</h3>
+<div class="cell">
+<div class="cell-output-display">
+<p><img src="results_files/figure-html/unnamed-chunk-10-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+</section>
+<section id="esas-versus-expenditure" class="level3">
+<h3 class="anchored" data-anchor-id="esas-versus-expenditure">ESAs versus expenditure</h3>
+<p>With this we want to demonstrate how ESAs interact with our expenditure indicator. Does high ESA spending imply low local spending (positive correlaiton it seems). Does increasing ESA spending result in decreasing ESA spending? It seems from the below that the two have a positive correlation implying little substitution?</p>
+<div class="cell">
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning in RColorBrewer::brewer.pal(n, pal): n too large, allowed maximum for palette PiYG is 11
+Returning the palette you asked for with that many colors</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning: Removed 53757 rows containing missing values (`geom_point()`).</code></pre>
+</div>
+<div class="cell-output-display">
+<p><img src="results_files/figure-html/unnamed-chunk-11-1.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 2,740 × 13
+# Groups:   fips [2,740]
+   fips  r.squared adj.r.squared  sigma statistic     p.value    df logLik   AIC
+   &lt;chr&gt;     &lt;dbl&gt;         &lt;dbl&gt;  &lt;dbl&gt;     &lt;dbl&gt;       &lt;dbl&gt; &lt;dbl&gt;  &lt;dbl&gt; &lt;dbl&gt;
+ 1 01001     0.720        0.706   7083.     51.5      5.98e-7     1  -225.  456.
+ 2 01003     0.724        0.711  48104.     52.6      5.16e-7     1  -267.  541.
+ 3 01005     0.664        0.647   5299.     39.5      3.89e-6     1  -219.  444.
+ 4 01007     0.389        0.358   4811.     12.7      1.94e-3     1  -217.  439.
+ 5 01009     0.850        0.842   6622.    113.       1.12e-9     1  -224.  453.
+ 6 01011     0.530        0.507   1266.     22.6      1.22e-4     1  -187.  381.
+ 7 01013     0.132        0.0889  5898.      3.05     9.62e-2     1  -221.  448.
+ 8 01015     0.850        0.842  12374.    113.       1.11e-9     1  -237.  481.
+ 9 01017     0.574        0.553   2750.     27.0      4.40e-5     1  -204.  415.
+10 01019     0.710        0.695   4957.     48.9      8.68e-7     1  -217.  441.
+# ℹ 2,730 more rows
+# ℹ 4 more variables: BIC &lt;dbl&gt;, deviance &lt;dbl&gt;, df.residual &lt;int&gt;, nobs &lt;int&gt;</code></pre>
+</div>
+</div>
+</section>
+</section>
+</section>
+<section id="key-relationships" class="level1">
+<h1>Key relationships</h1>
+<section id="gdp-and-property-taxes" class="level2">
+<h2 class="anchored" data-anchor-id="gdp-and-property-taxes">GDP and Property Taxes</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>df <span class="sc">%&gt;%</span> </span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> log_gdp_total, <span class="at">y =</span> log_Property_Tax, <span class="at">group =</span> state, <span class="at">color =</span> state)) <span class="sc">+</span></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_jitter</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning: Removed 2740 rows containing missing values (`geom_point()`).</code></pre>
+</div>
+<div class="cell-output-display">
+<p><img src="results_files/figure-html/unnamed-chunk-12-1.png" class="img-fluid" width="672"></p>
+</div>
+<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>df <span class="sc">%&gt;%</span> </span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> log_gdp_total_pc, <span class="at">y =</span> log_Property_Tax_pp, <span class="at">group =</span> state, <span class="at">color =</span> state)) <span class="sc">+</span></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_jitter</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning: Removed 2740 rows containing missing values (`geom_point()`).</code></pre>
+</div>
+<div class="cell-output-display">
+<p><img src="results_files/figure-html/unnamed-chunk-12-2.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+</section>
+<section id="gdp-and-education-expenditure" class="level2">
+<h2 class="anchored" data-anchor-id="gdp-and-education-expenditure">GDP and Education Expenditure</h2>
+<div class="cell">
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning: Removed 2740 rows containing missing values (`geom_point()`).</code></pre>
+</div>
+<div class="cell-output-display">
+<p><img src="results_files/figure-html/unnamed-chunk-13-1.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning: Removed 2740 rows containing missing values (`geom_point()`).</code></pre>
+</div>
+<div class="cell-output-display">
+<p><img src="results_files/figure-html/unnamed-chunk-13-2.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+</section>
+<section id="ig-expenditure-and-own-sources" class="level2">
+<h2 class="anchored" data-anchor-id="ig-expenditure-and-own-sources">IG Expenditure and Own Sources</h2>
+<div class="cell">
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning: Removed 2 rows containing missing values (`geom_point()`).</code></pre>
+</div>
+<div class="cell-output-display">
+<p><img src="results_files/figure-html/unnamed-chunk-14-1.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning: Removed 2 rows containing missing values (`geom_point()`).</code></pre>
+</div>
+<div class="cell-output-display">
+<p><img src="results_files/figure-html/unnamed-chunk-14-2.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+</section>
+</section>
+<section id="results" class="level1">
+<h1>Results</h1>
+<section id="panel-testing" class="level2">
+<h2 class="anchored" data-anchor-id="panel-testing">Panel testing</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="fu">is.pbalanced</span>(df, <span class="at">index =</span> <span class="fu">c</span>(<span class="st">"fips"</span>, <span class="st">"year"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] TRUE</code></pre>
+</div>
+</div>
+</section>
+<section id="mine-closures" class="level2">
+<h2 class="anchored" data-anchor-id="mine-closures">Mine closures</h2>
+<p>Mine data exists from 1996-2021</p>
+<div class="cell">
+
+</div>
+</section>
+</section>
+<section id="descriptive-underlying-regression-models" class="level1">
+<h1>Descriptive, underlying regression models</h1>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb17"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Descriptive regressions: Total Educ Current Expenditure</span></span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a><span class="fu">list</span>(<span class="fu">feols</span>(log_Property_Tax <span class="sc">~</span> log_gdp_total <span class="sc">|</span> fips <span class="sc">+</span> year, <span class="at">data =</span> mines_df, <span class="at">se =</span> <span class="st">"cluster"</span>, <span class="at">cluster =</span> <span class="st">"fips"</span>),</span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a>     <span class="fu">feols</span>(log_Property_Tax_pp <span class="sc">~</span> log_gdp_total_pc <span class="sc">|</span> fips <span class="sc">+</span> year, <span class="at">data =</span> mines_df, <span class="at">se =</span> <span class="st">"cluster"</span>, <span class="at">cluster =</span> <span class="st">"fips"</span>)) <span class="sc">%&gt;%</span> etable</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>                             model 1                 model 2
+Dependent Var.: (log) Property Taxes (log) Property Taxes pp
+                                                            
+(log) GDP         0.3430*** (0.0311)                        
+(log) GDP pc                              0.3020*** (0.0267)
+Fixed-Effects:  -------------------- -----------------------
+fips                             Yes                     Yes
+year                             Yes                     Yes
+_______________ ____________________ _______________________
+S.E.: Clustered             by: fips                by: fips
+Observations                  57,540                  57,540
+R2                           0.95236                 0.90885
+Within R2                    0.02007                 0.03622
+---
+Signif. codes: 0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb19"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="fu">feols</span>(log_Total_Educ_Current_Exp <span class="sc">~</span> <span class="fu">sw</span>(log_gdp_total,</span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a>                                      log_gdp_priv_ind,</span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a>                                      log_gdp_o_g_mining_quarr_21,</span>
+<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a>                                      log_esa_tot_exp, </span>
+<span id="cb19-5"><a href="#cb19-5" aria-hidden="true" tabindex="-1"></a>                                       log_Total_Rev_Own_Sources <span class="sc">+</span> log_Total_IG_Revenue, </span>
+<span id="cb19-6"><a href="#cb19-6" aria-hidden="true" tabindex="-1"></a>                                       log_Property_Tax, </span>
+<span id="cb19-7"><a href="#cb19-7" aria-hidden="true" tabindex="-1"></a>                                       log_Property_Tax <span class="sc">+</span> log_Total_IG_Revenue,</span>
+<span id="cb19-8"><a href="#cb19-8" aria-hidden="true" tabindex="-1"></a>                                       log_Property_Tax <span class="sc">+</span> log_Total_Fed_IG_Revenue <span class="sc">+</span> log_State_IGR_Education) <span class="sc">|</span> fips <span class="sc">+</span> year, <span class="at">data =</span> mines_df, <span class="at">se =</span> <span class="st">"cluster"</span>, <span class="at">cluster =</span> <span class="st">"fips"</span>) <span class="sc">%&gt;%</span> etable</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>                                             ..1                     ..2
+Dependent Var.:          (log) Educ. Expenditure (log) Educ. Expenditure
+                                                                        
+(log) GDP                     0.1456*** (0.0099)                        
+(log) GDP Priv. Industry                              0.1152*** (0.0083)
+(log) GDP O&amp;G&amp;Mining                                                    
+(log) ESA Expenditure                                                   
+(log) Rev. Own Sources                                                  
+(log) IG Revenue                                                        
+(log) Property Taxes                                                    
+(log) Federal IG Rev.                                                   
+(log) State IG Rev                                                      
+Fixed-Effects:           ----------------------- -----------------------
+fips                                         Yes                     Yes
+year                                         Yes                     Yes
+________________________ _______________________ _______________________
+S.E.: Clustered                         by: fips                by: fips
+Observations                              57,540                  57,540
+R2                                       0.99510                 0.99504
+Within R2                                0.05650                 0.04374
+
+                                             ..3                     ..4
+Dependent Var.:          (log) Educ. Expenditure (log) Educ. Expenditure
+                                                                        
+(log) GDP                                                               
+(log) GDP Priv. Industry                                                
+(log) GDP O&amp;G&amp;Mining          0.0037*** (0.0007)                        
+(log) ESA Expenditure                                   -0.0007 (0.0007)
+(log) Rev. Own Sources                                                  
+(log) IG Revenue                                                        
+(log) Property Taxes                                                    
+(log) Federal IG Rev.                                                   
+(log) State IG Rev                                                      
+Fixed-Effects:           ----------------------- -----------------------
+fips                                         Yes                     Yes
+year                                         Yes                     Yes
+________________________ _______________________ _______________________
+S.E.: Clustered                         by: fips                by: fips
+Observations                              57,540                  57,540
+R2                                       0.99482                 0.99481
+Within R2                                0.00279                 0.00014
+
+                                             ..5                     ..6
+Dependent Var.:          (log) Educ. Expenditure (log) Educ. Expenditure
+                                                                        
+(log) GDP                                                               
+(log) GDP Priv. Industry                                                
+(log) GDP O&amp;G&amp;Mining                                                    
+(log) ESA Expenditure                                                   
+(log) Rev. Own Sources        0.2072*** (0.0089)                        
+(log) IG Revenue              0.3448*** (0.0129)                        
+(log) Property Taxes                                  0.0444*** (0.0068)
+(log) Federal IG Rev.                                                   
+(log) State IG Rev                                                      
+Fixed-Effects:           ----------------------- -----------------------
+fips                                         Yes                     Yes
+year                                         Yes                     Yes
+________________________ _______________________ _______________________
+S.E.: Clustered                         by: fips                by: fips
+Observations                              57,538                  57,540
+R2                                       0.99727                 0.99497
+Within R2                                0.47345                 0.03080
+
+                                             ..7                     ..8
+Dependent Var.:          (log) Educ. Expenditure (log) Educ. Expenditure
+                                                                        
+(log) GDP                                                               
+(log) GDP Priv. Industry                                                
+(log) GDP O&amp;G&amp;Mining                                                    
+(log) ESA Expenditure                                                   
+(log) Rev. Own Sources                                                  
+(log) IG Revenue              0.3409*** (0.0140)                        
+(log) Property Taxes          0.0572*** (0.0077)      0.0536*** (0.0078)
+(log) Federal IG Rev.                                 0.0032*** (0.0006)
+(log) State IG Rev                                    0.3108*** (0.0151)
+Fixed-Effects:           ----------------------- -----------------------
+fips                                         Yes                     Yes
+year                                         Yes                     Yes
+________________________ _______________________ _______________________
+S.E.: Clustered                         by: fips                by: fips
+Observations                              57,540                  57,540
+R2                                       0.99668                 0.99653
+Within R2                                0.36064                 0.33177
+---
+Signif. codes: 0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb21"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="fu">feols</span>(log_Total_Educ_Current_Exp_pp <span class="sc">~</span> <span class="fu">sw</span>(log_gdp_total_pc,</span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a>                                         log_gdp_priv_ind_pc,</span>
+<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a>                                         log_gdp_o_g_mining_quarr_21_pc,</span>
+<span id="cb21-4"><a href="#cb21-4" aria-hidden="true" tabindex="-1"></a>                                         log_esa_tot_exp_pp,</span>
+<span id="cb21-5"><a href="#cb21-5" aria-hidden="true" tabindex="-1"></a>                                         log_Total_Rev_Own_Sources_pp <span class="sc">+</span> log_Total_IG_Revenue_pp,</span>
+<span id="cb21-6"><a href="#cb21-6" aria-hidden="true" tabindex="-1"></a>                                         log_Property_Tax_pp, </span>
+<span id="cb21-7"><a href="#cb21-7" aria-hidden="true" tabindex="-1"></a>                                         log_Property_Tax_pp <span class="sc">+</span> log_Total_IG_Revenue_pp, </span>
+<span id="cb21-8"><a href="#cb21-8" aria-hidden="true" tabindex="-1"></a>                                         log_Property_Tax_pp <span class="sc">+</span> log_Total_Fed_IG_Revenue_pp <span class="sc">+</span> log_State_IGR_Education_pp) <span class="sc">|</span> fips <span class="sc">+</span> year, <span class="at">data =</span> mines_df, <span class="at">se =</span> <span class="st">"cluster"</span>, <span class="at">cluster =</span> <span class="st">"fips"</span>) <span class="sc">%&gt;%</span> etable</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>                                                   ..1
+Dependent Var.:             (log) Educ. Expenditure pp
+                                                      
+(log) GDP pc                        0.0812*** (0.0083)
+(log) GDP Priv. Industry pc                           
+(log) O&amp;G&amp;Mining pc                                   
+(log) ESA Expenditure pp                              
+(log) Rev. Own Sources pp                             
+(log) IG Revenue pp                                   
+(log) Property Taxes pp                               
+(log) Federal IG Rev. pp                              
+(log) State IG Rev pp                                 
+Fixed-Effects:              --------------------------
+fips                                               Yes
+year                                               Yes
+___________________________ __________________________
+S.E.: Clustered                               by: fips
+Observations                                    57,540
+R2                                             0.90172
+Within R2                                      0.01956
+
+                                                   ..2
+Dependent Var.:             (log) Educ. Expenditure pp
+                                                      
+(log) GDP pc                                          
+(log) GDP Priv. Industry pc         0.0674*** (0.0072)
+(log) O&amp;G&amp;Mining pc                                   
+(log) ESA Expenditure pp                              
+(log) Rev. Own Sources pp                             
+(log) IG Revenue pp                                   
+(log) Property Taxes pp                               
+(log) Federal IG Rev. pp                              
+(log) State IG Rev pp                                 
+Fixed-Effects:              --------------------------
+fips                                               Yes
+year                                               Yes
+___________________________ __________________________
+S.E.: Clustered                               by: fips
+Observations                                    57,540
+R2                                             0.90143
+Within R2                                      0.01670
+
+                                                   ..3
+Dependent Var.:             (log) Educ. Expenditure pp
+                                                      
+(log) GDP pc                                          
+(log) GDP Priv. Industry pc                           
+(log) O&amp;G&amp;Mining pc                 0.0177*** (0.0035)
+(log) ESA Expenditure pp                              
+(log) Rev. Own Sources pp                             
+(log) IG Revenue pp                                   
+(log) Property Taxes pp                               
+(log) Federal IG Rev. pp                              
+(log) State IG Rev pp                                 
+Fixed-Effects:              --------------------------
+fips                                               Yes
+year                                               Yes
+___________________________ __________________________
+S.E.: Clustered                               by: fips
+Observations                                    57,540
+R2                                             0.90008
+Within R2                                      0.00325
+
+                                                   ..4
+Dependent Var.:             (log) Educ. Expenditure pp
+                                                      
+(log) GDP pc                                          
+(log) GDP Priv. Industry pc                           
+(log) O&amp;G&amp;Mining pc                                   
+(log) ESA Expenditure pp               0.0009 (0.0020)
+(log) Rev. Own Sources pp                             
+(log) IG Revenue pp                                   
+(log) Property Taxes pp                               
+(log) Federal IG Rev. pp                              
+(log) State IG Rev pp                                 
+Fixed-Effects:              --------------------------
+fips                                               Yes
+year                                               Yes
+___________________________ __________________________
+S.E.: Clustered                               by: fips
+Observations                                    57,540
+R2                                             0.89976
+Within R2                                      1.31e-5
+
+                                                   ..5
+Dependent Var.:             (log) Educ. Expenditure pp
+                                                      
+(log) GDP pc                                          
+(log) GDP Priv. Industry pc                           
+(log) O&amp;G&amp;Mining pc                                   
+(log) ESA Expenditure pp                              
+(log) Rev. Own Sources pp           0.2045*** (0.0096)
+(log) IG Revenue pp                 0.2861*** (0.0135)
+(log) Property Taxes pp                               
+(log) Federal IG Rev. pp                              
+(log) State IG Rev pp                                 
+Fixed-Effects:              --------------------------
+fips                                               Yes
+year                                               Yes
+___________________________ __________________________
+S.E.: Clustered                               by: fips
+Observations                                    57,538
+R2                                             0.94132
+Within R2                                      0.41466
+
+                                                   ..6
+Dependent Var.:             (log) Educ. Expenditure pp
+                                                      
+(log) GDP pc                                          
+(log) GDP Priv. Industry pc                           
+(log) O&amp;G&amp;Mining pc                                   
+(log) ESA Expenditure pp                              
+(log) Rev. Own Sources pp                             
+(log) IG Revenue pp                                   
+(log) Property Taxes pp             0.1190*** (0.0140)
+(log) Federal IG Rev. pp                              
+(log) State IG Rev pp                                 
+Fixed-Effects:              --------------------------
+fips                                               Yes
+year                                               Yes
+___________________________ __________________________
+S.E.: Clustered                               by: fips
+Observations                                    57,540
+R2                                             0.91035
+Within R2                                      0.10573
+
+                                                   ..7
+Dependent Var.:             (log) Educ. Expenditure pp
+                                                      
+(log) GDP pc                                          
+(log) GDP Priv. Industry pc                           
+(log) O&amp;G&amp;Mining pc                                   
+(log) ESA Expenditure pp                              
+(log) Rev. Own Sources pp                             
+(log) IG Revenue pp                 0.2862*** (0.0148)
+(log) Property Taxes pp             0.1399*** (0.0144)
+(log) Federal IG Rev. pp                              
+(log) State IG Rev pp                                 
+Fixed-Effects:              --------------------------
+fips                                               Yes
+year                                               Yes
+___________________________ __________________________
+S.E.: Clustered                               by: fips
+Observations                                    57,540
+R2                                             0.93477
+Within R2                                      0.34929
+
+                                                   ..8
+Dependent Var.:             (log) Educ. Expenditure pp
+                                                      
+(log) GDP pc                                          
+(log) GDP Priv. Industry pc                           
+(log) O&amp;G&amp;Mining pc                                   
+(log) ESA Expenditure pp                              
+(log) Rev. Own Sources pp                             
+(log) IG Revenue pp                                   
+(log) Property Taxes pp             0.1403*** (0.0142)
+(log) Federal IG Rev. pp            0.0018*** (0.0004)
+(log) State IG Rev pp               0.2629*** (0.0149)
+Fixed-Effects:              --------------------------
+fips                                               Yes
+year                                               Yes
+___________________________ __________________________
+S.E.: Clustered                               by: fips
+Observations                                    57,540
+R2                                             0.93269
+Within R2                                      0.32852
+---
+Signif. codes: 0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</code></pre>
+</div>
+</div>
+<section id="incorporating-state-level-trends" class="level2">
+<h2 class="anchored" data-anchor-id="incorporating-state-level-trends">Incorporating state-level trends</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb23"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Expenditure dependent on revenue streams levels</span></span>
+<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a><span class="fu">feols</span>(log_Total_Educ_Current_Exp <span class="sc">~</span> <span class="fu">sw</span>(log_gdp_total, </span>
+<span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a>                                      log_gdp_priv_ind,</span>
+<span id="cb23-4"><a href="#cb23-4" aria-hidden="true" tabindex="-1"></a>                                      log_gdp_o_g_mining_quarr_21) <span class="sc">+</span> time<span class="sc">:</span><span class="fu">as.factor</span>(state) <span class="sc">|</span> fips <span class="sc">+</span> year, <span class="at">data =</span> mines_df, <span class="at">se =</span> <span class="st">"cluster"</span>, <span class="at">cluster =</span> <span class="st">"fips"</span>) <span class="sc">%&gt;%</span>  <span class="fu">etable</span>(., <span class="at">drop =</span> <span class="st">"time*"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Notes from the estimations:
+[x 3] The variable 'time:as.factor(state)56' has been removed because of collinearity (see $collin.var).</code></pre>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>                                             ..1                     ..2
+Dependent Var.:          (log) Educ. Expenditure (log) Educ. Expenditure
+                                                                        
+(log) GDP                     0.1140*** (0.0090)                        
+(log) GDP Priv. Industry                              0.0876*** (0.0075)
+(log) GDP O&amp;G&amp;Mining                                                    
+Fixed-Effects:           ----------------------- -----------------------
+fips                                         Yes                     Yes
+year                                         Yes                     Yes
+________________________ _______________________ _______________________
+S.E.: Clustered                         by: fips                by: fips
+Observations                              57,540                  57,540
+R2                                       0.99580                 0.99576
+Within R2                                0.19157                 0.18296
+
+                                             ..3
+Dependent Var.:          (log) Educ. Expenditure
+                                                
+(log) GDP                                       
+(log) GDP Priv. Industry                        
+(log) GDP O&amp;G&amp;Mining          0.0024*** (0.0006)
+Fixed-Effects:           -----------------------
+fips                                         Yes
+year                                         Yes
+________________________ _______________________
+S.E.: Clustered                         by: fips
+Observations                              57,540
+R2                                       0.99564
+Within R2                                0.16063
+---
+Signif. codes: 0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb26"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Expenditure dependent on revenue streams levels</span></span>
+<span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a><span class="fu">feols</span>(log_Total_Educ_Current_Exp_pp <span class="sc">~</span> <span class="fu">sw</span>(log_gdp_total_pc, </span>
+<span id="cb26-3"><a href="#cb26-3" aria-hidden="true" tabindex="-1"></a>                                      log_gdp_priv_ind_pc,</span>
+<span id="cb26-4"><a href="#cb26-4" aria-hidden="true" tabindex="-1"></a>                                      log_gdp_o_g_mining_quarr_21_pc) <span class="sc">+</span> time<span class="sc">:</span><span class="fu">as.factor</span>(state) <span class="sc">|</span> fips <span class="sc">+</span> year, <span class="at">data =</span> mines_df, <span class="at">se =</span> <span class="st">"cluster"</span>, <span class="at">cluster =</span> <span class="st">"fips"</span>) <span class="sc">%&gt;%</span>  <span class="fu">etable</span>(., <span class="at">drop =</span> <span class="st">"time*"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Notes from the estimations:
+[x 3] The variable 'time:as.factor(state)56' has been removed because of collinearity (see $collin.var).</code></pre>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>                                                   ..1
+Dependent Var.:             (log) Educ. Expenditure pp
+                                                      
+(log) GDP pc                        0.0529*** (0.0071)
+(log) GDP Priv. Industry pc                           
+(log) O&amp;G&amp;Mining pc                                   
+Fixed-Effects:              --------------------------
+fips                                               Yes
+year                                               Yes
+___________________________ __________________________
+S.E.: Clustered                               by: fips
+Observations                                    57,540
+R2                                             0.91927
+Within R2                                      0.19465
+
+                                                   ..2
+Dependent Var.:             (log) Educ. Expenditure pp
+                                                      
+(log) GDP pc                                          
+(log) GDP Priv. Industry pc         0.0431*** (0.0063)
+(log) O&amp;G&amp;Mining pc                                   
+Fixed-Effects:              --------------------------
+fips                                               Yes
+year                                               Yes
+___________________________ __________________________
+S.E.: Clustered                               by: fips
+Observations                                    57,540
+R2                                             0.91914
+Within R2                                      0.19334
+
+                                                   ..3
+Dependent Var.:             (log) Educ. Expenditure pp
+                                                      
+(log) GDP pc                                          
+(log) GDP Priv. Industry pc                           
+(log) O&amp;G&amp;Mining pc                 0.0122*** (0.0032)
+Fixed-Effects:              --------------------------
+fips                                               Yes
+year                                               Yes
+___________________________ __________________________
+S.E.: Clustered                               by: fips
+Observations                                    57,540
+R2                                             0.91865
+Within R2                                      0.18852
+---
+Signif. codes: 0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</code></pre>
+</div>
+</div>
+</section>
+<section id="incorporating-time-lags" class="level2">
+<h2 class="anchored" data-anchor-id="incorporating-time-lags">Incorporating time lags</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb29"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a>levs_gdp_real_trend <span class="ot">&lt;-</span> <span class="fu">feols</span>(log_Total_Educ_Current_Exp <span class="sc">~</span> <span class="fu">sw</span>(log_gdp_total <span class="sc">+</span> log_gdp_total_l1 <span class="sc">+</span> log_gdp_total_l2, log_gdp_priv_ind <span class="sc">+</span> log_gdp_priv_ind_l1 <span class="sc">+</span> log_gdp_priv_ind_l2) <span class="sc">+</span> time<span class="sc">:</span><span class="fu">as.factor</span>(state) <span class="sc">|</span> fips <span class="sc">+</span> year, <span class="at">data =</span> mines_df, <span class="at">se =</span> <span class="st">"cluster"</span>, <span class="at">cluster =</span> <span class="st">"fips"</span>)</span>
+<span id="cb29-2"><a href="#cb29-2" aria-hidden="true" tabindex="-1"></a>levs_gdp_real_trend <span class="sc">%&gt;%</span> <span class="fu">etable</span>(., <span class="at">drop =</span> <span class="st">"time*"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>                                                ..1                     ..2
+Dependent Var.:             (log) Educ. Expenditure (log) Educ. Expenditure
+                                                                           
+(log) GDP                        0.0347*** (0.0064)                        
+(log,l1) GDP                     0.0238*** (0.0043)                        
+(log,l2) GDP                     0.0806*** (0.0065)                        
+(log) GDP Priv. Industry                                 0.0260*** (0.0054)
+(log,l1) GDP Priv. Industry                              0.0197*** (0.0036)
+(log,l2) GDP Priv. Industry                              0.0649*** (0.0057)
+Fixed-Effects:              ----------------------- -----------------------
+fips                                            Yes                     Yes
+year                                            Yes                     Yes
+___________________________ _______________________ _______________________
+S.E.: Clustered                            by: fips                by: fips
+Observations                                 52,060                  52,060
+R2                                          0.99641                 0.99637
+Within R2                                   0.21874                 0.20940
+---
+Signif. codes: 0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb31"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a><span class="fu">feols</span>(log_Total_Educ_Current_Exp <span class="sc">~</span> <span class="fu">sw</span>(log_gdp_total_pc <span class="sc">+</span> log_gdp_total_pc_l1 <span class="sc">+</span> log_gdp_total_pc_l2, </span>
+<span id="cb31-2"><a href="#cb31-2" aria-hidden="true" tabindex="-1"></a>                                      log_gdp_priv_ind_pc <span class="sc">+</span> log_gdp_priv_ind_pc_l1 <span class="sc">+</span> log_gdp_priv_ind_pc_l2,</span>
+<span id="cb31-3"><a href="#cb31-3" aria-hidden="true" tabindex="-1"></a>                                      log_gdp_o_g_mining_quarr_21 <span class="sc">+</span> log_gdp_o_g_mining_quarr_21_l1 <span class="sc">+</span> log_gdp_o_g_mining_quarr_21_l2) <span class="sc">+</span> time<span class="sc">:</span><span class="fu">as.factor</span>(state) <span class="sc">|</span> fips <span class="sc">+</span> year, <span class="at">data =</span> mines_df, <span class="at">se =</span> <span class="st">"cluster"</span>, <span class="at">cluster =</span> <span class="st">"fips"</span>) <span class="sc">%&gt;%</span>  <span class="fu">etable</span>(., <span class="at">drop =</span> <span class="st">"time*"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>                                                   ..1                     ..2
+Dependent Var.:                (log) Educ. Expenditure (log) Educ. Expenditure
+                                                                              
+(log) GDP pc                          -0.0044 (0.0065)                        
+(log,l1) GDP pc                       0.0111* (0.0046)                        
+(log,l2) GDP pc                     0.0323*** (0.0068)                        
+(log) GDP Priv. Industry pc                                   -0.0059 (0.0056)
+(log,l1) GDP Priv. Industry pc                                0.0086* (0.0039)
+(log,l2) GDP Priv. Industry pc                              0.0267*** (0.0060)
+(log) GDP O&amp;G&amp;Mining                                                          
+(log,l1) GDP O&amp;G&amp;Mining                                                       
+(log,l2) GDP O&amp;G&amp;Mining                                                       
+Fixed-Effects:                 ----------------------- -----------------------
+fips                                               Yes                     Yes
+year                                               Yes                     Yes
+______________________________ _______________________ _______________________
+S.E.: Clustered                               by: fips                by: fips
+Observations                                    52,060                  52,060
+R2                                             0.99623                 0.99623
+Within R2                                      0.17929                 0.17842
+
+                                                   ..3
+Dependent Var.:                (log) Educ. Expenditure
+                                                      
+(log) GDP pc                                          
+(log,l1) GDP pc                                       
+(log,l2) GDP pc                                       
+(log) GDP Priv. Industry pc                           
+(log,l1) GDP Priv. Industry pc                        
+(log,l2) GDP Priv. Industry pc                        
+(log) GDP O&amp;G&amp;Mining                   0.0006 (0.0005)
+(log,l1) GDP O&amp;G&amp;Mining             0.0015*** (0.0004)
+(log,l2) GDP O&amp;G&amp;Mining             0.0022*** (0.0005)
+Fixed-Effects:                 -----------------------
+fips                                               Yes
+year                                               Yes
+______________________________ _______________________
+S.E.: Clustered                               by: fips
+Observations                                    52,060
+R2                                             0.99623
+Within R2                                      0.17860
+---
+Signif. codes: 0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb33"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Expenditure dependent on revenue streams levels</span></span>
+<span id="cb33-2"><a href="#cb33-2" aria-hidden="true" tabindex="-1"></a><span class="fu">feols</span>(log_Total_Educ_Current_Exp_pp <span class="sc">~</span> <span class="fu">sw</span>(log_gdp_total_pc <span class="sc">+</span> log_gdp_total_pc_l1 <span class="sc">+</span> log_gdp_total_pc_l2, </span>
+<span id="cb33-3"><a href="#cb33-3" aria-hidden="true" tabindex="-1"></a>                                      log_gdp_priv_ind_pc <span class="sc">+</span> log_gdp_priv_ind_pc_l1 <span class="sc">+</span> log_gdp_priv_ind_pc_l2,</span>
+<span id="cb33-4"><a href="#cb33-4" aria-hidden="true" tabindex="-1"></a>                                      log_gdp_o_g_mining_quarr_21_pc <span class="sc">+</span> log_gdp_o_g_mining_quarr_21_pc_l1 <span class="sc">+</span> log_gdp_o_g_mining_quarr_21_pc_l2) <span class="sc">+</span> time<span class="sc">:</span><span class="fu">as.factor</span>(state) <span class="sc">|</span> fips <span class="sc">+</span> year, <span class="at">data =</span> mines_df, <span class="at">se =</span> <span class="st">"cluster"</span>, <span class="at">cluster =</span> <span class="st">"fips"</span>) <span class="sc">%&gt;%</span>  <span class="fu">etable</span>(., <span class="at">drop =</span> <span class="st">"time*"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>                                                      ..1
+Dependent Var.:                (log) Educ. Expenditure pp
+                                                         
+(log) GDP pc                              0.0051 (0.0068)
+(log,l1) GDP pc                         0.0270** (0.0084)
+(log,l2) GDP pc                        0.0387*** (0.0058)
+(log) GDP Priv. Industry pc                              
+(log,l1) GDP Priv. Industry pc                           
+(log,l2) GDP Priv. Industry pc                           
+(log) O&amp;G&amp;Mining pc                                      
+(log,l1) O&amp;G&amp;Mining pc                                   
+(log,l2) O&amp;G&amp;Mining pc                                   
+Fixed-Effects:                 --------------------------
+fips                                                  Yes
+year                                                  Yes
+______________________________ __________________________
+S.E.: Clustered                                  by: fips
+Observations                                       52,060
+R2                                                0.91310
+Within R2                                         0.17190
+
+                                                      ..2
+Dependent Var.:                (log) Educ. Expenditure pp
+                                                         
+(log) GDP pc                                             
+(log,l1) GDP pc                                          
+(log,l2) GDP pc                                          
+(log) GDP Priv. Industry pc               0.0030 (0.0059)
+(log,l1) GDP Priv. Industry pc          0.0223** (0.0070)
+(log,l2) GDP Priv. Industry pc         0.0333*** (0.0052)
+(log) O&amp;G&amp;Mining pc                                      
+(log,l1) O&amp;G&amp;Mining pc                                   
+(log,l2) O&amp;G&amp;Mining pc                                   
+Fixed-Effects:                 --------------------------
+fips                                                  Yes
+year                                                  Yes
+______________________________ __________________________
+S.E.: Clustered                                  by: fips
+Observations                                       52,060
+R2                                                0.91293
+Within R2                                         0.17027
+
+                                                      ..3
+Dependent Var.:                (log) Educ. Expenditure pp
+                                                         
+(log) GDP pc                                             
+(log,l1) GDP pc                                          
+(log,l2) GDP pc                                          
+(log) GDP Priv. Industry pc                              
+(log,l1) GDP Priv. Industry pc                           
+(log,l2) GDP Priv. Industry pc                           
+(log) O&amp;G&amp;Mining pc                      -0.0002 (0.0037)
+(log,l1) O&amp;G&amp;Mining pc                   -0.0011 (0.0044)
+(log,l2) O&amp;G&amp;Mining pc                 0.0194*** (0.0043)
+Fixed-Effects:                 --------------------------
+fips                                                  Yes
+year                                                  Yes
+______________________________ __________________________
+S.E.: Clustered                                  by: fips
+Observations                                       52,060
+R2                                                0.91218
+Within R2                                         0.16307
+---
+Signif. codes: 0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</code></pre>
+</div>
+</div>
+</section>
+</section>
+<section id="coal-production-data" class="level1">
+<h1>Coal Production Data</h1>
+<p>We restrict the dataset to 2001:2019 as mine data is currently collected until 2019.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb35"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a>mines_df_02_19 <span class="ot">&lt;-</span> mines_df <span class="sc">%&gt;%</span> </span>
+<span id="cb35-2"><a href="#cb35-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(year <span class="sc">%in%</span> <span class="dv">2001</span><span class="sc">:</span><span class="dv">2019</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+<section id="full-panel-model" class="level1">
+<h1>Full panel model</h1>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb36"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a><span class="fu">list</span>(<span class="fu">feols</span>(log_Total_Educ_Current_Exp_pp <span class="sc">~</span> log_gdp_priv_ind_pc <span class="sc">+</span> log_gdp_priv_ind_pc_l1 <span class="sc">+</span> log_gdp_priv_ind_pc_l2 <span class="sc">+</span> diff_total_active_n <span class="sc">+</span> l1_diff_total_active_n <span class="sc">+</span> l2_diff_total_active_n <span class="sc">|</span> fips <span class="sc">+</span> year, <span class="at">data =</span> mines_df_02_19, <span class="at">se =</span> <span class="st">"cluster"</span>, <span class="at">cluster =</span> <span class="st">"fips"</span>),</span>
+<span id="cb36-2"><a href="#cb36-2" aria-hidden="true" tabindex="-1"></a><span class="fu">feols</span>(log_Total_Educ_Current_Exp_pp <span class="sc">~</span> <span class="fu">sw</span>(log_gdp_priv_ind_pc <span class="sc">+</span> log_gdp_priv_ind_pc_l1 <span class="sc">+</span> log_gdp_priv_ind_pc_l2 <span class="sc">+</span> diff_total_active_prod <span class="sc">+</span> l1_diff_total_active_prod <span class="sc">+</span> l2_diff_total_active_prod,</span>
+<span id="cb36-3"><a href="#cb36-3" aria-hidden="true" tabindex="-1"></a>                                         log_gdp_total_pc <span class="sc">+</span> log_gdp_total_pc_l1 <span class="sc">+</span> log_gdp_total_pc_l2 <span class="sc">+</span> diff_total_active_n <span class="sc">+</span> l1_diff_total_active_n <span class="sc">+</span> l2_diff_total_active_n,</span>
+<span id="cb36-4"><a href="#cb36-4" aria-hidden="true" tabindex="-1"></a>                                         log_gdp_total_pc <span class="sc">+</span> log_gdp_total_pc_l1 <span class="sc">+</span> log_gdp_total_pc_l2 <span class="sc">+</span> diff_total_active_prod <span class="sc">+</span> l1_diff_total_active_prod <span class="sc">+</span> l2_diff_total_active_prod) <span class="sc">|</span> fips <span class="sc">+</span> year, <span class="at">data =</span> mines_df_02_19, <span class="at">se =</span> <span class="st">"cluster"</span>, <span class="at">cluster =</span> <span class="st">"fips"</span>)) <span class="sc">%&gt;%</span> etable</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>                                                  model 1
+Dependent Var.:                (log) Educ. Expenditure pp
+                                                         
+(log) GDP Priv. Industry pc               0.0081 (0.0072)
+(log,l1) GDP Priv. Industry pc         0.0280*** (0.0073)
+(log,l2) GDP Priv. Industry pc         0.0496*** (0.0057)
+(fd) Active Coal Mines                  -0.0018* (0.0008)
+(l1, fd) Active Coal Mines             -0.0020** (0.0007)
+(l2, fd) Active Coal Mines              -0.0014* (0.0006)
+(fd) Active Coal Prod                                    
+(l1,fd) Active Coal Prod                                 
+(l2,fd) Active Coal Prod                                 
+(log) GDP pc                                             
+(log,l1) GDP pc                                          
+(log,l2) GDP pc                                          
+Fixed-Effects:                 --------------------------
+fips                                                  Yes
+year                                                  Yes
+______________________________ __________________________
+S.E.: Clustered                                  by: fips
+Observations                                       46,580
+R2                                                0.89094
+Within R2                                         0.02259
+
+                                                       .1
+Dependent Var.:                (log) Educ. Expenditure pp
+                                                         
+(log) GDP Priv. Industry pc               0.0077 (0.0072)
+(log,l1) GDP Priv. Industry pc         0.0281*** (0.0073)
+(log,l2) GDP Priv. Industry pc         0.0498*** (0.0057)
+(fd) Active Coal Mines                                   
+(l1, fd) Active Coal Mines                               
+(l2, fd) Active Coal Mines                               
+(fd) Active Coal Prod                    -0.0003 (0.0004)
+(l1,fd) Active Coal Prod               -0.0007** (0.0003)
+(l2,fd) Active Coal Prod              -0.0015*** (0.0002)
+(log) GDP pc                                             
+(log,l1) GDP pc                                          
+(log,l2) GDP pc                                          
+Fixed-Effects:                 --------------------------
+fips                                                  Yes
+year                                                  Yes
+______________________________ __________________________
+S.E.: Clustered                                  by: fips
+Observations                                       46,580
+R2                                                0.89093
+Within R2                                         0.02251
+
+                                                       .2
+Dependent Var.:                (log) Educ. Expenditure pp
+                                                         
+(log) GDP Priv. Industry pc                              
+(log,l1) GDP Priv. Industry pc                           
+(log,l2) GDP Priv. Industry pc                           
+(fd) Active Coal Mines                  -0.0018* (0.0008)
+(l1, fd) Active Coal Mines             -0.0021** (0.0007)
+(l2, fd) Active Coal Mines              -0.0014* (0.0006)
+(fd) Active Coal Prod                                    
+(l1,fd) Active Coal Prod                                 
+(l2,fd) Active Coal Prod                                 
+(log) GDP pc                              0.0119 (0.0084)
+(log,l1) GDP pc                        0.0326*** (0.0089)
+(log,l2) GDP pc                        0.0570*** (0.0063)
+Fixed-Effects:                 --------------------------
+fips                                                  Yes
+year                                                  Yes
+______________________________ __________________________
+S.E.: Clustered                                  by: fips
+Observations                                       46,580
+R2                                                0.89125
+Within R2                                         0.02543
+
+                                                       .3
+Dependent Var.:                (log) Educ. Expenditure pp
+                                                         
+(log) GDP Priv. Industry pc                              
+(log,l1) GDP Priv. Industry pc                           
+(log,l2) GDP Priv. Industry pc                           
+(fd) Active Coal Mines                                   
+(l1, fd) Active Coal Mines                               
+(l2, fd) Active Coal Mines                               
+(fd) Active Coal Prod                    -0.0003 (0.0004)
+(l1,fd) Active Coal Prod               -0.0007** (0.0003)
+(l2,fd) Active Coal Prod              -0.0015*** (0.0002)
+(log) GDP pc                              0.0115 (0.0084)
+(log,l1) GDP pc                        0.0328*** (0.0089)
+(log,l2) GDP pc                        0.0573*** (0.0063)
+Fixed-Effects:                 --------------------------
+fips                                                  Yes
+year                                                  Yes
+______________________________ __________________________
+S.E.: Clustered                                  by: fips
+Observations                                       46,580
+R2                                                0.89125
+Within R2                                         0.02534
+---
+Signif. codes: 0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb38"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb38-1"><a href="#cb38-1" aria-hidden="true" tabindex="-1"></a><span class="fu">list</span>(<span class="fu">feols</span>(log_Total_Educ_Current_Exp_pp <span class="sc">~</span> log_gdp_priv_ind_pc <span class="sc">+</span> log_gdp_priv_ind_pc_l1 <span class="sc">+</span> log_gdp_priv_ind_pc_l2 <span class="sc">+</span> <span class="fu">l</span>(total_active_n, <span class="dv">0</span><span class="sc">:</span><span class="dv">2</span>)  <span class="sc">|</span> fips <span class="sc">+</span> year, <span class="at">data =</span> mines_df_02_19, <span class="at">se =</span> <span class="st">"cluster"</span>, <span class="at">cluster =</span> <span class="st">"fips"</span>, <span class="at">panel.id =</span> <span class="sc">~</span>fips<span class="sc">+</span>year),</span>
+<span id="cb38-2"><a href="#cb38-2" aria-hidden="true" tabindex="-1"></a>     <span class="fu">feols</span>(log_Total_Educ_Current_Exp_pp <span class="sc">~</span> <span class="fu">sw</span>(log_gdp_priv_ind_pc <span class="sc">+</span> log_gdp_priv_ind_pc_l1 <span class="sc">+</span> log_gdp_priv_ind_pc_l2 <span class="sc">+</span> <span class="fu">l</span>(total_active_prod, <span class="dv">0</span><span class="sc">:</span><span class="dv">2</span>),</span>
+<span id="cb38-3"><a href="#cb38-3" aria-hidden="true" tabindex="-1"></a>                                         log_gdp_total_pc <span class="sc">+</span> log_gdp_total_pc_l1 <span class="sc">+</span> log_gdp_total_pc_l2 <span class="sc">+</span> <span class="fu">l</span>(total_active_n, <span class="dv">0</span><span class="sc">:</span><span class="dv">2</span>),</span>
+<span id="cb38-4"><a href="#cb38-4" aria-hidden="true" tabindex="-1"></a>                                         log_gdp_total_pc <span class="sc">+</span> log_gdp_total_pc_l1 <span class="sc">+</span> log_gdp_total_pc_l2 <span class="sc">+</span> <span class="fu">l</span>(total_active_prod, <span class="dv">0</span><span class="sc">:</span><span class="dv">2</span>)) <span class="sc">|</span> fips <span class="sc">+</span> year, <span class="at">data =</span> mines_df_02_19, <span class="at">se =</span> <span class="st">"cluster"</span>, <span class="at">cluster =</span> <span class="st">"fips"</span>, <span class="at">panel.id =</span> <span class="sc">~</span>fips<span class="sc">+</span>year)) <span class="sc">%&gt;%</span> etable</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>                                                  model 1
+Dependent Var.:                (log) Educ. Expenditure pp
+                                                         
+(log) GDP Priv. Industry pc               0.0081 (0.0072)
+(log,l1) GDP Priv. Industry pc         0.0280*** (0.0073)
+(log,l2) GDP Priv. Industry pc         0.0498*** (0.0057)
+Active Coal Mines                       -0.0019* (0.0009)
+(l1) Active Coal Mines                   -0.0002 (0.0004)
+(l2) Active Coal Mines                   0.0014* (0.0006)
+Active Coal Prod                                         
+(l1) Active Coal Prod                                    
+(l2) Active Coal Prod                                    
+(log) GDP pc                                             
+(log,l1) GDP pc                                          
+(log,l2) GDP pc                                          
+Fixed-Effects:                 --------------------------
+fips                                                  Yes
+year                                                  Yes
+______________________________ __________________________
+S.E.: Clustered                                  by: fips
+Observations                                       46,580
+R2                                                0.89093
+Within R2                                         0.02256
+
+                                                       .1
+Dependent Var.:                (log) Educ. Expenditure pp
+                                                         
+(log) GDP Priv. Industry pc               0.0076 (0.0072)
+(log,l1) GDP Priv. Industry pc         0.0280*** (0.0073)
+(log,l2) GDP Priv. Industry pc         0.0499*** (0.0057)
+Active Coal Mines                                        
+(l1) Active Coal Mines                                   
+(l2) Active Coal Mines                                   
+Active Coal Prod                       -1.21e-7 (3.38e-7)
+(l1) Active Coal Prod                  -3.67e-7 (4.61e-7)
+(l2) Active Coal Prod                   6.25e-7 (4.51e-7)
+(log) GDP pc                                             
+(log,l1) GDP pc                                          
+(log,l2) GDP pc                                          
+Fixed-Effects:                 --------------------------
+fips                                                  Yes
+year                                                  Yes
+______________________________ __________________________
+S.E.: Clustered                                  by: fips
+Observations                                       46,580
+R2                                                0.89092
+Within R2                                         0.02239
+
+                                                       .2
+Dependent Var.:                (log) Educ. Expenditure pp
+                                                         
+(log) GDP Priv. Industry pc                              
+(log,l1) GDP Priv. Industry pc                           
+(log,l2) GDP Priv. Industry pc                           
+Active Coal Mines                       -0.0019* (0.0009)
+(l1) Active Coal Mines                   -0.0002 (0.0004)
+(l2) Active Coal Mines                   0.0014* (0.0006)
+Active Coal Prod                                         
+(l1) Active Coal Prod                                    
+(l2) Active Coal Prod                                    
+(log) GDP pc                              0.0119 (0.0084)
+(log,l1) GDP pc                        0.0326*** (0.0089)
+(log,l2) GDP pc                        0.0573*** (0.0063)
+Fixed-Effects:                 --------------------------
+fips                                                  Yes
+year                                                  Yes
+______________________________ __________________________
+S.E.: Clustered                                  by: fips
+Observations                                       46,580
+R2                                                0.89125
+Within R2                                         0.02540
+
+                                                       .3
+Dependent Var.:                (log) Educ. Expenditure pp
+                                                         
+(log) GDP Priv. Industry pc                              
+(log,l1) GDP Priv. Industry pc                           
+(log,l2) GDP Priv. Industry pc                           
+Active Coal Mines                                        
+(l1) Active Coal Mines                                   
+(l2) Active Coal Mines                                   
+Active Coal Prod                       -1.27e-7 (3.32e-7)
+(l1) Active Coal Prod                  -3.88e-7 (4.65e-7)
+(l2) Active Coal Prod                    5.86e-7 (4.5e-7)
+(log) GDP pc                              0.0113 (0.0084)
+(log,l1) GDP pc                        0.0327*** (0.0089)
+(log,l2) GDP pc                        0.0573*** (0.0063)
+Fixed-Effects:                 --------------------------
+fips                                                  Yes
+year                                                  Yes
+______________________________ __________________________
+S.E.: Clustered                                  by: fips
+Observations                                       46,580
+R2                                                0.89123
+Within R2                                         0.02523
+---
+Signif. codes: 0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</code></pre>
+</div>
+</div>
+</section>
+<section id="getspanel" class="level1">
+<h1>getspanel</h1>
+</section>
+<section id="instrumental-variable-testing" class="level1">
+<h1>Instrumental Variable Testing</h1>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb40"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb40-1"><a href="#cb40-1" aria-hidden="true" tabindex="-1"></a><span class="fu">feols</span>(log_Total_Educ_Current_Exp_pp <span class="sc">~</span> log_gdp_total_pc <span class="sc">|</span> fips <span class="sc">+</span> year <span class="sc">|</span> log_Property_Tax_pp <span class="sc">~</span> total_active_prod, <span class="at">data =</span> mines_df_02_19, <span class="at">se =</span> <span class="st">"cluster"</span>, <span class="at">cluster =</span> <span class="st">"fips"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>TSLS estimation, Dep. Var.: log_Total_Educ_Current_Exp_pp, Endo.: log_Property_Tax_pp, Instr.: total_active_prod
+Second stage: Dep. Var.: log_Total_Educ_Current_Exp_pp
+Observations: 52,060 
+Fixed-effects: fips: 2,740,  year: 19
+Standard-errors: Clustered (fips) 
+                        Estimate Std. Error  t value Pr(&gt;|t|) 
+fit_log_Property_Tax_pp 0.104745   0.836390 0.125234  0.90035 
+log_gdp_total_pc        0.049146   0.238785 0.205819  0.83695 
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+RMSE: 0.08628     Adj. R2: 0.900421
+                Within R2: 0.114764
+F-test (1st stage), (log) Property Taxes pp: stat = 0.158825, p = 0.690243, on 1 and 52,039 DoF.
+                                 Wu-Hausman: stat = 2.141e-4, p = 0.988325, on 1 and 49,299 DoF.</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb42"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb42-1"><a href="#cb42-1" aria-hidden="true" tabindex="-1"></a><span class="fu">feols</span>(log_Total_Educ_Current_Exp_pp <span class="sc">~</span> log_gdp_total_pc <span class="sc">|</span> fips <span class="sc">+</span> year <span class="sc">|</span> log_Property_Tax_pp <span class="sc">~</span> <span class="fu">l</span>(total_active_prod,<span class="dv">1</span>), <span class="at">data =</span> mines_df_02_19, <span class="at">se =</span> <span class="st">"cluster"</span>, <span class="at">cluster =</span> <span class="st">"fips"</span>, <span class="at">panel.id =</span> <span class="sc">~</span>fips<span class="sc">+</span>year)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>TSLS estimation, Dep. Var.: log_Total_Educ_Current_Exp_pp, Endo.: log_Property_Tax_pp, Instr.: l(total_active_prod, 1)
+Second stage: Dep. Var.: log_Total_Educ_Current_Exp_pp
+Observations: 49,320 
+Fixed-effects: fips: 2,740,  year: 18
+Standard-errors: Clustered (fips) 
+                        Estimate Std. Error   t value Pr(&gt;|t|) 
+fit_log_Property_Tax_pp -9.04377    665.797 -0.013583  0.98916 
+log_gdp_total_pc         2.64751    189.032  0.014006  0.98883 
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+RMSE: 2.20089     Adj. R2:  -67.1
+                Within R2: -582.7
+F-test (1st stage), (log) Property Taxes pp: stat = 1.566e-4, p = 0.990015, on 1 and 49,300 DoF.
+                                 Wu-Hausman: stat = 0.097969, p = 0.754282, on 1 and 46,560 DoF.</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb44"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb44-1"><a href="#cb44-1" aria-hidden="true" tabindex="-1"></a><span class="fu">feols</span>(log_Total_Educ_Current_Exp_pp <span class="sc">~</span> log_gdp_total_pc <span class="sc">|</span> fips <span class="sc">+</span> year <span class="sc">|</span> log_Property_Tax_pp <span class="sc">~</span> total_active_n, <span class="at">data =</span> mines_df_02_19, <span class="at">se =</span> <span class="st">"cluster"</span>, <span class="at">cluster =</span> <span class="st">"fips"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>TSLS estimation, Dep. Var.: log_Total_Educ_Current_Exp_pp, Endo.: log_Property_Tax_pp, Instr.: total_active_n
+Second stage: Dep. Var.: log_Total_Educ_Current_Exp_pp
+Observations: 52,060 
+Fixed-effects: fips: 2,740,  year: 19
+Standard-errors: Clustered (fips) 
+                        Estimate Std. Error  t value Pr(&gt;|t|) 
+fit_log_Property_Tax_pp 0.274651   0.182834 1.502187  0.13316 
+log_gdp_total_pc        0.000241   0.052146 0.004617  0.99632 
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+RMSE: 0.094247     Adj. R2:  0.881184
+                 Within R2: -0.056249
+F-test (1st stage), (log) Property Taxes pp: stat = 10.6    , p = 0.001128, on 1 and 52,039 DoF.
+                                 Wu-Hausman: stat =  1.95824, p = 0.161708, on 1 and 49,299 DoF.</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb46"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb46-1"><a href="#cb46-1" aria-hidden="true" tabindex="-1"></a><span class="fu">feols</span>(log_Total_Educ_Current_Exp_pp <span class="sc">~</span> log_gdp_total_pc <span class="sc">|</span> fips <span class="sc">+</span> year <span class="sc">|</span> log_Property_Tax_pp <span class="sc">~</span> <span class="fu">l</span>(total_active_n,<span class="dv">1</span>), <span class="at">data =</span> mines_df_02_19, <span class="at">se =</span> <span class="st">"cluster"</span>, <span class="at">cluster =</span> <span class="st">"fips"</span>, <span class="at">panel.id =</span> <span class="sc">~</span>fips<span class="sc">+</span>year)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>TSLS estimation, Dep. Var.: log_Total_Educ_Current_Exp_pp, Endo.: log_Property_Tax_pp, Instr.: l(total_active_n, 1)
+Second stage: Dep. Var.: log_Total_Educ_Current_Exp_pp
+Observations: 49,320 
+Fixed-effects: fips: 2,740,  year: 18
+Standard-errors: Clustered (fips) 
+                        Estimate Std. Error  t value Pr(&gt;|t|) 
+fit_log_Property_Tax_pp 0.218773   0.229145 0.954738  0.33979 
+log_gdp_total_pc        0.016918   0.064054 0.264114  0.79171 
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+RMSE: 0.088573     Adj. R2: 0.889757
+                 Within R2: 0.054629
+F-test (1st stage), (log) Property Taxes pp: stat = 4.87774 , p = 0.02721, on 1 and 49,300 DoF.
+                                 Wu-Hausman: stat = 0.342905, p = 0.55816, on 1 and 46,560 DoF.</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb48"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb48-1"><a href="#cb48-1" aria-hidden="true" tabindex="-1"></a><span class="fu">feols</span>(log_Total_Educ_Current_Exp_pp <span class="sc">~</span> log_gdp_total_pc <span class="sc">|</span> fips <span class="sc">+</span> year <span class="sc">|</span> log_Property_Tax_pp <span class="sc">~</span> total_active_n, <span class="at">data =</span> mines_df_02_19, <span class="at">se =</span> <span class="st">"cluster"</span>, <span class="at">cluster =</span> <span class="st">"fips"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>TSLS estimation, Dep. Var.: log_Total_Educ_Current_Exp_pp, Endo.: log_Property_Tax_pp, Instr.: total_active_n
+Second stage: Dep. Var.: log_Total_Educ_Current_Exp_pp
+Observations: 52,060 
+Fixed-effects: fips: 2,740,  year: 19
+Standard-errors: Clustered (fips) 
+                        Estimate Std. Error  t value Pr(&gt;|t|) 
+fit_log_Property_Tax_pp 0.274651   0.182834 1.502187  0.13316 
+log_gdp_total_pc        0.000241   0.052146 0.004617  0.99632 
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+RMSE: 0.094247     Adj. R2:  0.881184
+                 Within R2: -0.056249
+F-test (1st stage), (log) Property Taxes pp: stat = 10.6    , p = 0.001128, on 1 and 52,039 DoF.
+                                 Wu-Hausman: stat =  1.95824, p = 0.161708, on 1 and 49,299 DoF.</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb50"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb50-1"><a href="#cb50-1" aria-hidden="true" tabindex="-1"></a><span class="fu">feols</span>(log_Total_Educ_Current_Exp_pp <span class="sc">~</span> log_gdp_total_pc <span class="sc">|</span> fips <span class="sc">+</span> year <span class="sc">|</span> log_Property_Tax_pp <span class="sc">~</span> <span class="fu">l</span>(total_active_n,<span class="dv">1</span>), <span class="at">data =</span> mines_df_02_19, <span class="at">se =</span> <span class="st">"cluster"</span>, <span class="at">cluster =</span> <span class="st">"fips"</span>, <span class="at">panel.id =</span> <span class="sc">~</span>fips<span class="sc">+</span>year)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>TSLS estimation, Dep. Var.: log_Total_Educ_Current_Exp_pp, Endo.: log_Property_Tax_pp, Instr.: l(total_active_n, 1)
+Second stage: Dep. Var.: log_Total_Educ_Current_Exp_pp
+Observations: 49,320 
+Fixed-effects: fips: 2,740,  year: 18
+Standard-errors: Clustered (fips) 
+                        Estimate Std. Error  t value Pr(&gt;|t|) 
+fit_log_Property_Tax_pp 0.218773   0.229145 0.954738  0.33979 
+log_gdp_total_pc        0.016918   0.064054 0.264114  0.79171 
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+RMSE: 0.088573     Adj. R2: 0.889757
+                 Within R2: 0.054629
+F-test (1st stage), (log) Property Taxes pp: stat = 4.87774 , p = 0.02721, on 1 and 49,300 DoF.
+                                 Wu-Hausman: stat = 0.342905, p = 0.55816, on 1 and 46,560 DoF.</code></pre>
+</div>
+</div>
+</section>
+<section id="bartik-instrument" class="level1">
+<h1>Bartik Instrument</h1>
+<div class="cell">
+
+</div>
+</section>
+
+</main>
+<!-- /main column -->
+<script id="quarto-html-after-body" type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (event) {
+  const toggleBodyColorMode = (bsSheetEl) => {
+    const mode = bsSheetEl.getAttribute("data-mode");
+    const bodyEl = window.document.querySelector("body");
+    if (mode === "dark") {
+      bodyEl.classList.add("quarto-dark");
+      bodyEl.classList.remove("quarto-light");
+    } else {
+      bodyEl.classList.add("quarto-light");
+      bodyEl.classList.remove("quarto-dark");
+    }
+  }
+  const toggleBodyColorPrimary = () => {
+    const bsSheetEl = window.document.querySelector("link#quarto-bootstrap");
+    if (bsSheetEl) {
+      toggleBodyColorMode(bsSheetEl);
+    }
+  }
+  toggleBodyColorPrimary();  
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
+  const clipboard = new window.ClipboardJS('.code-copy-button', {
+    target: function(trigger) {
+      return trigger.previousElementSibling;
+    }
+  });
+  clipboard.on('success', function(e) {
+    // button target
+    const button = e.trigger;
+    // don't keep focus
+    button.blur();
+    // flash "checked"
+    button.classList.add('code-copy-button-checked');
+    var currentTitle = button.getAttribute("title");
+    button.setAttribute("title", "Copied!");
+    let tooltip;
+    if (window.bootstrap) {
+      button.setAttribute("data-bs-toggle", "tooltip");
+      button.setAttribute("data-bs-placement", "left");
+      button.setAttribute("data-bs-title", "Copied!");
+      tooltip = new bootstrap.Tooltip(button, 
+        { trigger: "manual", 
+          customClass: "code-copy-button-tooltip",
+          offset: [0, -8]});
+      tooltip.show();    
+    }
+    setTimeout(function() {
+      if (tooltip) {
+        tooltip.hide();
+        button.removeAttribute("data-bs-title");
+        button.removeAttribute("data-bs-toggle");
+        button.removeAttribute("data-bs-placement");
+      }
+      button.setAttribute("title", currentTitle);
+      button.classList.remove('code-copy-button-checked');
+    }, 1000);
+    // clear code selection
+    e.clearSelection();
+  });
+  function tippyHover(el, contentFn) {
+    const config = {
+      allowHTML: true,
+      content: contentFn,
+      maxWidth: 500,
+      delay: 100,
+      arrow: false,
+      appendTo: function(el) {
+          return el.parentElement;
+      },
+      interactive: true,
+      interactiveBorder: 10,
+      theme: 'quarto',
+      placement: 'bottom-start'
+    };
+    window.tippy(el, config); 
+  }
+  const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+  for (var i=0; i<noterefs.length; i++) {
+    const ref = noterefs[i];
+    tippyHover(ref, function() {
+      // use id or data attribute instead here
+      let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+      try { href = new URL(href).hash; } catch {}
+      const id = href.replace(/^#\/?/, "");
+      const note = window.document.getElementById(id);
+      return note.innerHTML;
+    });
+  }
+  const findCites = (el) => {
+    const parentEl = el.parentElement;
+    if (parentEl) {
+      const cites = parentEl.dataset.cites;
+      if (cites) {
+        return {
+          el,
+          cites: cites.split(' ')
+        };
+      } else {
+        return findCites(el.parentElement)
+      }
+    } else {
+      return undefined;
+    }
+  };
+  var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+  for (var i=0; i<bibliorefs.length; i++) {
+    const ref = bibliorefs[i];
+    const citeInfo = findCites(ref);
+    if (citeInfo) {
+      tippyHover(citeInfo.el, function() {
+        var popup = window.document.createElement('div');
+        citeInfo.cites.forEach(function(cite) {
+          var citeDiv = window.document.createElement('div');
+          citeDiv.classList.add('hanging-indent');
+          citeDiv.classList.add('csl-entry');
+          var biblioDiv = window.document.getElementById('ref-' + cite);
+          if (biblioDiv) {
+            citeDiv.innerHTML = biblioDiv.innerHTML;
+          }
+          popup.appendChild(citeDiv);
+        });
+        return popup.innerHTML;
+      });
+    }
+  }
+});
+</script>
+</div> <!-- /content -->
+
+
+
+</body></html>
