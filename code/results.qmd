@@ -81,7 +81,7 @@ df$region = sapply(df$state_name, get_region)
 ```
 
 ## Descriptive Statistics
-The below summary tables display descriptive statistics for all indicators used in regression results below. The table is divided in two (pre- and post-2007) as the establishment of Educational Service Agencies started taking place around 2007.
+The below summary tables display descriptive statistics for all indicators used in regression results below. The table is divided in two (pre- and post-2007) as the establishment of Educational Service Agencies started taking place around 2007. First table shows 2007-2021, latter table earlier 2000-2007.
 ```{r, echo = FALSE, results = 'asis'}
 # Variables of interest for descriptive statistics
 vars <- c("Total_Revenue", "Total_Taxes", "Property_Tax", "Total_IG_Revenue", "Total_Fed_IG_Revenue", "Total_Expenditure", "Total_Interest_on_Debt")
