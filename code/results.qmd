@@ -432,7 +432,7 @@ grid.arrange(exp, rev, own, ig, nrow = 2) %>% suppressWarnings()
 ```
 
 ## KR 3: Revenue, Expenditure and Property Taxes
-We know the majority of "own source" revenue comes from property taxes. The below scatterplots demonstrate the relationship between education revenue and expeniture versus property taxes collected. The solid black line represents a best-fit line and the dashed line represents a 45 degree line.
+We know the majority of "own source" revenue comes from property taxes. The below scatterplots demonstrate the relationship between education revenue and expeniture versus property taxes collected. The solid black line represents a best-fit line and the dashed line represents a 45 degree line (intercept-adjusted to match data).
 
 ```{r, echo = FALSE, message = FALSE, warnings = FALSE}
 
@@ -474,6 +474,9 @@ grid.arrange(tot_rev, pp_rev, tot, pp, ncol = 2) %>% suppressWarnings()
 
 ## KR 4: GDP and Property Taxes
 
+The solid black line represents a best-fit line and the dashed line represents a 45 degree line (intercept-adjusted to match data).
+
+GDP and Property taxes have a positive linear correlation, to be expected.
 
 ```{r, echo = FALSE, message = FALSE, warnings = FALSE}
 
@@ -481,12 +484,14 @@ tot <- df %>%
   ggplot(aes(x = log_gdp_total, y = log_Property_Tax)) +
   geom_jitter(, colour = "steelblue", alpha = 0.5) + 
   geom_smooth(method=lm, colour = "black") +
+    geom_abline(slope = 1, intercept = -5, linetype = "dashed") +
   labs(x = "log GDP", y = "log Property Taxes Collected") 
 
 pp <- df %>% 
   ggplot(aes(x = log_gdp_total_pc, y = log_Property_Tax_pp)) +
   geom_jitter(, colour = "darkorchid", alpha = 0.5) + 
   geom_smooth(method=lm, colour = "black") +
+      geom_abline(slope = 1, intercept = -3, linetype = "dashed") +
   labs(x = "log GDP pc", y = "log Property Taxes Collected pp") 
 
 grid.arrange(tot, pp, ncol = 2) %>% suppressWarnings()
@@ -495,12 +500,17 @@ grid.arrange(tot, pp, ncol = 2) %>% suppressWarnings()
 
 ## KR 5: GDP and Education Expenditure
 
+The solid black line represents a best-fit line and the dashed line represents a 45 degree line (intercept-adjusted to match data).
+
+GDP and Education expenditure have a positive linear correlation, as expected. 
+
 ```{r, echo = FALSE, message= FALSE, warnings = FALSE}
 
 tot <- df %>% 
   ggplot(aes(x = log_gdp_total, y = log_Total_Educ_Total_Exp)) +
   geom_jitter(, colour = "brown", alpha = 0.5) + 
-  geom_smooth(methodf=lm, colour = "black") +
+  geom_smooth(method=lm, colour = "black") +
+      geom_abline(slope = 1, intercept = -3, linetype = "dashed") +
   labs(x = "log GDP", y = "log Education Expenditure") 
 
 
@@ -508,6 +518,7 @@ pp <- df %>%
   ggplot(aes(x = log_gdp_total_pc, y = log_Total_Educ_Total_Exp_pp)) +
   geom_jitter(, colour = "darkorange2", alpha = 0.5) + 
   geom_smooth(method=lm, colour = "black")  +
+      geom_abline(slope = 1, intercept = -2, linetype = "dashed") +
   labs(x = "log GDP pc", y = "log Education Expenditure pp") 
 
 grid.arrange(tot, pp, ncol = 2) %>% suppressWarnings()
