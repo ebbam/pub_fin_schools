@@ -2,6 +2,7 @@
 title: "Descriptive Analysis & Preliminary Results"
 format: 
   html:
+    embed-resources: true
     theme: cosmo
     toc: true
     toc_float: true
