@@ -752,23 +752,23 @@ To my eye, I don't see any of these being useful - either they fail a first-stag
 
 ```{r, message = FALSE, warnings = FALSE}
 # Using total active production as an instrument for per capita property tax
-feols(log_Total_Educ_Total_Exp_pp ~ log_gdp_total_pc | fips + year | log_Property_Tax_pp ~ total_active_prod, data = mines_df, se = "cluster", cluster = "fips")
-feols(log_Elem_Educ_Total_Exp_pp ~ log_gdp_total_pc | fips + year | log_Property_Tax_pp ~ total_active_prod, data = mines_df, se = "cluster", cluster = "fips")
+feols(log_Total_Educ_Total_Exp_pp ~ 1 | fips + year | log_Property_Tax_pp ~ total_active_prod, data = mines_df, se = "cluster", cluster = "fips")
+feols(log_Elem_Educ_Total_Exp_pp ~ 1 | fips + year | log_Property_Tax_pp ~ total_active_prod, data = mines_df, se = "cluster", cluster = "fips")
 
 # Using the lag of total active production as an instrument for per capita property tax
-feols(log_Total_Educ_Total_Exp_pp ~ log_gdp_total_pc | fips + year | log_Property_Tax_pp ~ l(total_active_prod,1), data = mines_df, se = "cluster", cluster = "fips", panel.id = ~fips+year)
+feols(log_Total_Educ_Total_Exp_pp ~ 1 | fips + year | log_Property_Tax_pp ~ l(total_active_prod,1), data = mines_df, se = "cluster", cluster = "fips", panel.id = ~fips+year)
 
-feols(log_Elem_Educ_Total_Exp_pp ~ log_gdp_total_pc | fips + year | log_Property_Tax_pp ~ l(total_active_prod,1), data = mines_df, se = "cluster", cluster = "fips", panel.id = ~fips+year)
+feols(log_Elem_Educ_Total_Exp_pp ~ 1 | fips + year | log_Property_Tax_pp ~ l(total_active_prod,1), data = mines_df, se = "cluster", cluster = "fips", panel.id = ~fips+year)
 
 # Using total active mines as an instrument for per capita property tax
-feols(log_Total_Educ_Total_Exp_pp ~ log_gdp_total_pc | fips + year | log_Property_Tax_pp ~ total_active_n, data = mines_df, se = "cluster", cluster = "fips")
+feols(log_Total_Educ_Total_Exp_pp ~ 1 | fips + year | log_Property_Tax_pp ~ total_active_n, data = mines_df, se = "cluster", cluster = "fips")
 
-feols(log_Elem_Educ_Total_Exp_pp ~ log_gdp_total_pc | fips + year | log_Property_Tax_pp ~ total_active_n, data = mines_df, se = "cluster", cluster = "fips")
+feols(log_Elem_Educ_Total_Exp_pp ~ 1 | fips + year | log_Property_Tax_pp ~ total_active_n, data = mines_df, se = "cluster", cluster = "fips")
 
-# Using lag og total active mines as an instrument for per capita property tax
-feols(log_Total_Educ_Total_Exp_pp ~ log_gdp_total_pc | fips + year | log_Property_Tax_pp ~ l(total_active_n,1), data = mines_df, se = "cluster", cluster = "fips", panel.id = ~fips+year)
+# Using lag of total active mines as an instrument for per capita property tax
+feols(log_Total_Educ_Total_Exp_pp ~ 1 | fips + year | log_Property_Tax_pp ~ l(total_active_n,1:2), data = mines_df, se = "cluster", cluster = "fips", panel.id = ~fips+year)
 
-feols(log_Elem_Educ_Total_Exp_pp ~ log_gdp_total_pc | fips + year | log_Property_Tax_pp ~ l(total_active_n,1), data = mines_df, se = "cluster", cluster = "fips", panel.id = ~fips+year)
+feols(log_Elem_Educ_Total_Exp_pp ~ 1 | fips + year | log_Property_Tax_pp ~ l(total_active_n,1:2), data = mines_df, se = "cluster", cluster = "fips", panel.id = ~fips+year)
 ```
 
 ##### Using coal production and mine activity as instruments for per capita gdp
@@ -805,6 +805,12 @@ feols(log_Elem_Educ_Total_Exp_pp ~ 1 | fips + year | log_gdp_total_pc ~ l(total_
 #### Bartik Instrument
 TBA: Results to be added
 ```{r}
+ss <- readRDS(here("data/temp/shift_shares_base_01_05_11.RDS"))
+ss %>% 
+  filter(!(substr(fips, 1,2) %in% c("02", "15", "51", "09", "24"))) %>% 
+  pull(fips) %>% 
+  unique %>% 
+  setdiff(unique(mines_df$fips))
 
 ```
 

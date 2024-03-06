@@ -73,3 +73,12 @@ df_va <- function(df){
 
 # Initialise function for specific size of matrix
 c_mat <- function(var) {matrix(var, 18, 3072)}
+
+
+
+# # Function to convert standard fips codes to BEA fips codes
+# # FIPS modifications - inconsistent FIPS codes between BEA sources and others
+# # the following creates a lookup process for replacing standard FIPS codes with their BEA equivalents
+# bea_fips <- read_excel(here("data/out/FIPSModificationsVA.xlsx"), skip = 1, col_types = c("text", "text","text","text"))
+# getfips <- bea_fips$`BEA FIPS`
+# names(getfips) <- bea_fips$FIPS
