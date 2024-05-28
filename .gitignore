@@ -1,0 +1,16 @@
+.Rproj.user
+.Rhistory
+.RData
+.Ruserdata
+.DS_Store
+**/.DS_Store
+data/.DS_Store
+.Renviron
+code/results_cache/
+code/results_files/
+*.icloud
+
+data/raw/BEA_county_econ_stats
+data/raw/CAGDP2
+data/raw/CAGDP9
+data/raw/QCEW
