@@ -1,4 +1,5 @@
 #### Variable labels for latex output ####
+library(fixest)
 
 setFixest_dict(c(gdp_total = "GDP",                                                                                                  
                  gdp_total_l1 = "(l1) GDP",                                                                                                
@@ -36,10 +37,10 @@ setFixest_dict(c(gdp_total = "GDP",
                  real_gdp_govt_pc = "Real GDP Govt pc",                                                                                           
                  real_gdp_govt_pc_l1 = "(l1) Real GDP Govt pc",                                                                                    
                  real_gdp_govt_pc_l2 = "(l2) Real GDP Govt pc",
-                 Total_Educ_Current_Exp = "Educ. Expenditure",
-                 Total_Educ_Current_Exp_pp = "Educ. Expenditure pp",
-                 log_Total_Educ_Current_Exp = "(log) Educ. Expenditure",
-                 log_Total_Educ_Current_Exp_pp = "(log) Educ. Expenditure pp",
+                 Total_Educ_Current_Exp = "Edu Exp",
+                 Total_Educ_Current_Exp_pp = "Edu Exp pp",
+                 log_Total_Educ_Current_Exp = "(log) Edu Exp",
+                 log_Total_Educ_Current_Exp_pp = "(log) Edu Exp pp",
                  log_Property_Tax = "(log) Property Taxes", 
                  log_Total_Rev_Own_Sources  = "(log) Rev. Own Sources",
                  log_Total_IG_Revenue  = "(log) IG Revenue",                                
@@ -86,8 +87,8 @@ setFixest_dict(c(gdp_total = "GDP",
                 log_gdp_o_g_mining_quarr_21_pc = "(log) O&G&Mining pc",         
                 log_gdp_o_g_mining_quarr_21_pc_l1 = "(log,l1) O&G&Mining pc",                                                                                        
                 log_gdp_o_g_mining_quarr_21_pc_l2 = "(log,l2) O&G&Mining pc",                                                                          
-                 log_esa_tot_exp = "(log) ESA Expenditure",
-                 log_esa_tot_exp_pp = "(log) ESA Expenditure pp",
+                 log_esa_tot_exp = "(log) ESA Exp",
+                 log_esa_tot_exp_pp = "(log) ESA Exp pp",
                 total_active_n = "Active Coal Mines",                                              
                 "l(total_active_n,1)"  = "(l1) Active Coal Mines",                                  
                 "l(total_active_n,2)"  = "(l2) Active Coal Mines",                                      
@@ -99,7 +100,15 @@ setFixest_dict(c(gdp_total = "GDP",
                 l2_diff_total_active_n = "(l2, fd) Active Coal Mines",                                 
                 diff_total_active_prod = "(fd) Active Coal Prod",
                 l1_diff_total_active_prod = "(l1,fd) Active Coal Prod",
-                l2_diff_total_active_prod = "(l2,fd) Active Coal Prod"))           
+                l2_diff_total_active_prod = "(l2,fd) Active Coal Prod",
+                "l(diff_total_active_n,1)" =  "(l1,fd) Active Coal Mines",
+                "l(diff_total_active_n,2)" =  "(l2,fd) Active Coal Mines",
+                "l(diff_total_active_prod,1)" =  "(l1,fd) Active Coal Prod",
+                "l(diff_total_active_prod,2)" =  "(l2,fd) Active Coal Prod",
+                log_Elem_Educ_Total_Exp_pp = "(log) Elementary Educ. Exp. pp",
+                log_Total_Educ_Total_Exp_pp =  "(log) Educ. Exp. pp"))
+                
+              
 
 # 
 # plot_dict = c("f(mines_diff,3)" = "-3", "f(mines_diff,2)" = "-2", "f(mines_diff, 1)" = "-1", 

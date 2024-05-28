@@ -364,17 +364,17 @@ temp_all <- read.xlsx(here('documentation/vocational_sorting.xlsx')) %>%
   filter(!Exclude) 
 
 # Saves a dataset with all observations except explicitly excluded observations for issues detailed in missing_data_cleaning.xlsx
-temp_all %>% saveRDS(here("data/out/school_districts_all.RDS"))
+#temp_all %>% saveRDS(here("data/out/school_districts_all.RDS"))
 
 # Saves a dataset excluding vocational and adult education
-temp_all %>% 
-  filter(!Vocational | !Adult) %>% 
-  saveRDS(here("data/out/school_districts_no_vocational.RDS"))
+#temp_all %>%
+# filter(!Vocational | !Adult) %>%
+# saveRDS(here("data/out/school_districts_no_vocational.RDS"))
 
 
 # Saves a dataset of only vocational education districts
-temp_all %>% filter(Vocational) %>% 
-  saveRDS(here('data/out/vocational_school_districts.RDS'))
+#temp_all %>% filter(Vocational) %>%
+# saveRDS(here('data/out/vocational_school_districts.RDS'))
 
 
 ```
@@ -385,7 +385,7 @@ temp_all %>% filter(Vocational) %>%
 county_all <- sch_dist_names %>% 
   select(FIPSid, fips) %>% 
   distinct %>% 
-  left_join(readRDS(here("data/out/school_districts_all.RDS")), ., by = "FIPSid") %>%
+  left_join(readRDS(here("data/out/old/school_districts_all.RDS")), ., by = "FIPSid") %>%
   relocate(fips) %>% 
   group_by(fips, year) %>% 
   # group by counties
@@ -401,7 +401,7 @@ county_all <- sch_dist_names %>%
 county_no_voc <- sch_dist_names %>% 
   select(FIPSid, fips) %>% 
   distinct %>% 
-  left_join(readRDS(here("data/out/school_districts_no_vocational.RDS")), ., by = "FIPSid") %>%
+  left_join(readRDS(here("data/out/old/school_districts_no_vocational.RDS")), ., by = "FIPSid") %>%
   relocate(fips) %>% 
   group_by(fips, year) %>% 
   # group by counties
@@ -2535,8 +2535,8 @@ temp_short %>%
 
 ```{r}
 
-temp_short %>% 
-  saveRDS(here('data/temp/temp_short_25_01_23.RDS'))
+#temp_short %>% 
+#  saveRDS(here('data/temp/temp_short_25_01_23.RDS'))
 
 ```
 
@@ -2690,6 +2690,8 @@ pop <- rbind(pop_age_00_09, pop_age_10_19, pop_age_20_22) %>%
 
 
 #pop %>% saveRDS(here("data/temp/population_age_controls.RDS"))
+
+# pop <- readRDS(here("data/temp/population_age_controls.RDS"))
 
 ```
 
