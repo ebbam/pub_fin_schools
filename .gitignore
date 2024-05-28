@@ -7,6 +7,7 @@
 data/.DS_Store
 .Renviron
 code/results_cache/
+code/results_files/
 *.icloud
 *.Rapp.history
 
