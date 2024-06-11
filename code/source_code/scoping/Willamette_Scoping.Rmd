@@ -1,0 +1,935 @@
+---
+title: "Willamette_Scoping.Rmd"
+author: "Ebba Mark"
+date: "`r Sys.Date()`"
+output: pdf_document
+---
+# County-level data scoping
+This document explores the county-level data for completeness and other issues.
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+
+library(here)
+library(tidyverse)
+library(janitor)
+library(gridExtra)
+library(readr)
+library(data.table)
+library(readxl)
+
+source(here('code/dicts.R'))
+
+
+```
+
+# Expenditure Totals
+The below imports the full county-level dataset from 2000 onwwards. Time series is shortened in willamette_cleaning_master.Rmd to speed up data processing. Original data starts in 1967 (although not checked for completeness).
+```{r}
+
+county_short <- readRDS(here("data/temp/county_short_expenditure.RDS")) %>% 
+  arrange(fips, year)
+col_classes <- as.list(sapply(county_short, class))
+
+county_short_py <- read.csv(here("data/temp/county_short_expenditure_py.csv"),
+                            colClasses = col_classes, na.strings = "") %>% 
+  tibble
+
+county_short_py %>% 
+  identical(county_short)
+
+county_full_py <- read.csv(here("data/temp/county_full_expenditure_py.csv"),
+                            colClasses = col_classes, na.strings = "") %>% 
+  tibble
+
+county_full_py %>% 
+  filter(year >= 2000) %>% 
+  identical(county_short)
+  
+
+```
+
+
+# Categorisation Transformation
+## 1970-2020
+```{r}
+# One graph of all TOTAL expenditure categories
+# will_category == "total expenditure" is the overall total expenditure
+full_totals <- county_full_py %>% 
+   filter(!is.na(large_category) & retain_total & large_category %in% c("Total", "Interest on Debt")) %>% 
+    group_by(year, fips, will_category, Population) %>% 
+  summarise(amount = sum(amount, na.rm = TRUE)) %>% 
+  # Saving PC calculation for new Census population variables
+  #mutate(amount_pc = amount/Population) %>% 
+  ungroup
+
+# One of subcategories
+full_cats <- county_full_py %>%
+   filter(!is.na(large_category) & retain_total & large_category != "Total") %>% 
+   group_by(year, fips, large_category, Population) %>% 
+  summarise(amount = sum(amount, na.rm = TRUE)) %>% 
+  #mutate(amount_pc = amount/Population) %>% 
+  ungroup
+
+# One of higher-level categories 
+full_high_cats <- county_full_py %>% 
+   filter(!is.na(sum_category)) %>% 
+   group_by(year, fips, sum_category, Population) %>% 
+  summarise(amount = sum(amount, na.rm = TRUE)) %>% 
+  #mutate(amount_pc = amount/Population) %>% 
+  ungroup
+
+```
+
+# Sanity testing
+## 2000 - 2021
+```{r}
+
+# Check that county_cats and county_high_cats have same values: PASSED
+test <- full_cats %>% 
+  filter(!grepl("Total", large_category)) %>% 
+  group_by(year, fips) %>% 
+  summarise(sum_test = sum(amount, na.rm = TRUE)) %>% 
+  ungroup
+
+full_high_cats %>% 
+  group_by(year, fips) %>% 
+  summarise(sum_test = sum(amount, na.rm = TRUE)) %>% 
+  ungroup %>% 
+  all.equal(test)
+
+
+# There are significant discrepancies 
+# This tests whether rerunning the code changes the differences
+full_cats %>% filter(!grepl("Total", large_category)) %>% group_by(fips, year) %>% summarise(sum = sum(amount)) %>% left_join(., county_total, by = c("fips", "year")) %>% mutate(test_diff = amount - sum) %>% arrange(test_diff) # %>% ungroup %>% identical(old_diffs)
+
+full_cats %>% filter(!grepl("Total", large_category)) %>% group_by(fips, year) %>% summarise(sum = sum(amount)) %>% left_join(., county_total, by = c("fips", "year")) %>% mutate(test_diff = amount - sum) %>% ggplot(aes(x = test_diff)) + geom_histogram(bins = 10) + geom_vline(xintercept = 0, linetype = "dashed", color = "red") + facet_wrap(~year)
+
+c_tots_short <- county_totals %>% select(year, fips, will_category, amount)
+for(k in unique(county_totals$will_category)){
+  print(k)
+  c_tots_short %>% 
+    filter(will_category == k) %>% 
+    select(year, fips, amount) %>% 
+    rename(sum_test = amount) %>% 
+    all.equal(test) %>% print
+}
+
+plots <- list()
+for(k in unique(county_totals$will_category)){
+  print(k)
+  plots[[k]] <- c_tots_short %>% 
+    filter(will_category == k) %>% 
+    select(year, fips, amount) %>% 
+    left_join(., test, by = c("fips", "year")) %>% 
+    mutate(test_diff = amount - sum_test) %>% 
+    ggplot(aes(x = year, y = test_diff)) +
+    geom_jitter() +
+    geom_hline(aes(yintercept = 5000), color = "red") +
+    geom_hline(aes(yintercept = -1000000), color = "red") +
+    labs(title = k)
+}
+
+plots_slim = plots[!(names(plots) %in% c("intergovernmental",
+                                         "total IG expenditure",
+                                         "total assistance and subsidies",
+                                         "assistance and subsidies",
+                                         "debt on interest",
+                                         "total construction", 
+                                         "construction",
+                                         "total capital outlays",
+                                         "capital outlays",
+                                         "other capital outlays",
+                                         "total insurance trust benefits", 
+                                         "total interest on general debt", 
+                                         "total other capital outlays",
+                                         "total salaries & wages",
+                                         "total current operations",
+                                         "current operations",
+                                         "current expenditure",
+                                         "direct expenditure"))]
+grid.arrange(grobs = plots_slim, ncol = 4)
+
+```
+
+
+```{r, include = FALSE, eval = FALSE}
+# Testing to find which combinations of categories add up to ANY available total
+# Selected FIPS with highest presence of expenditure across categories
+test2 <- county_short %>% filter(year == 2000 & fips == "36055" & large_category != "Total" & retain_total & !(will_category %in% c("highways (regular)", "highways (toll)", "elementary and secondary education", "higher education", "other education", "water utilities", "electric utilities", "gas utilities", "transit utilities")))
+nums <- test2 %>% filter(amount != 0) %>% pull(amount) %>% unique
+
+#library(parallel)
+# Get all possible combinations of values
+#comb <- mclapply(1:length(nums), function(x) combn(nums, x), mc.cores = 3, mc.cleanup = TRUE)
+comb <- lapply(1:length(nums), function(x) combn(nums, x))
+
+totals <- county_totals %>% filter(year == 2000 & fips == "36055" & will_category != "total interest on general debt") %>% filter(amount != 0) %>% pull(amount) %>% unique
+
+# Main insight here: no combination of individual expenditure categories adds up to 
+for(k in 1:length(comb)){
+  for(j in 1:length(totals)){
+    if(length(unlist(comb[k])[unlist(comb[k]) == totals[j]]) != 0){
+      print(totals[j])
+      print(k)
+      print(unlist(comb[k])[unlist(comb[k]) == totals[j]])
+    }
+  }
+}
+
+```
+
+
+# Data Completeness Testing
+## TS: 1970-2020
+### Checking missing values 
+
+```{r}
+
+full_high_cats %>% 
+  group_by(sum_category) %>% 
+  filter(all(amount == 0)) %>% 
+  pull(sum_category) %>% 
+  unique
+
+full_rel <- full_high_cats %>% 
+  group_by(sum_category) %>% 
+  filter(!(all(amount == 0))) %>% 
+  ungroup %>% 
+  # Only present in 1979 for one county - deleted
+  filter(!(sum_category %in% c("Employment Security"))) %>% 
+  # FIPS 51123 code is only present 1967, 1970-1976 - not evidently incorporated elsewhere (officially, incorporated to fips code 51800 but this is not present in the dataset) therefore removed.
+  # Years before 1970 are removed because only 1967 (nothing reported from 1968-1969)
+  filter(fips != "51123" & year >= 1970) %>% 
+  # Preserve original FIPS codes for plotting
+  mutate(
+    # Shannon County, SD (FIPS code = 46113) was renamed Oglala Lakota County and assigned anew FIPS code (46102) effective in 2014
+         fips = case_when(fips == "46113" ~ "46102",
+                          # 46131 was incorproated into 46071 in 1979 - only one data point in 1978, missing for 46071, likely missing therefore relabeled
+                          fips == "46131" ~ "46071",
+                          # Maui is recorded in non-BEA records as fips 15009 + fips 15005. 
+                          # 15005 not present in public finance dataset so only 15009 is replaced
+                          fips == "15009" ~ "15901",
+                          # Replace the FIPS that are inconsistent between BEA and other sources
+                          #fips %in% names(getfips) ~ unname(getfips[fips]),
+                          TRUE ~ fips)) %>% 
+  complete(fips, year, sum_category) %>% 
+  # FIPS State Code from first two letters of fips code
+  mutate(fips_state = substr(fips, 1, 2))
+
+# Check for balanced panel
+n_distinct(full_rel$fips) * n_distinct(full_rel$year) * n_distinct(full_rel$sum_category) == nrow(full_rel)
+
+tot_rel <- full_totals %>% 
+  # FIPS code is only present 1967, 1970-1976 - not evidently incorporated elsewhere (officially, incorporated to fips code 51800 but this is not present in the dataset) therefore removed.
+  # Years before 1970 are removed because only 1967 (nothing reported from 1968-1969)
+  filter(fips != "51123" & year >= 1970) %>% 
+  mutate(
+    # Shannon County, SD (FIPS code = 46113) was renamed Oglala Lakota County and assigned anew FIPS code (46102) effective in 2014
+         fips = case_when(fips == "46113" ~ "46102",
+                          # 46131 was incorproated into 46071 in 1979 - only one data point in 1978, missing for 46071, likely missing therefore relabeled
+                          fips == "46131" ~ "46071",
+                          # Maui is recorded in non-BEA records as fips 15009 + fips 15005. 
+                          # 15005 not present in public finance dataset so only 15009 is replaced
+                          fips == "15009" ~ "15901",
+                          # Replace the FIPS that are inconsistent between BEA and other sources
+                          #fips %in% names(getfips) ~ unname(getfips[fips]),
+                          TRUE ~ fips)) %>% 
+  complete(fips, year, will_category) %>% 
+  mutate(fips_state = substr(fips, 1, 2))
+
+# Check for balanced panel
+n_distinct(tot_rel$fips) * n_distinct(tot_rel$year) * n_distinct(tot_rel$will_category) == nrow(tot_rel)
+
+# FIPS codes match in totals and categorised dataframes
+all.equal(unique(full_rel$fips), unique(tot_rel$fips))
+# Years match in totals and categorised dataframes
+all.equal(unique(full_rel$year), unique(tot_rel$year))
+
+# Check for presence of raw items
+county_full_py %>% 
+  filter(!is.na(large_category) & retain_total) %>% 
+  mutate(amount = ifelse(is.na(amount), 0, amount),
+         present = ifelse(amount != 0, 1, 0)) %>% 
+  group_by(year, item_formal)  %>% 
+  summarise(present = sum(present)) %>% 
+  group_by(item_formal) %>% 
+  filter(all(present == 0)) %>% 
+  pull(item_formal) %>% 
+  unique
+
+```
+
+### Plotting
+```{r}
+
+# Check for presence of raw items
+county_full_py %>% 
+  filter(!is.na(large_category) & retain_total) %>% 
+  mutate(amount = ifelse(is.na(amount), 0, amount),
+         present = ifelse(amount != 0, 1, 0)) %>% 
+  group_by(year, item_formal)  %>% 
+  summarise(present = sum(present)) %>% 
+  ungroup %>% 
+  mutate(present = ifelse(present == 0, NA, present)) %>% 
+  ggplot(aes(x = year, y = item_formal, fill = present)) +
+  geom_tile()
+
+# Shows coverage (binary) of our categories across our time period 1967-2020
+full_rel %>% 
+  mutate(amount = ifelse(is.na(amount), 0, amount),
+         present = ifelse(amount != 0, 1, 0)) %>% 
+  group_by(year, sum_category)  %>% 
+  summarise(present = sum(present, na.rm = TRUE)) %>% 
+  ungroup %>% 
+  mutate(present = ifelse(present == 0, NA, present)) %>% 
+  ggplot(aes(x = year, y = sum_category, fill = present)) +
+  geom_tile() +
+  scale_fill_continuous(trans = 'reverse')
+
+# Shows coverage (magnitude) of our categories across our time period 1967-2020
+full_rel %>% 
+  group_by(year, sum_category)  %>% 
+  summarise(mag = sum(amount, na.rm = TRUE)) %>% 
+  ungroup %>% 
+  mutate(mag = ifelse(mag == 0, NA, mag)) %>% 
+  ggplot(aes(x = year, y = sum_category, fill = mag)) +
+  geom_tile() +
+  scale_fill_continuous(trans = 'reverse')
+  
+# Saves a dataset in the temp folder that is grouped by the high categories at the county level from 1970-2020: no values reported for 1968 and 1969
+# full_rel %>% 
+#   saveRDS(., here("data/temp/full_pubexp_county_grouped_cleaned.RDS"))
+
+```
+
+
+# County Population
+## 1970 - 2020
+```{r}
+
+# temp <- full_rel %>% 
+#   # Preserve original FIPS codes for plotting
+#   mutate(fips_orig = fips, 
+#            # Shannon County, SD (FIPS code = 46113) was renamed Oglala Lakota County and assigned anew FIPS code (46102) effective in 2014
+#          fips = case_when(fips == "46113" ~ "46102",
+#                           # 46131 was incorproated into 46071 in 1979 - only one data point in 1978, missing for 46071, likely missing therefore relabeled
+#                           fips == "46131" ~ "46071",
+#                           # Maui is recorded in non-BEA records as fips 15009 + fips 15005. 
+#                           # 15005 not present in public finance dataset so only 15009 is replaced
+#                           fips == "15009" ~ "15901",
+#                           # Replace the FIPS that are inconsistent between BEA and other sources
+#                           #fips %in% names(getfips) ~ unname(getfips[fips]),
+#                           TRUE ~ fips)) %>% 
+#   expand(fips, year, sum_category)
+
+
+
+
+# # Calculate new per capita values bc some population totals have changed
+# # Sanity checks to ensure no other values are changed
+# temp %>% select(-fips_orig) %>% filter(!(fips %in% c("46102"))) %>% identical(filter(full_rel, !(fips %in% c("46113", "46102"))))
+# temp %>% select(-c(fips, fips_orig)) %>% identical(select(full_rel, -fips))
+# # Should only lose one FIPS code because of Shannon South Dakota
+# n_distinct(full_rel$fips) - n_distinct(temp$fips) == 1
+# #temp %>% pull(fips) %>% unique %>% setdiff(., unique(ngdp$fips)) %>% length(.) == 0
+
+# # Concerned that there are the same amount of FIPS codes in the dataset after replacing with BEA matched codes (there should be less).
+# # Following checks:
+# # Passes the check
+# bea_fips %>% 
+#   group_by(`BEA FIPS`) %>% 
+#   summarise(count = n(),
+#             in_df = sum(FIPS %in% county_rel$fips)) %>% 
+#   ungroup %>% 
+#   filter(in_df != 1) %>% 
+#   nrow(.) == 0
+# 
+# temp <- temp %>% 
+#   complete(year, fips, sum_category) %>% 
+#   group_by(fips) %>%
+#   fill(fips_state, .direction = "downup") %>% 
+#   ungroup
+# 
+# temp_gdp <- ngdp %>% 
+#   full_join(rgdp, by = c("fips", "year")) %>% 
+#   left_join(temp, ., by = c("fips", "year")) %>% 
+#   filter(year != 2000)
+
+# 
+# readRDS(here("data/temp/pubexp_county_grouped_cleaned.RDS")) %>% 
+#   select(-fips) %>% 
+#   filter(year != 2000) %>% 
+#   identical(select(temp_gdp, -c(fips, fips_orig, gdp_nom, gdp_real)))
+#   
+
+# Replacing above dataframe
+#saveRDS(temp_gdp, here("data/temp/pubexp_county_grouped_cleaned.RDS"))
+
+
+```
+
+
+# County Population Data
+## 1970 - 2009
+Source: https://data.nber.org/data/census_popest.html
+```{r}
+
+pop_70_09 <- read.csv(here("data/raw/county_population.csv"), colClasses = list(fips = "character")) %>% 
+  tibble %>% 
+        # Removes US total
+  filter(state_fips != 0 &
+        # Removes state totals
+         county_fips != 0 &
+          # Retains only rows where population is reported
+         nchar(county_fips) <= 3) %>% 
+  mutate(fips = ifelse(fips == "46113", "46102", ifelse(fips == "15009", "15901", fips))) %>% 
+  # Removes columns with only NA values
+  # Removes pop19904 - the difference between pop1990 and pop19904 is max +/-3%
+  # Retains pop1990 as the true value
+  select(-c(pop20104, base20104, pop2010, pop2011, pop2012, pop2013, pop2014, pop19904)) %>% 
+  select(-c(state_fips, county_fips, areaname, state_name, county_name, fipsst, fipsco, region, division)) %>% 
+  pivot_longer(cols = starts_with("pop"), names_to = "year", values_to = "pop", names_prefix = "pop") %>% 
+  mutate(year = as.numeric(year),
+         # Dade County is relabeled in 1997 from 12025 to Miami-Dade County in 12086
+         fips = ifelse(fips == "12025", "12086", fips)) %>% 
+  filter(!(fips == "12086" & is.na(pop))) %>% 
+  filter(fips %in% full_rel$fips)
+
+# Check to see whether any fips values are unmatched
+pop_70_09 %>% 
+  left_join(full_rel, ., by = c("fips", "year")) %>% 
+  # Filter to see which observations before 2009 are not assigned a population statistic - the 6 fips codes excluded are pre-identified (Alaskan fips codes that changed in the 1980s, 1990s, or early 2000s)
+  # Documented FIPS code changes available here: https://www.census.gov/programs-surveys/geography/technical-documentation/county-changes.html
+  filter(is.na(pop) & 
+           year <= 2009 & 
+           !(fips %in% c("02013", # exists from 1980
+                         "02068", # exists from 1990
+                         "02164", # exists from 1980
+                         "02195", # exists from 2000
+                         "02230", # exists from 2000 
+                         "02282"))) %>% # exists from 1990
+  nrow(.) == 0
+
+```
+
+## 2010-2020
+Source: https://www2.census.gov/programs-surveys/popest/datasets/2010-2020/counties/totals/
+Source: https://www.census.gov/data/datasets/time-series/demo/popest/2010s-counties-total.html
+```{r}
+# This dataset includes additional control variables related to birth rates, deaths, international and domestic migration rates
+# Perhaps worth including at a later time for additional control variables
+# read.csv(here('data/raw/co-est2020-alldata.csv')) %>% tibble %>% names
+
+# This dataset includes population estimates only
+pop_10_20 <- read.csv(here('data/raw/co-est2020.csv')) %>% 
+  tibble %>% 
+  # Filters out state-level observations
+  filter(SUMLEV == 50) %>% 
+  # Create fips codes from state and county fips codes
+  mutate(fips = paste0(str_pad(as.character(STATE), 2, "left", "0"), str_pad(as.character(COUNTY), 3, "left", "0"))) %>% 
+  select(fips, contains("POP"), -"POPESTIMATE042020", -"CENSUS2010POP") %>% 
+  mutate(fips = ifelse(fips == "46113", "46102", ifelse(fips == "15009", "15901", fips))) %>% 
+  pivot_longer(cols = starts_with("POPESTIMATE"), names_to = "year", values_to = "pop", names_prefix = "POPESTIMATE") %>% 
+  mutate(year = as.numeric(year)) %>% 
+  filter(fips %in% full_rel$fips)
+
+# Check to see whether any fips values are unmatched
+pop_10_20 %>% 
+  left_join(full_rel, ., by = c("fips", "year")) %>% 
+  filter(is.na(pop) & year >= 2010) %>% nrow(.) == 0
+
+pop_70_09 %>% 
+  rbind(pop_10_20) %>% 
+  # Confirmed a balanced panel
+  # complete(year, fips) 
+  left_join(full_rel, ., by = c('fips', 'year')) %>% 
+  filter(is.na(pop)) %>% 
+  nrow(.) == 19 * 120 # (120 missing values in pop dataset for the above Alaskan counties and 19 expenditure categories)
+  
+# Final dataset with population numbers!
+pop_70_09 %>% 
+  rbind(pop_10_20) %>% 
+  # Confirmed a balanced panel
+  # complete(year, fips) 
+  left_join(full_rel, ., by = c('fips', 'year')) %>%
+  saveRDS(here("data/temp/pubexp_1970_2020.RDS"))
+
+pop_70_09 %>% 
+  rbind(pop_10_20) %>% 
+  left_join(tot_rel, ., by = c('fips', 'year')) %>% 
+  filter(is.na(pop)) %>% 
+  nrow(.) == 22 * 120 # (120 missing values in pop dataset for the above Alaskan counties and 22 total expenditure categories)
+
+pop_70_09 %>% 
+  rbind(pop_10_20) %>% 
+  # Confirmed a balanced panel
+  # complete(year, fips) %>% nrow ==  3058*51 # 3058 counties * 51 years
+  left_join(tot_rel, ., by = c('fips', 'year')) %>% 
+  saveRDS(here("data/temp/pubexp_1970_2020_totals.RDS"))
+
+```
+
+# County Economy Stats
+Source: https://apps.bea.gov/regional/downloadzip.cfm
+
+
+## (EXCLUDED) CAINC1: Annual Personal Income by County (1969-2021)
+EXCLUDE because all values are present in CAINC4
+```{r, eval = FALSE, include = FALSE}
+cainc1 <- read.csv(here("data/raw/BEA_county_econ_stats/CAINC1/CAINC1__ALL_AREAS_1969_2021.csv"), colClasses = c("GeoFIPS" = "character"), nrows = 9600) %>% 
+  tibble %>%
+  mutate(fips = trimws(GeoFIPS)) %>% 
+  # Filter out national and state-wide totals
+  filter(substr(fips, 3,5) != "000") %>% 
+  mutate(Description = case_when(Description == "Personal income (thousands of dollars) " ~ "personal_inc_k",
+                                 Description == "Population (persons) 1/" ~ "population",
+                                 Description == "Per capita personal income (dollars) 2/" ~ "personal_inc_pc")) %>% 
+  select(-c(TableName, Region, IndustryClassification, LineCode, Unit, GeoName, GeoFIPS)) %>% 
+  relocate(fips) %>% 
+  pivot_longer(cols = starts_with("X"), names_to = "year", values_to = "value", names_prefix = "X") %>% 
+  pivot_wider(id_cols = c("fips", "year"), values_from = value, names_from = Description) %>%
+  mutate(across(!fips, ~as.numeric(.x)))
+
+cainc1_names <- cainc1 %>% names
+
+```
+
+## CAINC4: Personal Income and Employment by Major Component by County (1969-2021)
+All values except 5 are included in CAINC30
+```{r}
+
+cainc4 <- read.csv(here("data/raw/BEA_county_econ_stats/CAINC4/CAINC4__ALL_AREAS_1969_2021.csv"), 
+                   colClasses = c("GeoFIPS" = "character"), nrows = 73600) %>% 
+  tibble %>% 
+  mutate(fips = trimws(GeoFIPS)) %>% 
+  filter(substr(fips, 3,5) != "000") %>%
+  # These values are present in CAINC1 - have verified that they are identical!
+    mutate(desc_unif = case_when(substr(Description, 1,1) != " " ~ paste0("a_inc_", trimws(Description)), 
+                                 substr(Description, 1,1) == " " ~ paste0("b_inc_", trimws(Description)),
+                                 TRUE ~ Description),  
+         desc_unif = gsub(",", "",gsub(":", "", gsub(",", "", gsub("[0-9]/", "", gsub("[()]", "", gsub(" ", "_", desc_unif)))))),
+         desc_unif = case_when(Description == "Personal income (thousands of dollars) " ~ "a_personal_inc",
+                               Description == "Population (persons) 1/" ~ "population",
+                               Description == "Per capita personal income (dollars) 2/" ~ "personal_inc_pc",
+                               Description == "Total employment " ~ "a_empl_Total_employment",
+                               Description == " Wage and salary employment " ~ "b_empl_Wage_and_salary_employment",
+                               Description == " Proprietors employment " ~ "b_empl_Proprietors_employment" ,
+                               Description == "Personal income (thousands of dollars) " ~ "a_Personal_income_k",
+                               TRUE ~ desc_unif),
+         desc_unif = ifelse(Unit == "Thousands of dollars", paste0(desc_unif, "_k"), desc_unif)) %>% 
+  select(-c(Region, TableName, IndustryClassification, GeoName, LineCode, GeoFIPS, Description, Unit)) %>% 
+  relocate(fips, desc_unif) %>% 
+  # There are two observations for b_inc_Employer_contributions_for_government_social_insurance_k
+  distinct %>% 
+  pivot_longer(cols = starts_with("X"), names_to = "year", values_to = "value", names_prefix = "X") %>% 
+  pivot_wider(id_cols = c("fips", "year"), values_from = value, names_from = desc_unif) %>%
+  mutate(across(!fips, ~as.numeric(.x)))
+
+cainc4_names <- cainc4 %>% 
+  names 
+  
+
+# cainc4temp <- read.csv(here("data/raw/BEA_county_econ_stats/CAINC4/CAINC4__ALL_AREAS_1969_2021.csv"),
+#                    colClasses = c("GeoFIPS" = "character"), nrows = 73600) %>%
+#   tibble %>%
+#   mutate(fips = trimws(GeoFIPS)) %>%
+#   filter(substr(fips, 3,5) != "000") %>% 
+#   select(fips, GeoFIPS, Description, X2001:X2021) %>% 
+#   filter(Description %in% c("Wages and salaries ",
+#                             "Supplements to wages and salaries ",
+#                             " Employer contributions for employee pension and insurance funds 8/", 
+#                             " Employer contributions for government social insurance "    )) %>% distinct %>% arrange(fips, desc(Description)) %>%  filter(GeoFIPS %in% unique(cainc6n$GeoFIPS)) %>% select(-c(GeoFIPS, Description))
+#   
+# #     
+# #   mutate(Description = trimws(gsub("[0-9]/", "", Description))) %>% 
+# #   filter(!(Description %in% c("Nonfarm personal income",    "Farm income",                "Total employment",           "Wage and salary employment", "Proprietors employment" ))) %>% 
+# #   select(-c(X1969:X2000)) %>% 
+# #   distinct %>% 
+# #   select(-c(TableName, Region, GeoName, GeoFIPS)) %>% 
+# #   relocate(fips) %>% 
+# #   filter(Description %in% cainc5n_temp$Description) %>% 
+# #   filter(fips %in% cainc5n_temp$fips)
+# # Identities in this dataset (explains the "less" "plus" "equals" work as well)
+#Earnings by place of work - Contributions for government social insurance + Adjustment for residence = Net earnings by place of residence
+33797 - 2163 + 25212 == 56846
+
+# Net earnings by place of residence + Dividends, interest, rent + Personal current transfer receipts = Personal Income
+56846 + 7626 + 5501 == 69973
+
+# Wages and Salaries + Supplements to wages and salaries + "Proprietors' income == Earnings by place of work
+22449 + 2453 + 8895 == 33797
+```
+
+
+
+## CAINC5N: Personal Income by Major Component of Industry and Earnings by NAICS Industry (2001-2021)
+```{r}
+
+# Isolates variables present in CAINC4 - to be excluded from CAINC5N
+# They have been confirmed IDENTICAL via testing!
+cainc4_cats <- read.csv(here("data/raw/BEA_county_econ_stats/CAINC4/CAINC4__ALL_AREAS_1969_2021.csv"), 
+                   colClasses = c("GeoFIPS" = "character"), nrows = 73600) %>% 
+  tibble %>% pull(Description) %>% unique %>% 
+  lapply(., function(x) trimws(gsub("[()]", "", gsub("[0-9]/", "", x)))) %>% paste0(., collapse = "|")
+
+
+cainc5n <- read.csv(here("data/raw/BEA_county_econ_stats/CAINC5N/CAINC5N__ALL_AREAS_2001_2021.csv"), 
+                   colClasses = c("GeoFIPS" = "character"), nrows = 416318) %>%
+  tibble %>% 
+  mutate(fips = trimws(GeoFIPS)) %>% 
+  filter(substr(fips, 3,5) != "000") %>% 
+  # Removes values that are already present in CAINC4
+  filter(!grepl(cainc4_cats, trimws(gsub("[()]", "", Description)))) %>%
+  mutate(IndustryClassification = case_when(Description == "  Government and government enterprises " ~ "99",
+                                            Description == "   Federal civilian " ~ "991",
+                                            Description == "   Military "   ~ "992",
+                                            Description == "   State and local " ~ "993",
+                                            Description == "    State government " ~ "9931",
+                                            Description == "    Local government " ~ "9932",
+                                            Description == " Nonfarm earnings " ~ "113-99",
+                                            TRUE ~ IndustryClassification),
+         Description = gsub(",", "", gsub("[()]", "", gsub(" ", "_", trimws(gsub("[0-9]/", "", Description))))),
+         IndustryClassification = gsub("-", "_", gsub(",", "__", IndustryClassification)),
+         # IndustryClassificaition has an ordering of the NAICS codes and how they are nested in the dataframe
+         # All values in thousands of dollars
+         desc_unif = paste0("x", IndustryClassification, "_", Description, "_inc_k")) %>%
+  select(-c(TableName, Region, GeoName, GeoFIPS, LineCode, Description, Unit, IndustryClassification)) %>% 
+  relocate(fips, desc_unif) %>% 
+  pivot_longer(cols = starts_with("X"), names_to = "year", values_to = "value", names_prefix = "X") %>% 
+  pivot_wider(id_cols = c("fips", "year"), values_from = value, names_from = desc_unif) %>%
+  mutate(across(!fips, ~as.numeric(.x)))
+
+cainc5_names <- cainc5n %>% names
+
+```
+
+
+## CAINC6N: Compensation of Employees by NAICS Industry (2001-2021)
+```{r}
+ cainc6n <- read.csv(here("data/raw/BEA_county_econ_stats/CAINC6N/CAINC6N__ALL_AREAS_2001_2021.csv"), 
+                   colClasses = c("GeoFIPS" = "character"), nrows = 378182) %>%
+  tibble %>% 
+  mutate(fips = trimws(GeoFIPS)) %>% 
+  filter(substr(fips, 3,5) != "000") %>% 
+ select(-c(TableName, GeoFIPS, Region, GeoName, LineCode)) %>% 
+  relocate(fips) %>% 
+  # Following are reported in CAINC4 on a longer time horizon 1969 - 2021, therefore removed here
+  filter(!Description %in% c(" Wages and salaries " , 
+                             " Supplements to wages and salaries ",   
+                             "  Employer contributions for employee pension and insurance funds 2/",
+                             "  Employer contributions for government social insurance ")) %>% 
+  # Compensation of employees = wages&salaries + Supplements to wages and salaries - "Compensation of employees total is not present in CAINC4
+  mutate(IndustryClassification = case_when(Description == "  Government and government enterprises " ~ "99",
+                                            Description == "   Federal civilian " ~ "991",
+                                            Description == "   Military "   ~ "992",
+                                            Description == "   State and local " ~ "993",
+                                            Description == "    State government " ~ "9931",
+                                            Description == "    Local government " ~ "9932",
+                                            Description == " Nonfarm compensation " ~ "113-99",
+                                            TRUE ~ IndustryClassification),
+         Description = gsub(",", "", gsub("[()]", "", gsub(" ", "_", trimws(gsub("[0-9]/", "", Description))))),
+         IndustryClassification = gsub("-", "_", gsub(",", "__", IndustryClassification)), 
+         desc_unif = ifelse(Description %in% c("Compensation_of_employees_thousands_of_dollars", 
+                                                          "Average_compensation_per_job_dollars"), Description, paste0("x", IndustryClassification, "_comp_", Description, "_k"))) %>% 
+  select(fips, desc_unif, X2001:X2021) %>% 
+  pivot_longer(cols = starts_with("X"), names_to = "year", values_to = "value", names_prefix = "X") %>% 
+  pivot_wider(id_cols = c("fips", "year"), values_from = value, names_from = desc_unif) %>%
+  mutate(across(!fips, ~as.numeric(.x)))
+           
+     
+cainc6_names <- cainc6n %>% names
+
+```
+
+
+## CAEMP25N: Total FT and PT Employment by NAICS Industry (2001-2021)
+```{r}
+caemp25n <- read.csv(here("data/raw/BEA_county_econ_stats/CAEMP25N/CAEMP25N__ALL_AREAS_2001_2021.csv"), 
+                     nrows = 104874, colClasses = c("GeoFIPS" = "character")) %>% 
+  tibble %>% 
+  mutate(fips = trimws(GeoFIPS)) %>% 
+  # Filtered out of this dataset because it is included on a longer time horizon in CAINC4 (1969-2021)
+  filter(!(Description %in% c("Total employment (number of jobs) ",
+                                                              " Wage and salary employment ",
+                                                              " Proprietors employment "))) %>%
+  # Filter out national and state-wide totals
+  filter(substr(fips, 3,5) != "000") %>% 
+  mutate(desc_unif = case_when(substr(Description, 1,4) == "    " ~ paste0("e_empl_", trimws(Description)), 
+         substr(Description, 1,3) == "   " ~ paste0("d_empl_", trimws(Description)), 
+         substr(Description, 1,2) == "  " ~ paste0("c_empl_", trimws(Description)), 
+         substr(Description, 1, 1) == " " ~ paste0("b_empl_", trimws(Description)),  
+         substr(Description, 1, 1) != " " ~ paste0("a_empl_", trimws(Description))),
+         desc_unif = gsub(",", "", gsub("2/", "", gsub("[()]", "", gsub(" ", "_", desc_unif))))) %>% 
+    relocate(fips, desc_unif) %>% 
+  # Removing unnecessary columns and columns that only have one unique value (TableName, Unit)
+    select(-c(TableName, Description, GeoFIPS, Unit, IndustryClassification, LineCode, Region, GeoName)) %>% 
+  pivot_longer(cols = starts_with("X"), names_to = "year", values_to = "n_jobs", names_prefix = "X") %>% 
+  pivot_wider(id_cols = c("fips", "year"), values_from = n_jobs, names_from = desc_unif) %>%
+  mutate(across(!fips, ~as.numeric(.x)))
+
+caemp25_names <- caemp25n %>% names
+```
+
+## CAINC30: Economic Profile by County (1969-2021) (MERGED!)
+```{r}
+
+cainc30 <- read.csv(here("data/raw/BEA_county_econ_stats/CAINC30/CAINC30__ALL_AREAS_1969_2021.csv"), colClasses = c("GeoFIPS" = "character"), nrows = 99200) %>%
+  tibble %>% 
+  mutate(fips = trimws(GeoFIPS)) %>% 
+  # Filter out national and state-wide totals
+  filter(substr(fips, 3,5) != "000") %>% 
+  select(fips, Description, X1969:X2021) %>% 
+  mutate(Description = trimws(gsub("(number of jobs)", "", gsub("[0-9]/", "", Description), fixed = TRUE))) %>% 
+  pivot_longer(cols = starts_with("X"), names_to = "year", values_to = "value", names_prefix = "X") %>% 
+  pivot_wider(id_cols = c("fips", "year"), values_from = value, names_from = Description) %>%
+  mutate(across(!fips, ~as.numeric(.x))) %>% 
+  clean_names %>% 
+  rename(pinc_k = personal_income_thousands_of_dollars) %>% 
+  mutate(pinc_k_pc = pinc_k/population_persons)
+
+cainc30_names <- cainc30 %>% select(-c(fips, year)) %>% names
+
+# Controls saved for merging in analysis.Rmd
+cainc30 %>% saveRDS(here('data/temp/cainc30_controls.RDS'))
+
+cats_controls <- readRDS(here("data/temp/pubexp_1970_2020.RDS")) %>% 
+  mutate(fips = ifelse(fips %in% names(getfips), unname(getfips[fips]), fips)) %>% 
+  left_join(., cainc30, by = c('fips', 'year'))
+
+cats_controls %>% select(-names(cainc30)) %>% identical(select(readRDS(here("data/temp/pubexp_1970_2020.RDS")), -c(fips, year)))
+
+# Testing "balanced" panels
+cats_controls %>% nrow == 51*3058*19
+
+cats_controls %>% saveRDS(here("data/temp/pubexp_1970_2020_controls.RDS"))
+
+tots_controls <- readRDS(here("data/temp/pubexp_1970_2020_totals.RDS")) %>% 
+  mutate(fips = ifelse(fips %in% names(getfips), unname(getfips[fips]), fips)) %>% 
+  left_join(., cainc30, by = c('fips', 'year'))
+
+tots_controls %>% select(-names(cainc30)) %>% identical(select(readRDS(here("data/temp/pubexp_1970_2020_totals.RDS")), -c(fips, year)))
+
+# Testing "balanced" panels
+tots_controls %>% nrow == 51*3058*22
+
+tots_controls %>% saveRDS(here("data/temp/pubexp_1970_2020_totals_controls.RDS"))
+
+
+
+
+
+```
+
+
+### Testing presence of CAINC4N in CAINC30
+```{r}
+
+cainc4_test <- read.csv(here("data/raw/BEA_county_econ_stats/CAINC4/CAINC4__ALL_AREAS_1969_2021.csv"), 
+                   colClasses = c("GeoFIPS" = "character"), nrows = 73600) %>% 
+  tibble %>% 
+  mutate(fips = trimws(GeoFIPS)) %>% 
+  filter(substr(fips, 3,5) != "000") %>%
+  # These values are present in CAINC1 - have verified that they are identical!
+    mutate(Description = trimws(gsub("(dollars)", "", 
+                                     gsub("Less: ", "",
+                                          gsub("Plus: ", "",
+                                               gsub("Equals: ", "", 
+                                                    gsub("[0-9]/", "", Description)))), fixed = TRUE))) %>% 
+  select(-c(Region, TableName, IndustryClassification, GeoName, LineCode, GeoFIPS, Unit)) %>% 
+  relocate(fips, Description) %>% 
+  # There are two observations for b_inc_Employer_contributions_for_government_social_insurance_k
+  distinct %>% 
+  pivot_longer(cols = starts_with("X"), names_to = "year", values_to = "value", names_prefix = "X") %>% 
+  pivot_wider(id_cols = c("fips", "year"), values_from = value, names_from = Description) %>%
+  mutate(across(!fips, ~as.numeric(.x)))
+
+cainc4_names <- cainc4_test %>% select(-c(fips, year)) %>% names
+
+for(j in intersect(cainc4_names, cainc30_names)){
+  stopifnot(cainc4_test %>%  
+    select(fips, year, eval(j)) %>% 
+    identical(select(cainc30, fips, year, eval(j))) == TRUE)
+}
+
+# Categories in cainc4 that are missing from cainc30:
+setdiff(cainc4_names, cainc30_names)
+# "Nonfarm personal income",
+# "Farm income", 
+# "Contributions for government social insurance", 
+# "Employee and self-employed contributions for government social insurance", 
+# "Adjustment for residence"
+
+```
+
+
+## CAINC35: Personal Current Transfer Receipts (1969-2021)
+```{r}
+
+cainc35 <- read.csv(here("data/raw/BEA_county_econ_stats/CAINC35/CAINC35__ALL_AREAS_1969_2021.csv"), colClasses = c("GeoFIPS" = "character"), nrows = 73600) %>%
+  tibble %>% 
+   mutate(fips = trimws(GeoFIPS)) %>% 
+  # Filter out national and state-wide totals
+  filter(substr(fips, 3,5) != "000")
+
+cainc35 %>% select(Description) %>% distinct %>% print(n = 31)
+
+ 
+```
+
+
+## (EXCLUDED) CAINC45: Farm Income & Expenses (1969-2021)
+EXCLUDED because deemed unrelated to topic for now
+```{r, eval = FALSE, include = FALSE}
+
+cainc45 <- read.csv(here("data/raw/BEA_county_econ_stats/CAINC45/CAINC45__ALL_AREAS_1969_2021.csv"), colClasses = c("GeoFIPS" = "character"), nrows = 92800) %>% 
+  tibble %>% 
+   mutate(fips = trimws(GeoFIPS)) %>% 
+  # Filter out national and state-wide totals
+  filter(substr(fips, 3,5) != "000")
+
+cainc45 %>% select(Description) %>% distinct %>% print(n = 31)
+
+```
+
+
+## CAINC91: Gross Flow of Earnings (1990-2021)
+```{r}
+cainc91 <- read.csv(here("data/raw/BEA_county_econ_stats/CAINC91/CAINC91__ALL_AREAS_1990_2021.csv"), colClasses = c("GeoFIPS" = "character"), nrows = 9357) %>% 
+  tibble %>% 
+   mutate(fips = trimws(GeoFIPS)) %>% 
+  # Filter out national and state-wide totals
+  filter(substr(fips, 3,5) != "000") %>% 
+  select(-c(TableName, LineCode, IndustryClassification, Unit, Region, GeoFIPS, GeoName)) %>% 
+  relocate(fips, Description) %>% 
+  # Inflows of earnings - outflow of earnings = adjustment for residence
+  # all in thousands of dollars
+  mutate(Description = gsub(" ", "_", trimws(Description))) %>% 
+  pivot_longer(cols = starts_with("X"), names_to = "year", values_to = "value", names_prefix = "X") %>% 
+  pivot_wider(id_cols = c("fips", "year"), values_from = value, names_from = Description) %>%
+  mutate(across(!fips, ~as.numeric(.x)))
+  
+
+```
+
+# County GDP and Real GDP
+Source: BEA https://apps.bea.gov/regional/downloadzip.cfm
+```{r}
+
+gdp <- read.csv(here("data/raw/CAGDP2/CAGDP2__ALL_AREAS_2001_2021.csv"), colClasses = c("GeoFIPS" = "character"), nrows = 108052) %>% 
+  tibble %>% 
+  mutate(fips = trimws(GeoFIPS)) %>% 
+  # Filter out national and state-wide totals
+  # LineCode 1 corresponds to total GDP
+  # LineCode 2 Private industry total
+  # LineCode 6 Mining, quarrying, and oil & gas extraction
+  # LineCode 83 is Government and government enterprises
+  filter(substr(fips, 3,5) != "000" & LineCode %in% c(1, 2, 6, 83)) %>%
+  select(-c(Unit, IndustryClassification, TableName, Region, GeoFIPS, GeoName, LineCode)) %>% 
+  relocate(fips, Description) %>% 
+  mutate(Description = case_when(Description == "All industry total " ~ "total", 
+                                 Description == " Private industries " ~ "priv_ind", 
+                                 Description == "  Mining, quarrying, and oil and gas extraction " ~ "o_g_mining_quarr_21", 
+                                 Description == "Government and government enterprises "  ~ "govt")) %>%
+  pivot_longer(cols = starts_with("X"), names_to = "year", values_to = "value", names_prefix = "X") %>% 
+  pivot_wider(id_cols = c("fips", "year"), values_from = value, names_from = Description, names_glue = "gdp_{Description}") %>%
+  mutate(across(!fips, ~as.numeric(.x)))
+
+
+full_gdp <- read.csv(here("data/raw/CAGDP9/CAGDP9__ALL_AREAS_2001_2021.csv"), colClasses = c("GeoFIPS" = "character"), nrows = 108052) %>% 
+  tibble %>%
+  mutate(fips = trimws(GeoFIPS)) %>%
+  # Filter out national and state-wide totals
+  # LineCode 1 corresponds to total GDP
+  # LineCode 2 Private industry total
+  # LineCode 6 Mining, quarrying, and oil & gas extraction
+  # LineCode 83 is Government and government enterprises
+  filter(substr(fips, 3,5) != "000" & LineCode %in% c(1, 2, 6, 83)) %>% 
+  select(-c(Unit, IndustryClassification, TableName, Region, GeoFIPS, GeoName, LineCode)) %>% 
+  relocate(fips, Description) %>%
+  mutate(Description = case_when(Description == "All industry total " ~ "total", 
+                                 Description == " Private industries " ~ "priv_ind", 
+                                 Description == "  Mining, quarrying, and oil and gas extraction " ~ "o_g_mining_quarr_21", 
+                                 Description == "Government and government enterprises "  ~ "govt")) %>% 
+  pivot_longer(cols = starts_with("X"), names_to = "year", values_to = "value", names_prefix = "X") %>% 
+  pivot_wider(id_cols = c("fips", "year"), values_from = value, names_from = Description, names_glue = "real_gdp_{Description}") %>%
+  mutate(across(!fips, ~as.numeric(.x))) %>% 
+  left_join(., gdp, by = c("fips", "year"))
+
+
+#full_gdp %>% saveRDS(here("data/temp/gdp_controls.RDS"))
+
+```
+
+# County economic diversity index
+https://www.chmura.com/download-diversity-index-county
+```{r}
+
+econ_div <- read_excel(here('data/raw/Chmura_Diversity-Index-County_final.xlsx')) %>% 
+  select(-region_description) %>% 
+  rename(fips = region_code) %>% 
+  pivot_longer(cols = !c(fips), names_to = "year", values_to = "econ_div", names_transform = ~as.numeric(sub("diversity_index_", "", .))) %>% 
+  complete(fips, year = 2000:2022) %>% 
+  group_by(fips) %>% 
+  fill(econ_div, .direction = "updown") %>% 
+  ungroup %>% 
+  mutate(fips = ifelse(fips %in% names(getfips), unname(getfips[fips]), fips)) %>% 
+  mutate(fips = ifelse(fips == "15009", "15901", fips)) %>%
+  group_by(fips, year) %>% 
+  summarise(across(where(is.numeric), mean)) %>% 
+  ungroup %>% 
+  mutate(global_mean = mean(econ_div)) %>% 
+  group_by(fips) %>% 
+  # checked that no non-zero or one values exist
+  mutate(local_mean = mean(unique(econ_div)), 
+         high_econ_div = ifelse(local_mean >= global_mean, 1, 0), 
+         low_econ_div = ifelse(local_mean < global_mean, 1, 0)) %>% 
+  ungroup %>% 
+  select(-global_mean) %>% 
+  rename(mean_econ_div = local_mean)
+
+saveRDS(econ_div, here('data/temp/econ_div_controls.RDS'))
+
+```
+
+
+# County Totals
+```{r}
+temp_tot <- full_totals %>% 
+  # Preserve original FIPS codes for plotting
+  mutate(fips_orig = fips, 
+           # Shannon County, SD (FIPS code = 46113) was renamed Oglala Lakota County and assigned anew FIPS code (46102) effective in 2014
+         fips = case_when(fips == "46113" ~ "46102",
+                          # 46131 was incorproated into 46071 in 1979 - only one data point in 1978, missing for 46071, likely missing therefore relabeled
+                          fips == "46131" ~ "46071",
+                          # Maui is recorded in non-BEA records as fips 15009 + fips 15005. 
+                          # 15005 not present in public finance dataset so only 15009 is replaced
+                          fips == "15009" ~ "15901",
+                          # Replace the FIPS that are inconsistent between BEA and other sources
+                          #fips %in% names(getfips) ~ unname(getfips[fips]),
+                          TRUE ~ fips))  
+
+
+# Calculate new per capita values bc some population totals have changed
+# Sanity checks to ensure no other values are changed
+temp_tot %>% select(-fips_orig) %>% filter(!(fips %in% c("46102", "15901", getfips))) %>% identical(filter(county_totals, !(fips %in% c("46113", "46102", "15009", names(getfips)))))
+temp_tot %>% select(-c(fips, fips_orig)) %>% identical(select(county_totals, -fips))
+# Should only lose one FIPS code because of Shannon South Dakota
+n_distinct(county_totals$fips) - n_distinct(temp_tot$fips) == 1
+temp_tot %>% pull(fips) %>% unique %>% setdiff(., unique(ngdp$fips)) %>% length(.) == 0
+
+ngdp %>% 
+  full_join(rgdp, by = c("fips", "year")) %>% 
+  left_join(temp_tot, ., by = c("fips", "year")) %>% 
+  filter(year != 2000)
+  #saveRDS(., here("data/temp/pubexp_county_totals_cleaned.RDS"))
+  
+```
+
+
+
+# Rents from Motor Fuel Sales
+```{r}
+
+
+```
+
