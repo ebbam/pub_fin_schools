@@ -22,6 +22,7 @@ Below, I provide some descriptive statistics and figures about the data, some pr
 **Conclusion: I do not yet feel confident in any of the results below but hopefully these steps can help orient the next phase of analysis (ideally moving on to consider oil and gas industry treatment variables as well or treatments that proxy "industrial transformation" in a more general sense).**
 
 ```{r, echo = FALSE, message = FALSE}
+rm(list = ls())
 library(tidyverse)
 library(conflicted)
 library(stargazer)
@@ -61,6 +62,7 @@ conflict_prefer_all("dplyr", quiet = TRUE)
 ```
 
 ```{r, echo = FALSE}
+# MOVE TO CLEANING SCRIPT
 
 # Of all variables available in the school district dataset, select below which to retain (commenting out irrelevant ones)
 # Saves compile time later
@@ -153,6 +155,8 @@ df_all <- readRDS(here("data/out/school_exp_county.RDS")) %>%
 
 ```{r, echo = FALSE}
 
+# MOVE TO CLEANING SCRIPT
+
 #Note: GDP controls and economic diversity indicators from the original #"main_county/pub_fin/data/temp" and cleaned from Willamette_Scoping.Rmd.
 gdp <- readRDS(here("data/temp/gdp_controls.RDS")) %>% 
   mutate(across(contains("mining"), ~ifelse(is.na(.), 0, .)))
@@ -216,6 +220,8 @@ All data used is reported annually at the county-level. Therefore, no time-invar
 
 ```{r, echo = FALSE, message = FALSE, include = FALSE}
 
+# MOVE TO CLEANING SCRIPT
+
 df_cleaned %>% pull(fips) %>% unique %>% setdiff(unique(gdp$fips)) %>% length(.) == 0
 gdp %>% filter(fips %in% unique(df_cleaned$fips)) %>% filter(!complete.cases(.)) %>% nrow(.) == 0
 
@@ -227,9 +233,9 @@ df <- df_cleaned %>%
   left_join(., gdp, by = c('fips', 'year')) %>% 
   mutate(across(contains("gdp"), ~./pop_total, .names = "{.col}_pc")) %>% 
   group_by(fips) %>% 
-  mutate(across(contains("gdp"), list(diff = ~. - dplyr::lag(., 1), log = ~log((.*1000) + 1)), .names = "{.fn}_{.col}")) %>% 
+  mutate(across(contains("gdp"), list(diff = ~. - dplyr::lag(., 1), log = ~log((.*1000) + 1)), .names = "{.fn}_{.col}"),
          # Currently only GDP controls contain diff
-         #across(contains('gdp'), list(l1 = ~dplyr::lag(., 1), l2 = ~dplyr::lag(., 2)), .names = "{.col}_{.fn}")) %>%
+         across(contains('gdp'), list(l1 = ~dplyr::lag(., 1), l2 = ~dplyr::lag(., 2)), .names = "{.fn}_{.col}")) %>%
   ungroup %>%
   left_join(., ec_div, by = c('fips', 'year'))
 
@@ -313,6 +319,9 @@ GDP controls are currently only available at the county level from 2001-2021. Ex
 
 
 ```{r, echo = FALSE, message = FALSE, include = FALSE}
+
+# MOVE TO CLEANING SCRIPT
+
 mines_data <- readRDS(here('data/temp/mines_data/allcomp_cap_prod_complete.RDS')) %>% 
   dplyr::select(-state)
 
@@ -378,10 +387,9 @@ mines_restr <- mines_dff %>%
   group_by(fips) %>% 
   filter(!(any(log_Property_Tax_pp < 4))) %>% 
   ungroup
-
+  
 rm(mines_dff)
 rm(mines_data)
-
 
 #saveRDS(mines_restr, here('data/temp/mines_restr.RDS'))
 ```
@@ -391,7 +399,8 @@ rm(mines_data)
 The following plot displays each county's time series of expenditure (total and per pupil log values) as well as the overall mean. Colors correspond to the US state the county is in. 
 ```{r, echo = FALSE, message = FALSE, warnings = FALSE, fig.height = 10}
 
-mines_restr <- readRDS(here('data/temp/mines_restr.RDS'))
+mines_restr <- readRDS(here('data/temp/mines_restr.RDS')) %>% 
+  mutate(time = year - 2000)
 
 mean_df <- mines_restr %>% 
   group_by(year) %>%
@@ -446,7 +455,7 @@ mines_restr %>%
   theme_minimal() + 
   scale_fill_viridis() +
   theme(legend.position = "none") +
-  scale_y_discrete(limits = rev(levels(as.factor(df$year)))) +
+  scale_y_discrete(limits = rev(levels(as.factor(mines_restr$year)))) +
   labs(title = "Histogram of Education Expenditure per Pupil per Year", y = "Year", x = "(log) Total Education Expenditure per Pupil (Real USD)")
 
 mines_restr %>% 
@@ -456,7 +465,7 @@ mines_restr %>%
   theme_minimal() + 
   scale_fill_viridis(option = "plasma") +
   theme(legend.position = "none") +
-  scale_y_discrete(limits = rev(levels(as.factor(df$year)))) +
+  scale_y_discrete(limits = rev(levels(as.factor(mines_restr$year)))) +
   labs(title = "Histogram of log GDP per capita per year", y = "Year", x = "(log) GDP per Capita")
   
 ```
@@ -1045,21 +1054,9 @@ In the following set of results I report results for the sample used in the desc
 
 ```{r}
 
-is.pbalanced(df, index = c("fips", "year"))
+is.pbalanced(mines_restr, index = c("fips", "year"))
 
 ```
-
-## County-level trends
-TBA: Summary of county-level trends to be added. Ideally graphics showing their spatial autocorrelation.
-```{r, echo = FALSE, eval = FALSE, message = FALSE}
-
-mines_restr %>% 
- dplyr::select(year, fips, log_real_Total_Expenditure, log_real_esa_tot_exp) %>% 
-  group_by(fips) %>%
-  do(glance(lm(Total_Expenditure ~ esa_tot_exp, data = .)))
-
-```
-
 
 ## Descriptive regression models
 
@@ -1121,8 +1118,8 @@ list(feols(log_Elem_Educ_Total_Exp_pp ~ l(log_Elem_Educ_Total_Exp_pp, 1) + sw0(l
 
 #### Real values
 ```{r}
-tot_vars = c("real_diff_log_Total_Educ_Total_Exp_pp", "log_real_Total_Educ_Total_Exp_pp")
-elem_vars = c("real_diff_log_Elem_Educ_Total_Exp_pp", "log_real_Elem_Educ_Total_Exp_pp")
+tot_vars = c("diff_log_real_Total_Educ_Total_Exp_pp", "log_real_Total_Educ_Total_Exp_pp")
+elem_vars = c("diff_log_real_Elem_Educ_Total_Exp_pp", "log_real_Elem_Educ_Total_Exp_pp")
 
 list(feols(log_real_Total_Educ_Total_Exp_pp ~ l(log_real_Total_Educ_Total_Exp_pp, 1) + sw0(log_real_gdp_total_pc,
                                          log_real_gdp_priv_ind_pc,
@@ -1167,16 +1164,16 @@ Education expenditure has a highly relevant time dependence. The effect of incre
 
 **Question: Is the above interpretation of the time dependence accurate?**
 ```{r}
-levs_gdp_real_trend <- feols(c(log_Total_Educ_Total_Exp_pp, log_Elem_Educ_Total_Exp_pp) ~ sw(log_gdp_total + log_gdp_total_l1 + log_gdp_total_l2, log_gdp_priv_ind + log_gdp_priv_ind_l1 + log_gdp_priv_ind_l2) + time:as.factor(state) | fips + year, data = mines_restr, se = "cluster", cluster = "fips")
+levs_gdp_real_trend <- feols(c(log_real_Total_Educ_Total_Exp_pp, log_real_Elem_Educ_Total_Exp_pp) ~ sw(log_real_gdp_total + l1_log_real_gdp_total + l2_log_real_gdp_total, log_real_gdp_priv_ind + l1_log_real_gdp_priv_ind + l2_log_real_gdp_priv_ind) + time:as.factor(state) | fips + year, data = mines_restr, se = "cluster", cluster = "fips")
 levs_gdp_real_trend %>% etable(., drop = "time*", se.below = TRUE) %>% kable
 
-feols(c(log_Total_Educ_Total_Exp_pp, log_Elem_Educ_Total_Exp_pp) ~ sw(log_gdp_total_pc + log_gdp_total_pc_l1 + log_gdp_total_pc_l2, 
-                                      log_gdp_priv_ind_pc + log_gdp_priv_ind_pc_l1 + log_gdp_priv_ind_pc_l2,
-                                      log_gdp_o_g_mining_quarr_21 + log_gdp_o_g_mining_quarr_21_l1 + log_gdp_o_g_mining_quarr_21_l2) + time:as.factor(state) | fips + year, data = mines_restr, se = "cluster", cluster = "fips") %>%  etable(., drop = "time*", se.below = TRUE) %>% kable
+feols(c(log_Total_Educ_Total_Exp_pp, log_Elem_Educ_Total_Exp_pp) ~ sw(log_gdp_total_pc + l1_log_gdp_total_pc + l2_log_gdp_total_pc, 
+                                      log_gdp_priv_ind_pc + l1_log_gdp_priv_ind_pc + l2_log_gdp_priv_ind_pc,
+                                      log_gdp_o_g_mining_quarr_21 + l1_log_gdp_o_g_mining_quarr_21 + l2_log_gdp_o_g_mining_quarr_21) + time:as.factor(state) | fips + year, data = mines_restr, se = "cluster", cluster = "fips") %>%  etable(., drop = "time*", se.below = TRUE) %>% kable
 
-feols(c(log_Total_Educ_Total_Exp_pp, log_Elem_Educ_Total_Exp_pp) ~ sw(log_gdp_total_pc + log_gdp_total_pc_l1 + log_gdp_total_pc_l2, 
-                                      log_gdp_priv_ind_pc + log_gdp_priv_ind_pc_l1 + log_gdp_priv_ind_pc_l2,
-                                      log_gdp_o_g_mining_quarr_21_pc + log_gdp_o_g_mining_quarr_21_pc_l1 + log_gdp_o_g_mining_quarr_21_pc_l2) + time:as.factor(state) | fips + year, data = mines_restr, se = "cluster", cluster = "fips") %>%  etable(., drop = "time*", se.below = TRUE) %>% kable
+feols(c(log_Total_Educ_Total_Exp_pp, log_Elem_Educ_Total_Exp_pp) ~ sw(log_gdp_total_pc + l1_log_gdp_total_pc + l2_log_gdp_total_pc, 
+                                      log_gdp_priv_ind_pc + l1_log_gdp_priv_ind_pc + l2_log_gdp_priv_ind_pc,
+                                      log_gdp_o_g_mining_quarr_21_pc + l1_log_gdp_o_g_mining_quarr_21_pc + l2_log_gdp_o_g_mining_quarr_21_pc) + time:as.factor(state) | fips + year, data = mines_restr, se = "cluster", cluster = "fips") %>%  etable(., drop = "time*", se.below = TRUE) %>% kable
 
 ```
 
@@ -1189,16 +1186,16 @@ Coal mine data exists from 1996-2021. The below is a preliminary treatment attem
 ### Standard TWFE panel regression
 
 ```{r, message = FALSE}
-list(feols(c(log_Total_Educ_Total_Exp_pp, log_Elem_Educ_Total_Exp_pp) ~ log_gdp_priv_ind_pc + log_gdp_priv_ind_pc_l1 + log_gdp_priv_ind_pc_l2 + diff_total_active_n + l1_diff_total_active_n + l2_diff_total_active_n | fips + year, data = mines_restr, se = "cluster", cluster = "fips"),
-feols(c(log_Total_Educ_Total_Exp_pp, log_Elem_Educ_Total_Exp_pp) ~ sw(log_gdp_priv_ind_pc + log_gdp_priv_ind_pc_l1 + log_gdp_priv_ind_pc_l2 + diff_total_active_prod + l1_diff_total_active_prod + l2_diff_total_active_prod,
-                                         log_gdp_total_pc + log_gdp_total_pc_l1 + log_gdp_total_pc_l2 + diff_total_active_n + l1_diff_total_active_n + l2_diff_total_active_n,
-                                         log_gdp_total_pc + log_gdp_total_pc_l1 + log_gdp_total_pc_l2 + diff_total_active_prod + l1_diff_total_active_prod + l2_diff_total_active_prod) | fips + year, data = mines_restr, se = "cluster", cluster = "fips")) %>% etable(se.below = TRUE) %>% kable
+list(feols(c(log_Total_Educ_Total_Exp_pp, log_Elem_Educ_Total_Exp_pp) ~ log_gdp_priv_ind_pc + l1_log_gdp_priv_ind_pc + l2_log_gdp_priv_ind_pc + diff_total_active_n + l1_diff_total_active_n + l2_diff_total_active_n | fips + year, data = mines_restr, se = "cluster", cluster = "fips"),
+feols(c(log_Total_Educ_Total_Exp_pp, log_Elem_Educ_Total_Exp_pp) ~ sw(log_gdp_priv_ind_pc + l1_log_gdp_priv_ind_pc + l2_log_gdp_priv_ind_pc + diff_total_active_prod + l1_diff_total_active_prod + l2_diff_total_active_prod,
+                                         log_gdp_total_pc + l1_log_gdp_total_pc + l2_log_gdp_total_pc + diff_total_active_n + l1_diff_total_active_n + l2_diff_total_active_n,
+                                         log_gdp_total_pc + l1_log_gdp_total_pc + l2_log_gdp_total_pc + diff_total_active_prod + l1_diff_total_active_prod + l2_diff_total_active_prod) | fips + year, data = mines_restr, se = "cluster", cluster = "fips")) %>% etable(se.below = TRUE) %>% kable
 
 
-list(feols(c(log_Total_Educ_Total_Exp_pp, log_Elem_Educ_Total_Exp_pp) ~ log_gdp_priv_ind_pc + log_gdp_priv_ind_pc_l1 + log_gdp_priv_ind_pc_l2 + l(total_active_n, 0:2)  | fips + year, data = mines_restr, se = "cluster", cluster = "fips", panel.id = ~fips+year),
-     feols(c(log_Total_Educ_Total_Exp_pp, log_Elem_Educ_Total_Exp_pp) ~ sw(log_gdp_priv_ind_pc + log_gdp_priv_ind_pc_l1 + log_gdp_priv_ind_pc_l2 + l(total_active_prod, 0:2),
-                                         log_gdp_total_pc + log_gdp_total_pc_l1 + log_gdp_total_pc_l2 + l(total_active_n, 0:2),
-                                         log_gdp_total_pc + log_gdp_total_pc_l1 + log_gdp_total_pc_l2 + l(total_active_prod, 0:2)) | fips + year, data = mines_restr, se = "cluster", cluster = "fips", panel.id = ~fips+year)) %>% etable(se.below = TRUE) %>% kable
+list(feols(c(log_Total_Educ_Total_Exp_pp, log_Elem_Educ_Total_Exp_pp) ~ log_gdp_priv_ind_pc + l1_log_gdp_priv_ind_pc + l2_log_gdp_priv_ind_pc + l(total_active_n, 0:2)  | fips + year, data = mines_restr, se = "cluster", cluster = "fips", panel.id = ~fips+year),
+     feols(c(log_Total_Educ_Total_Exp_pp, log_Elem_Educ_Total_Exp_pp) ~ sw(log_gdp_priv_ind_pc + l1_log_gdp_priv_ind_pc + l2_log_gdp_priv_ind_pc + l(total_active_prod, 0:2),
+                                         log_gdp_total_pc + l1_log_gdp_total_pc + l2_log_gdp_total_pc + l(total_active_n, 0:2),
+                                         log_gdp_total_pc + l1_log_gdp_total_pc + l2_log_gdp_total_pc + l(total_active_prod, 0:2)) | fips + year, data = mines_restr, se = "cluster", cluster = "fips", panel.id = ~fips+year)) %>% etable(se.below = TRUE) %>% kable
 ```
 
 
@@ -1206,16 +1203,16 @@ list(feols(c(log_Total_Educ_Total_Exp_pp, log_Elem_Educ_Total_Exp_pp) ~ log_gdp_
 
 ```{r, message = FALSE}
 
-list(feols(c(log_Total_Educ_Total_Exp_pp, log_Elem_Educ_Total_Exp_pp) ~ log_gdp_priv_ind_pc + log_gdp_priv_ind_pc_l1 + log_gdp_priv_ind_pc_l2 + diff_total_active_n + l1_diff_total_active_n + l2_diff_total_active_n + time:as.factor(state) | fips + year, data = mines_restr, se = "cluster", cluster = "fips"),
-feols(c(log_Total_Educ_Total_Exp_pp, log_Elem_Educ_Total_Exp_pp) ~ sw(log_gdp_priv_ind_pc + log_gdp_priv_ind_pc_l1 + log_gdp_priv_ind_pc_l2 + diff_total_active_prod + l1_diff_total_active_prod + l2_diff_total_active_prod,
-                                         log_gdp_total_pc + log_gdp_total_pc_l1 + log_gdp_total_pc_l2 + diff_total_active_n + l1_diff_total_active_n + l2_diff_total_active_n,
-                                         log_gdp_total_pc + log_gdp_total_pc_l1 + log_gdp_total_pc_l2 + diff_total_active_prod + l1_diff_total_active_prod + l2_diff_total_active_prod) + time:as.factor(state) | fips + year, data = mines_restr, se = "cluster", cluster = "fips")) %>% etable(se.below = TRUE, drop = "time*") %>% kable
+list(feols(c(log_Total_Educ_Total_Exp_pp, log_Elem_Educ_Total_Exp_pp) ~ log_gdp_priv_ind_pc + l1_log_gdp_priv_ind_pc + l2_log_gdp_priv_ind_pc + diff_total_active_n + l1_diff_total_active_n + l2_diff_total_active_n + time:as.factor(state) | fips + year, data = mines_restr, se = "cluster", cluster = "fips"),
+feols(c(log_Total_Educ_Total_Exp_pp, log_Elem_Educ_Total_Exp_pp) ~ sw(log_gdp_priv_ind_pc + l1_log_gdp_priv_ind_pc + l2_log_gdp_priv_ind_pc + diff_total_active_prod + l1_diff_total_active_prod + l2_diff_total_active_prod,
+                                         log_gdp_total_pc + l1_log_gdp_total_pc + l2_log_gdp_total_pc + diff_total_active_n + l1_diff_total_active_n + l2_diff_total_active_n,
+                                         log_gdp_total_pc + l1_log_gdp_total_pc + l2_log_gdp_total_pc + diff_total_active_prod + l1_diff_total_active_prod + l2_diff_total_active_prod) + time:as.factor(state) | fips + year, data = mines_restr, se = "cluster", cluster = "fips")) %>% etable(se.below = TRUE, drop = "time*") %>% kable
 
 
-list(feols(c(log_Total_Educ_Total_Exp_pp, log_Elem_Educ_Total_Exp_pp) ~ log_gdp_priv_ind_pc + log_gdp_priv_ind_pc_l1 + log_gdp_priv_ind_pc_l2 + l(total_active_n, 0:2)  + time:as.factor(state) | fips + year, data = mines_restr, se = "cluster", cluster = "fips", panel.id = ~fips+year),
-     feols(c(log_Total_Educ_Total_Exp_pp, log_Elem_Educ_Total_Exp_pp) ~ sw(log_gdp_priv_ind_pc + log_gdp_priv_ind_pc_l1 + log_gdp_priv_ind_pc_l2 + l(total_active_prod, 0:2),
-                                         log_gdp_total_pc + log_gdp_total_pc_l1 + log_gdp_total_pc_l2 + l(total_active_n, 0:2),
-                                         log_gdp_total_pc + log_gdp_total_pc_l1 + log_gdp_total_pc_l2 + l(total_active_prod, 0:2)) + time:as.factor(state) | fips + year, data = mines_restr, se = "cluster", cluster = "fips", panel.id = ~fips+year)) %>% etable(se.below = TRUE, drop = "time*") %>% kable
+list(feols(c(log_Total_Educ_Total_Exp_pp, log_Elem_Educ_Total_Exp_pp) ~ log_gdp_priv_ind_pc + l1_log_gdp_priv_ind_pc + l2_log_gdp_priv_ind_pc + l(total_active_n, 0:2)  + time:as.factor(state) | fips + year, data = mines_restr, se = "cluster", cluster = "fips", panel.id = ~fips+year),
+     feols(c(log_Total_Educ_Total_Exp_pp, log_Elem_Educ_Total_Exp_pp) ~ sw(log_gdp_priv_ind_pc + l1_log_gdp_priv_ind_pc + l2_log_gdp_priv_ind_pc + l(total_active_prod, 0:2),
+                                         log_gdp_total_pc + l1_log_gdp_total_pc + l2_log_gdp_total_pc + l(total_active_n, 0:2),
+                                         log_gdp_total_pc + l1_log_gdp_total_pc + l2_log_gdp_total_pc + l(total_active_prod, 0:2)) + time:as.factor(state) | fips + year, data = mines_restr, se = "cluster", cluster = "fips", panel.id = ~fips+year)) %>% etable(se.below = TRUE, drop = "time*") %>% kable
 
 ```
 
@@ -1301,18 +1298,18 @@ feols(log_Elem_Educ_Total_Exp_pp ~ 1 | fips + year | log_gdp_total_pc ~ l(total_
 
 # Total educ w/0 county-level trends
 feols(c(log_Total_Educ_Total_Exp_pp, log_Elem_Educ_Total_Exp_pp)  ~ log_gdp_priv_ind_pc +
-             sw0(log_gdp_priv_ind_pc_l1 + log_gdp_priv_ind_pc_l2,
-                log_gdp_priv_ind_pc_l1 + log_gdp_priv_ind_pc_l2 + diff_total_active_n,
-                log_gdp_priv_ind_pc_l1 + log_gdp_priv_ind_pc_l2 + l(diff_total_active_n, 0:2),
-                 log_gdp_priv_ind_pc_l1 + log_gdp_priv_ind_pc_l2 + diff_total_active_prod,
-                log_gdp_priv_ind_pc_l1 + log_gdp_priv_ind_pc_l2 + l(diff_total_active_prod, 0:2)) | fips + year, data = mines_restr, se = "cluster", cluster = "fips", panel.id = ~fips+year) %>% etable(se.below = TRUE)
+             sw0(l1_log_gdp_priv_ind_pc + l2_log_gdp_priv_ind_pc,
+                l1_log_gdp_priv_ind_pc + l2_log_gdp_priv_ind_pc + diff_total_active_n,
+                l1_log_gdp_priv_ind_pc + l2_log_gdp_priv_ind_pc + l(diff_total_active_n, 0:2),
+                 l1_log_gdp_priv_ind_pc + l2_log_gdp_priv_ind_pc + diff_total_active_prod,
+                l1_log_gdp_priv_ind_pc + l2_log_gdp_priv_ind_pc + l(diff_total_active_prod, 0:2)) | fips + year, data = mines_restr, se = "cluster", cluster = "fips", panel.id = ~fips+year) %>% etable(se.below = TRUE)
      
 feols(c(log_Total_Educ_Total_Exp_pp, log_Elem_Educ_Total_Exp_pp)  ~ log_gdp_priv_ind_pc +
-             sw0(log_gdp_priv_ind_pc_l1 + log_gdp_priv_ind_pc_l2,
-                log_gdp_priv_ind_pc_l1 + log_gdp_priv_ind_pc_l2 + diff_total_active_n,
-                log_gdp_priv_ind_pc_l1 + log_gdp_priv_ind_pc_l2 + l(diff_total_active_n, 0:2),
-                 log_gdp_priv_ind_pc_l1 + log_gdp_priv_ind_pc_l2 + diff_total_active_prod,
-                log_gdp_priv_ind_pc_l1 + log_gdp_priv_ind_pc_l2 + l(diff_total_active_prod, 0:2)) + time:as.factor(state) | fips + year, data = mines_restr, se = "cluster", cluster = "fips", panel.id = ~fips+year) %>% etable(se.below = TRUE, drop = "time*")
+             sw0(l1_log_gdp_priv_ind_pc + l2_log_gdp_priv_ind_pc,
+                l1_log_gdp_priv_ind_pc + l2_log_gdp_priv_ind_pc + diff_total_active_n,
+                l1_log_gdp_priv_ind_pc + l2_log_gdp_priv_ind_pc + l(diff_total_active_n, 0:2),
+                 l1_log_gdp_priv_ind_pc + l2_log_gdp_priv_ind_pc + diff_total_active_prod,
+                l1_log_gdp_priv_ind_pc + l2_log_gdp_priv_ind_pc + l(diff_total_active_prod, 0:2)) + time:as.factor(state) | fips + year, data = mines_restr, se = "cluster", cluster = "fips", panel.id = ~fips+year) %>% etable(se.below = TRUE, drop = "time*")
 
 
 ```
@@ -1509,7 +1506,7 @@ feols(log_Elem_Educ_Total_Exp_pp ~ log_gdp_total_pc +
 ```{r}
 
 # Variables of interest for descriptive statistics
-vars <- c("Total_Revenue", "Property_Tax", "Total_IG_Revenue", "Total_Fed_IG_Revenue", "Total_State_IG_Revenue", "Total_Expenditure")
+vars <- c("Total_Revenue", "Property_Tax", "Total_IG_Revenue", "Total_Fed_IG_Revenue", "Total_State_IG_Revenue", "Total_Educ_Total_Exp", "Elem_Educ_Total_Exp")
 
 mines_restr %>%
   mutate(across(c(esa_tot_exp, vars, paste0(vars, "_pp"), gdp_total, gdp_priv_ind, gdp_govt, gdp_o_g_mining_quarr_21), ~./1000)) %>% 
@@ -1562,6 +1559,23 @@ mines_restr %>%
          "GDP - Oil, gas, mining",
          "Active Coal Mines",
          "Coal Produced (k short tons)"), type = "latex")
+
+
+```
+
+
+
+### PANELVAR
+```{r}
+library(panelvar)
+
+test_pvar <- pvargmm(
+  dependent_vars = c("real_Elem_Educ_Total_Exp", "log_real_Property_Tax", "log_real_gdp_priv_ind"),
+  lags = 1, 
+  panel_identifier = c("fips", "year"),
+  steps = c("twostep"),
+  data = data.frame(mines_restr)
+)
 
 
 ```
@@ -1742,7 +1756,7 @@ ggplot(state_lev,
 ```{r}
 
 for(fip in unique(mines_restr$fips)){
-  gdp_var <- mines_restr %>% 
+  gdp_var <- %>% %>% 
     filter(fips == fip) %>% 
     pull(real_gdp_priv_ind)
   
