@@ -1249,6 +1249,23 @@ feols(log_Total_Educ_Total_Exp_pp ~ l(log_Total_Educ_Total_Exp_pp, 1) | fips + y
 feols(log_Elem_Educ_Total_Exp_pp ~ l(log_Elem_Educ_Total_Exp_pp, 1) | fips + year | log_Property_Tax_pp ~ l(total_active_n,1:2), data = mines_restr, se = "cluster", cluster = "fips", panel.id = ~fips+year)
 ```
 
+####### Incorporating additional control variables
+
+```{r, message = FALSE, warnings = FALSE}
+# Using total active production as an instrument for per capita property tax
+feols(log_Total_Educ_Total_Exp_pp ~ l(log_Total_Educ_Total_Exp_pp, 1) | fips + year | log_Property_Tax_pp ~ total_active_prod, data = mines_restr, se = "cluster", cluster = "fips", panel.id = ~fips+year)
+feols(log_Elem_Educ_Total_Exp_pp ~ l(log_Elem_Educ_Total_Exp_pp, 1) | fips + year | log_Property_Tax_pp ~ total_active_prod, data = mines_restr, se = "cluster", cluster = "fips", panel.id = ~fips+year)
+
+# Using the lag of total active production as an instrument for per capita property tax
+feols(log_Total_Educ_Total_Exp_pp ~ l(log_Total_Educ_Total_Exp_pp, 1) | fips + year | log_Property_Tax_pp ~ l(total_active_prod,1), data = mines_restr, se = "cluster", cluster = "fips", panel.id = ~fips+year)
+
+feols(log_Elem_Educ_Total_Exp_pp ~ l(log_Elem_Educ_Total_Exp_pp, 1) | fips + year | log_Property_Tax_pp ~ l(total_active_prod,1), data = mines_restr, se = "cluster", cluster = "fips", panel.id = ~fips+year)
+
+```
+
+
+
+
 ##### Using coal production and mine activity as instruments for per capita gdp
 All pass a first-stage F-test with high statistic and low p-value; however, less than satisfactory on the Wu-Hausman endogeneity test.
 
@@ -1325,6 +1342,13 @@ lapply(list(feols(log_Total_Educ_Total_Exp_pp ~ 1 | fips + year | log_Property_T
   feols(log_Total_Educ_Total_Exp_pp ~ 1 | fips + year | log_Property_Tax_pp ~ l(total_active_prod,1), data = mines_restr, se = "cluster", cluster = "fips", panel.id = ~fips+year),
   feols(log_Elem_Educ_Total_Exp_pp ~ 1 | fips + year | log_Property_Tax_pp ~ l(total_active_prod,1), data = mines_restr, se = "cluster", cluster = "fips", panel.id = ~fips+year)), summary) %>% etable()
 
+# Using total active production as an instrument for per capita property tax controlling for state and federal support
+lapply(list(feols(log_Total_Educ_Total_Exp_pp ~ log_Total_State_IG_Revenue_pp + log_Total_Fed_IG_Revenue_pp | fips + year | log_Property_Tax_pp ~ total_active_prod, data = mines_restr, se = "cluster", cluster = "fips"), 
+  feols(log_Elem_Educ_Total_Exp_pp ~ log_Total_State_IG_Revenue_pp + log_Total_Fed_IG_Revenue_pp | fips + year | log_Property_Tax_pp ~ total_active_prod, data = mines_restr, se = "cluster", cluster = "fips"),
+  # Using the lag of total active production as an instrument for per capita property tax
+  feols(log_Total_Educ_Total_Exp_pp ~ log_Total_State_IG_Revenue_pp + log_Total_Fed_IG_Revenue_pp | fips + year | log_Property_Tax_pp ~ l(total_active_prod,1), data = mines_restr, se = "cluster", cluster = "fips", panel.id = ~fips+year),
+  feols(log_Elem_Educ_Total_Exp_pp ~ log_Total_State_IG_Revenue_pp + log_Total_Fed_IG_Revenue_pp | fips + year | log_Property_Tax_pp ~ l(total_active_prod,1), data = mines_restr, se = "cluster", cluster = "fips", panel.id = ~fips+year)), summary) %>% etable()
+
 # Using total active mines as an instrument for per capita property tax
 lapply(list(feols(log_Total_Educ_Total_Exp_pp ~ 1 | fips + year | log_Property_Tax_pp ~ total_active_n, data = mines_restr, se = "cluster", cluster = "fips"),
   feols(log_Elem_Educ_Total_Exp_pp ~ 1 | fips + year | log_Property_Tax_pp ~ total_active_n, data = mines_restr, se = "cluster", cluster = "fips"),
@@ -1332,6 +1356,55 @@ lapply(list(feols(log_Total_Educ_Total_Exp_pp ~ 1 | fips + year | log_Property_T
   # Using lag of total active mines as an instrument for per capita property tax
  feols(log_Total_Educ_Total_Exp_pp ~ 1 | fips + year | log_Property_Tax_pp ~ l(total_active_n,1:2), data = mines_restr, se = "cluster", cluster = "fips", panel.id = ~fips+year),
   feols(log_Elem_Educ_Total_Exp_pp ~ 1 | fips + year | log_Property_Tax_pp ~ l(total_active_n,1:2), data = mines_restr, se = "cluster", cluster = "fips", panel.id = ~fips+year)), summary)  %>% etable()
+```
+
+
+# Removing outliers - really high-income counties!!!
+```{r}
+
+mines_no_outliers <- mines_restr %>% 
+  group_by(fips) %>% 
+  filter(!any(log_real_Property_Tax_pp > 10.5)) %>% 
+  ungroup
+
+mines_no_outliers %>% 
+  ggplot(aes(x = log_real_Elem_Educ_Total_Exp_pp, y = log_real_Property_Tax_pp, colour = share_own_discrete)) +
+  geom_jitter() +
+    #geom_smooth(method=lm, colour = "black", linetype = "dashed") +
+  labs(title = "Elem Education Expenditure pp vs Property Tax pp") +
+  geom_abline(slope = 1, intercept = 0, linetype = 'dashed') +
+  theme_bw() +
+  theme(title = element_text(size = 9)) +
+  labs(colour = "Reliance on Local Sources")
+
+
+setFixest_etable(fitstat = ~ . + ivf1 + ivf1.p + wh + wh.p + ivwald1 + ivwald1.p + ivf2 + ivf2.p + ivwald2 + ivwald2.p, se.below = TRUE)
+
+# Using total active production as an instrument for per capita property tax
+lapply(list(feols(log_Total_Educ_Total_Exp_pp ~ 1 | fips + year | log_Property_Tax_pp ~ total_active_prod, data = mines_no_outliers, se = "cluster", cluster = "fips"), 
+  feols(log_Elem_Educ_Total_Exp_pp ~ 1 | fips + year | log_Property_Tax_pp ~ total_active_prod, data = mines_no_outliers, se = "cluster", cluster = "fips"),
+  # Using the lag of total active production as an instrument for per capita property tax
+  feols(log_Total_Educ_Total_Exp_pp ~ 1 | fips + year | log_Property_Tax_pp ~ l(total_active_prod,1), data = mines_no_outliers, se = "cluster", cluster = "fips", panel.id = ~fips+year),
+  feols(log_Elem_Educ_Total_Exp_pp ~ 1 | fips + year | log_Property_Tax_pp ~ l(total_active_prod,1), data = mines_no_outliers, se = "cluster", cluster = "fips", panel.id = ~fips+year)), summary) %>% etable()
+
+# Using total active production as an instrument for per capita property tax controlling for state and federal support
+lapply(list(feols(log_Total_Educ_Total_Exp_pp ~ log_Total_State_IG_Revenue_pp + log_Total_Fed_IG_Revenue_pp | fips + year | log_Property_Tax_pp ~ total_active_prod, data = mines_no_outliers, se = "cluster", cluster = "fips"), 
+  feols(log_Elem_Educ_Total_Exp_pp ~ log_Total_State_IG_Revenue_pp + log_Total_Fed_IG_Revenue_pp | fips + year | log_Property_Tax_pp ~ total_active_prod, data = mines_no_outliers, se = "cluster", cluster = "fips"),
+  # Using the lag of total active production as an instrument for per capita property tax
+  feols(log_Total_Educ_Total_Exp_pp ~ log_Total_State_IG_Revenue_pp + log_Total_Fed_IG_Revenue_pp | fips + year | log_Property_Tax_pp ~ l(total_active_prod,1), data = mines_no_outliers, se = "cluster", cluster = "fips", panel.id = ~fips+year),
+  feols(log_Elem_Educ_Total_Exp_pp ~ log_Total_State_IG_Revenue_pp + log_Total_Fed_IG_Revenue_pp | fips + year | log_Property_Tax_pp ~ l(total_active_prod,1), data = mines_no_outliers, se = "cluster", cluster = "fips", panel.id = ~fips+year)), summary) %>% etable()
+
+# Using total active mines as an instrument for per capita property tax
+lapply(list(feols(log_Total_Educ_Total_Exp_pp ~ 1 | fips + year | log_Property_Tax_pp ~ total_active_n, data = mines_no_outliers, se = "cluster", cluster = "fips"),
+  feols(log_Elem_Educ_Total_Exp_pp ~ 1 | fips + year | log_Property_Tax_pp ~ total_active_n, data = mines_no_outliers, se = "cluster", cluster = "fips"),
+  
+  # Using lag of total active mines as an instrument for per capita property tax
+ feols(log_Total_Educ_Total_Exp_pp ~ 1 | fips + year | log_Property_Tax_pp ~ l(total_active_n,1:2), data = mines_no_outliers, se = "cluster", cluster = "fips", panel.id = ~fips+year),
+  feols(log_Elem_Educ_Total_Exp_pp ~ 1 | fips + year | log_Property_Tax_pp ~ l(total_active_n,1:2), data = mines_no_outliers, se = "cluster", cluster = "fips", panel.id = ~fips+year)), summary)  %>% etable()
+
+```
+
+
 ```
 
 # On Coal Counties Only
