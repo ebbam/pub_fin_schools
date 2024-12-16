@@ -74,6 +74,17 @@ df_va <- function(df){
 # Initialise function for specific size of matrix
 c_mat <- function(var) {matrix(var, 18, 3072)}
 
+# Function to mute outliers for mapping plot_us_map - 
+# takes any values outside 3 standard deviations from the mean and replaces with mean + 3*sd
+mute_outliers <- function(df, var_outliers, sds = 3){
+  temp <- df %>% 
+    mutate(sd = sd(get(var_outliers), na.rm = TRUE), 
+           mean = mean(get(var_outliers), na.rm = TRUE),
+           var_muted = case_when(get(var_outliers) > mean + sds*sd ~ mean + sds*sd,
+                                 get(var_outliers) < mean - sds*sd ~ mean - sds*sd,
+                                 TRUE ~ get(var_outliers)))
+  return(temp)
+}
 
 
 # # Function to convert standard fips codes to BEA fips codes
