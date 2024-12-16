@@ -11,10 +11,11 @@ mines_restr <- readRDS(here('data/temp/mines_restr.RDS'))
 
 # Commuting zones
 czs <- read_xls(here('data/out/cz00_eqv_v1.xls')) %>%
-  select(FIPS, `Commuting Zone ID, 2000`, `Commuting Zone Population 2000`) %>% 
+  select(FIPS, `Commuting Zone ID, 2000`, `Commuting Zone Population 2000`, `Commuting Zone ID, 1990`) %>% 
   rename(fips = 1, 
          cz_id= 2,
-         cz_population = 3) %>% 
+         cz_population = 3,
+         cz_id_1990 = 4) %>% 
   mutate(fips = ifelse(fips == "46113", "46102", fips)) 
 
 
