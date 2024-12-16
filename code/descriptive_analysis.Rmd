@@ -24,8 +24,8 @@ library(usmap)
 library(fixest)
 library(datasets)
 
-source(here('code/dicts.R'))
-source(here('code/useful_functions.R'))
+source(here('code/source_code/dicts.R'))
+source(here('code/source_code/useful_functions.R'))
 
 ```
 

@@ -73,7 +73,11 @@ mines_df <- readRDS(here('data/temp/mines_restr.RDS')) %>%
   mutate(cz_id = as.character(cz_id),
          cz_id_1990 = as.character(cz_id_1990))
 
-# Dataframe to easily match state names and CZ ids if necessary
+
+```
+
+```{r}
+# Dataframe to easily match state names and CZ ids if necessary}
 # To be resolved: when a CZ is present in multiple states
 code_match <- mines_df %>% 
   select(fips, state_name, cz_id, cz_id_1990) %>% 

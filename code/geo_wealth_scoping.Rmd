@@ -1,0 +1,43 @@
+---
+title: "Wealth"
+author: "Ebba Mark"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Wealth Data
+Source: https://www.openicpsr.org/openicpsr/project/192306/version/V4/view?path=/openicpsr/192306/fcr:versions/V4/cz_wealth_inequality.csv&type=file
+Citation: Suss, Joel, Connor, Dylan, and Kemeny, Tom. GEOWEALTH-US: Spatial wealth inequality data for the United States, 1960-2020: cz_wealth_inequality.csv. Ann Arbor, MI: Inter-university Consortium for Political and Social Research [distributor], 2024-02-22. https://doi.org/10.3886/E192306V4-156741
+
+```{r cars}
+
+wealth_cz <- read.csv(here("data/raw/cz_wealth_inequality.csv")) %>% tibble %>% filter(year >= 2000) %>% mutate(cz_id_1990 = as.character(czone))
+cz_1990_trends_dat <- readRDS(here('data/temp/cz_1990_trends_dat.rds')) %>% tibble
+
+wealth_cz %>% pull(cz_id_1990) %>% unique
+cz_1990_trends_dat %>% pull(cz_id_1990) %>% unique
+
+setdiff(unique(cz_1990_trends_dat$cz_id_1990), unique(wealth_cz$cz_id_1990))
+setdiff(unique(wealth_cz$cz_id_1990), unique(cz_1990_trends_dat$cz_id_1990))
+
+cz_1990_trends_dat %>% left_join(., wealth_cz, by = c("year", 'cz_id_1990')) 
+
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+
+wealth_cz %>% 
+  ggplot(aes(x = year, y = wealth_median, group = cz_id_1990)) +
+  geom_line()
+
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
