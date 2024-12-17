@@ -68,7 +68,6 @@ conflict_prefer_all("dplyr", quiet = TRUE)
 
 source(here('code/source_code/useful_functions.R'))
 source(here('code/source_code/dicts.R'))
-source(here('code/source_code/cz_cleaning.R'))
 
 ```
 
@@ -80,90 +79,11 @@ source(here('code/source_code/cz_cleaning.R'))
 
 ```{r, echo = FALSE, message = FALSE, warnings = FALSE, fig.height = 10, include = FALSE}
 
-mines_df <- readRDS(here('data/temp/mines_restr.RDS')) %>% 
-  mutate(time = year - 2000) %>% 
-  mutate(panel = case_when(year %in% 2000:2003 ~ "2000-2003",
-                           year %in% 2004:2007 ~ "2004-2007", 
-                           year %in% 2008:2011 ~ "2008-2011", 
-                           year %in% 2012:2015 ~ "2012-2015", 
-                           year %in% 2016:2021 ~ "2016-2021")) %>% 
-  select(year, fips, state, state_name, time, panel, 
-         share_fed,
-         share_state,
-         share_own,
-         share_own_discrete,
-         econ_div,
-         Enrollment,
-         pop_school_age,
-         pop_total,
-         Total_Educ_Total_Exp,
-         Elem_Educ_Total_Exp,
-         real_Total_Revenue,
-         real_Total_IG_Revenue,
-         real_Total_Rev_Own_Sources,
-         real_Total_Fed_IG_Revenue, 
-         real_Total_State_IG_Revenue,
-         real_Tot_Local_IG_Rev, 
-         log_real_Total_Revenue,
-         log_real_Total_IG_Revenue,
-         log_real_Total_Rev_Own_Sources,
-         log_real_Total_Fed_IG_Revenue, 
-         log_real_Total_State_IG_Revenue,
-         log_real_Tot_Local_IG_Rev, 
-         Total_Taxes, 
-         real_Total_Taxes, 
-         Property_Tax,
-         real_Property_Tax,
-         Total_IG_Revenue,
-         real_Total_IG_Revenue,
-         real_Elem_Educ_Total_Exp,
-         real_Elem_Educ_Total_Exp_pp,
-         real_Total_Educ_Total_Exp,
-         real_Total_Educ_Total_Exp_pp,
-         real_gdp_priv_ind,
-         real_gdp_priv_ind_pc,
-         real_gdp_total,
-         real_gdp_total_pc,
-         real_Property_Tax, 
-         real_Property_Tax_pp, 
-         log_real_Total_Educ_Total_Exp,
-         log_real_Total_Educ_Total_Exp_pp,
-         log_real_Total_Educ_Total_Exp_pp,
-         log_real_gdp_total_pc,
-         log_real_gdp_total,
-         log_real_gdp_priv_ind,
-         log_real_gdp_priv_ind_pc,
-         log_real_gdp_govt,
-         log_real_gdp_govt_pc,
-         log_real_Total_Educ_Total_Exp,
-         log_real_Property_Tax_pp,
-         log_real_Elem_Educ_Total_Exp_pp,
-         log_real_Total_Rev_Own_Sources_pp,
-         log_real_Total_IG_Revenue_pp,
-         log_real_Total_Fed_IG_Revenue_pp,
-         log_real_Total_State_IG_Revenue_pp,
-         log_real_Total_Rev_Own_Sources,
-         log_real_Total_Revenue_pp,
-         log_real_Property_Tax,
-         log_real_Property_Tax_pp,
-         log_real_esa_rev_pp,
-         log_real_esa_tot_exp_pp,
-         log_real_Elem_Educ_Total_Exp, 
-         log_Enrollment, 
-         log_pop_total) %>% 
-  left_join(., czs, by = "fips") %>% 
-  mutate(cz_id = as.character(cz_id),
-         cz_id_1990 = as.character(cz_id_1990))
-
+mines_restr <- readRDS(here("data/out/regression_data_complete_fips.RDS")) 
 
 ```
 
 ```{r, echo = FALSE, warning = FALSE, message = FALSE}
-# Dataframe to easily match state names and CZ ids if necessary}
-# To be resolved: when a CZ is present in multiple states
-code_match <- mines_df %>% 
-  select(fips, state_name, cz_id, cz_id_1990) %>% 
-  distinct
 
 # Relevant vars for trend analysis below
 # Should be central place to add more vars if necessary
@@ -200,61 +120,17 @@ vars_grab_restr <- c("real_gdp_priv_ind",
                "Enrollment", 
                "pop_total")
 
-mines_restr <- mines_df %>% 
-  mutate(across(c(vars_grab_restr, paste0("log_", vars_grab_restr)), ~. - dplyr::lag(., 1), .names = "diff_{.col}")) %>% 
+mines_tots <- mines_restr %>% 
+  #mutate(across(c(vars_grab_restr, paste0("log_", vars_grab_restr)), ~. - dplyr::lag(., 1), .names = "diff_{.col}")) %>% 
   group_by(year) %>% 
   mutate(natl_pop = sum(pop_total, na.rm = TRUE)) %>% 
   ungroup
-  
-## Summarise to Commuting Zone Level
-mines_cz <- mines_restr %>%
-  select(cz_id, year, fips, vars_grab) %>% 
-  group_by(cz_id, year) %>%
-  summarise(across(vars_grab, ~sum(., na.rm = TRUE)),
-            n_fips = n_distinct(fips)) %>% 
-  ungroup %>% 
-  mutate(real_Elem_Educ_Total_Exp_pp = real_Elem_Educ_Total_Exp/Enrollment,
-         real_Total_Educ_Total_Exp_pp = real_Total_Educ_Total_Exp/Enrollment,
-         real_gdp_priv_ind_pc = real_gdp_priv_ind/pop_total,
-         real_gdp_total_pc = real_gdp_total/pop_total,
-         real_Property_Tax_pp = real_Property_Tax/Enrollment,
-         real_Total_Fed_IG_Revenue_pp = real_Total_Fed_IG_Revenue/Enrollment,
-         real_Total_IG_Revenue_pp = real_Total_IG_Revenue/Enrollment,
-         real_Total_State_IG_Revenue_pp = real_Total_State_IG_Revenue/Enrollment,
-         real_Tot_Local_IG_Rev_pp = real_Tot_Local_IG_Rev/Enrollment,
-         real_Total_Rev_Own_Sources_pp = real_Total_Rev_Own_Sources/Enrollment,
-         across(!c(cz_id, year, n_fips), ~log(.), .names = "log_{.col}"),
-         across(!c(cz_id, year, n_fips), ~. - dplyr::lag(., 1), .names = "diff_{.col}"),
-         time = year - 2000) %>% 
-  group_by(cz_id) %>% 
-  # first-difference of all variable
-  mutate(share_fed = sum(real_Total_Fed_IG_Revenue, na.rm = TRUE)/sum(real_Elem_Educ_Total_Exp),
-        share_state = sum(real_Total_State_IG_Revenue, na.rm = TRUE)/sum(real_Elem_Educ_Total_Exp),
-        share_local_ig = sum(real_Tot_Local_IG_Rev, na.rm = TRUE)/sum(real_Elem_Educ_Total_Exp),
-        share_own = sum(real_Total_Rev_Own_Sources, na.rm = TRUE)/sum(real_Elem_Educ_Total_Exp),
-        share_own_discrete = case_when(share_own > 0.5 ~ "1 = high",
-                                        share_own < 0.25 ~ "3 = low",
-                                        TRUE ~ "2 = medium")) %>% 
-  ungroup
 
-## Summarise to Commuting Zone Level
-mines_cz_1990 <- mines_restr %>%
-  select(cz_id_1990, year, fips, vars_grab) %>% 
-  group_by(cz_id_1990, year) %>%
-  summarise(across(vars_grab, ~sum(., na.rm = TRUE)),
-            n_fips = n_distinct(fips)) %>% 
-  ungroup %>% 
-  mutate(real_Elem_Educ_Total_Exp_pp = real_Elem_Educ_Total_Exp/Enrollment,
-         real_Total_Educ_Total_Exp_pp = real_Total_Educ_Total_Exp/Enrollment,
-         real_gdp_priv_ind_pc = real_gdp_priv_ind/pop_total,
-         real_gdp_total_pc = real_gdp_total/pop_total,
-         real_Property_Tax_pp = real_Property_Tax/Enrollment,
-         across(!c(cz_id_1990, year, n_fips), ~log(.), .names = "log_{.col}"),
-         across(!c(cz_id_1990, year, n_fips), ~. - dplyr::lag(., 1), .names = "diff_{.col}"),
-         time = year - 2000)
+mines_cz <- readRDS(here("data/out/cz_dataset.RDS"))
+mines_cz_1990 <- readRDS(here("data/out/cz_1990_dataset.RDS"))
 
 ## Summarise to State Level
-mines_state <- mines_restr %>%
+mines_state <- mines_tots %>%
   select(state_name, fips, cz_id, year, fips, vars_grab) %>% 
   group_by(state_name, year) %>%
   summarise(across(vars_grab, ~sum(., na.rm = TRUE)),
@@ -271,7 +147,7 @@ mines_state <- mines_restr %>%
          time = year - 2000)
       
 ## Summarise to natl level
-mines_natl <- mines_restr %>%
+mines_natl <- mines_tots %>%
   select(state_name, fips, cz_id, year, fips, vars_grab) %>% 
   group_by(year) %>%
   summarise(across(vars_grab, ~sum(., na.rm = TRUE)),
@@ -289,7 +165,7 @@ mines_natl <- mines_restr %>%
          time = year - 2000,
          id = "USA")
 
-mean_df <- mines_restr %>% 
+mean_df <- mines_tots %>% 
   group_by(year) %>%
              summarise(real_Total_Educ_Total_Exp = mean(real_Total_Educ_Total_Exp, na.rm = TRUE),
                        real_Total_Educ_Total_Exp_pp = mean(real_Total_Educ_Total_Exp_pp, na.rm = TRUE),
@@ -303,7 +179,7 @@ mean_df_cz <- mines_cz %>%
                        log_real_Total_Educ_Total_Exp = mean(log_real_Total_Educ_Total_Exp, na.rm = TRUE),
                        log_real_Total_Educ_Total_Exp_pp = mean(log_real_Total_Educ_Total_Exp_pp, na.rm = TRUE))
 
-lister = list("cz_id" = mines_cz) #"fips" = mines_restr, 
+lister = list("cz_id" = mines_cz, "fips" = mines_restr) #"fips" = mines_restr, 
 
 ```
 
@@ -888,13 +764,13 @@ enr <- mines_cz %>%
   theme(legend.position = "none", panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
     guides(fill=guide_legend(nrow=5))
 
-mines_cz %>% 
-  ggplot(aes(x = Enrollment/n_schools, y = log_real_Elem_Educ_Total_Exp_pp, color = year)) +
+enr_schd <- mines_cz %>% 
+  ggplot(aes(x = log_Enrollment/n_school_districts, y = log_real_Elem_Educ_Total_Exp_pp, color = year)) +
   geom_jitter() +
-  labs(x = "avg. Enrollment per school", y = "Elem Expenditure (log kUSD)", title = "Expenditure by Average CZ Enrollment per School") +
+  labs(x = "avg. log(Enrollment) per school district by county", y = "Elem Expenditure (log kUSD)", title = "Expenditure by Average CZ Enrollment per School") +
   theme(legend.position = "none", panel.grid.major = element_blank(), panel.grid.minor = element_blank())
 
-enr_elem + enr
+(enr_elem + enr) / enr_schd
   
 
 ```
