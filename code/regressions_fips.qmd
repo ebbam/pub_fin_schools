@@ -76,8 +76,7 @@ All data used is reported annually at the county-level. Therefore, no time-invar
 
 ```{r, echo = FALSE, message = FALSE, warnings = FALSE, fig.height = 10}
 
-mines_restr <- readRDS(here('data/temp/mines_restr.RDS')) %>% 
-  mutate(time = year - 2000)
+mines_restr <- readRDS(here("data/out/regression_data_complete_fips.RDS")) 
 
 mean_df <- mines_restr %>% 
   group_by(year) %>%
