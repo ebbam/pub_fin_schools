@@ -1,5 +1,5 @@
 ---
-title: "Commuting Zones"
+title: "Effect of Industrial Shocks on Public Ed."
 format: 
   html:
     embed-resources: true
@@ -9,6 +9,8 @@ format:
     toc-expand: 3
     toc-depth: 4
     toc-location: left
+params:
+  font_size: 6
 editor_options: 
   chunk_output_type: inline
 ---
@@ -18,14 +20,21 @@ editor_options:
 The following document summarises the progress made thus far on Chapter 1: Local Fiscal Risks of Decarbonisation of my DPhil. The work aims to pursue a better understanding of how industrial transformation impacts local well-being. From an original interest in looking at all aspects of local public finance, the project has narrowed to focus on expenditure on public education and its connection to industrial prosperity and transformation.
 
 Updates since last time:
+
 1. After reading more work on US economic geography, it became clear that aggregating counties up to commuting zones was the better choice for analysis at sub-state level as these areas more accurately represent local labour markets/economies/commuting zones ([Fowler et al. 2024](https://www.nature.com/articles/s41597-024-03829-5), [David Dorn's Resource Page](https://www.ddorn.net/data.htm#Local%20Labor%20Market%20Geography)).
 2. Below, I provide some baseline regressions to demonstrate the relationships between key variables in the dataset. 
 3. Next, I turn to an instrumental variable application in which I use coal mine counts and production volumes as an instrument for property taxes. Coal mine counts do not serve as good instruments but coal production passes relevance and exogeneity restrictions. I believe a strong argument can be made for the exclusion restriction to be satisfied. I provide supporting statistical tests for all that demonstrate the unfitness of coal mine counts but fitness of coal production. Along this line, we can hopefully discuss other sources of variation in industrial/economic productivity that might lead to property value spirals (positive or negative) to test the property tax channel. 
 4. I identify declining vs. growing regions by estimating commuting-zone growth rates conditional on state and national level growth rates. Using this distinction (on both a per capita and total gdp bases and a lenient vs. stringent magnitude threshold), I rerun the key regressions identified in steps 2 and 3 on the subgroups (declining and growing regions). Interpretation remains to be done. 
 
+Note: Any warnings about "missing observations" or "NA being removed" relates to the lags incorporated, except in the Bartik estimations.
+
 ```{r, echo = FALSE, message = FALSE}
 
 rm(list = ls())
+
+options(width = 500)
+knitr::opts_chunk$set(echo = FALSE, warnings = FALSE, message = FALSE)
+
 library(tidyverse)
 library(conflicted)
 library(stargazer)
@@ -64,19 +73,17 @@ source(here('code/reg_forms.R'))
 
 conflict_prefer_all("dplyr", quiet = TRUE)
 
-
 setFixest_etable(fitstat = ~ . + ivf1 + ivf1.p + ivf2 + ivf2.p + wh + wh.p + ivwaldall + ivwaldall.p, se.below = TRUE)
-
 
 ```
 
 # Data
 
-All data used is reported annually at the commuting zone level. Therefore, no time-invariant variables are included (apart from the State in which a county is in, which is made time-variant through the inclusion of a state-level trend in various models). 636 commuting zones in 40 states between 2001-2021.
+All data used is reported annually at the commuting zone level. Therefore, no time-invariant variables are included (apart from the State in which a commuting zone is in, which is made time-variant through the inclusion of a state-level trend in various models). 636 commuting zones in 40 states between 2001-2021.
 
 **Expenditure and Revenue:** The dependent variables of interest come from [Willamette University's Government Finance Database](https://willamette.edu/mba/research-impact/public-datasets/index.html). The data includes commuting-zone level revenue and expenditure on public education including disaggregated values by revenue source (federal, state, or other intergovernmental revenue) and expenditure item (lunches, wages, debt). All values are reported in real US dollars. The data for property taxes collected used in regressions below also come from this dataset. Expenditure on vocational training and from Educational Service Agencies (ESAs) are also sourced from this dataset.
 
-**GDP Controls:** US Bureau of Economic Analysis. Values are also reported in current US dollars (real GDP values exist). The controls used in the below are total, private industry, and oil, gas, mining & quarrying county-level GDP.
+**GDP Controls:** US Bureau of Economic Analysis. Values are also reported in current US dollars (real GDP values exist). The controls used in the below are total, private industry, and oil, gas, mining & quarrying commuting zone-level GDP.
 
 **Population controls:** US Census Bureau.
 
@@ -97,13 +104,11 @@ mean_df <- mines_cz %>%
 
 ```
 
-# Preliminary Results
+# Descriptive Regression Results
 
 In the following set of results, I report descriptive regressions to establish relationships between property taxes, education expenditure, GDP (total, private industry, O&G&mining), etc.
 
-## Balanced panel?
-
-```{r}
+```{r, include = FALSE, echo = FALSE}
 
 is.pbalanced(mines_cz, index = c("cz_id", "year"))
 
@@ -111,7 +116,7 @@ is.pbalanced(mines_cz, index = c("cz_id", "year"))
 
 ## Descriptive regression models
 
-All regression models that follow include TWFE (county- and year- fixed effects) and standard errors clustered by county.
+All regression models that follow include TWFE (CZ- and year- fixed effects) and standard errors clustered by commuting zone.
 
 All functional forms in the feols() functions below are of the form "Y \~ X" In the cases in which multiple estimations are included via sw(Xa, Xb, Xc + Xd), the function will return results for "Y\~Xa", "Y\~Xb", "Y \~ Xc + Xd".
 
@@ -126,15 +131,15 @@ run_model(prop_taxes, mines_cz) %>%
 
 ```
 
-### Education Expenditure \~ Revenue Sources
+<!-- ### Education Expenditure \~ Revenue Sources -->
 
-The below regressions are included to establish the relationship between education expenditure and its component parts. These regressions simply corroborate what is displayed in the section on Key Relationships in [LINK](https://ebbam.github.io/pub_fin_schools/code/cz_results.html) (ie. that the largest form of IG revenue is state funding and "Own Source" revenue is largely sourced from Property Taxes).
+<!-- The below regressions are included to establish the relationship between education expenditure and its component parts. These regressions simply corroborate what is displayed in the section on Key Relationships in [LINK](https://ebbam.github.io/pub_fin_schools/code/cz_results.html) (ie. that the largest form of IG revenue is state funding and "Own Source" revenue is largely sourced from Property Taxes). -->
 
-```{r}
+<!-- ```{r} -->
 
-run_model(educ_source, mines_cz) %>% etable()
+<!-- run_model(educ_source, mines_cz) %>% etable() -->
 
-```
+<!-- ``` -->
 
 ### Education Expenditure \~ GDP
 
@@ -160,12 +165,12 @@ run_model(educ_gdp_statetrends, mines_cz) %>%
 
 #### Incorporating time lags
 
-Education expenditure has a highly relevant time dependence. The effect of increases in GDP two years prior has the greatest effect on current education expenditure, implying a delayed effect of county-level economic growth on public education expenditure.
+Education expenditure has a highly relevant time dependence. The effect of increases in GDP two years prior has the greatest effect on current education expenditure, implying a delayed effect of commuting zone-level economic growth on public education expenditure.
 First 6 do not include state time trends; second 6 do.
 
-```{r}
+```{r, echo = FALSE, warning = FALSE}
 
-run_model(educ_gdp_lags, mines_cz) %>% etable(drop = "*time")
+run_model(educ_gdp_lags, mines_cz) %>% etable(drop = "*time", headers = rep(c("w.o State Trends", "w. State Trends"), 3))
 
 ```
 
@@ -205,8 +210,8 @@ To my eye, production volumes perform quite well as instrumental variables (pass
 
 ```{r, message = FALSE, warnings = FALSE}
 
-run_model(iv_prod_tax, mines_cz) %>% etable()
-run_model(iv_coaln_tax, mines_cz) %>% etable()
+run_model(iv_prod_tax, mines_cz) %>% etable(headers = c("INSTR: Total Active Prod", "INSTR: (l1) Total Active Prod"))
+run_model(iv_coaln_tax, mines_cz) %>% etable(headers = c("INSTR: Total Active N", "INSTR: (l1) Total Active N"))
 
 ```
 
@@ -216,8 +221,8 @@ All pass a first-stage F-test with high statistic and low p-value; however, less
 
 ```{r, message = FALSE, warnings = FALSE}
 
-run_model(iv_prod_gdp, mines_cz) %>% etable()
-run_model(iv_coaln_gdp, mines_cz) %>% etable()
+run_model(iv_prod_gdp, mines_cz) %>% etable(headers = c("INSTR: Total Active Prod", "INSTR: (l1) Total Active Prod"))
+run_model(iv_coaln_gdp, mines_cz) %>% etable(headers = c("INSTR: Total Active N", "INSTR: (l1) Total Active N"))
 
 ```
 
@@ -245,7 +250,7 @@ run_model(selected_base_models, mines_cz) %>% etable()
 
 # Declining vs. Growing Regions
 
-What would be great is to be able to econometrically test when a county is "declining." In the first step, it would be good to identify when a county is declining overall (GDP, poverty, etc) but ideally eventually apply this to the education outcome. My hope is that being able to identify counties that are "declining" we can either use this variable as a covariate or as a central point of analysis. The below analysis looks at state-level variables as a first step (mainly to aid in visual comparison and plotting). Ideally, once a method is decided on this would be applied to county-level data which would need to be summarise/collated in some way for plotting.
+What would be great is to be able to econometrically test when a commuting zone is "declining." In the first step, it would be good to identify when a commuting zone is declining overall (GDP, poverty, etc) but ideally eventually apply this to the education outcome. My hope is that being able to identify counties that are "declining" we can either use this variable as a covariate or as a central point of analysis. The below analysis looks at state-level variables as a first step (mainly to aid in visual comparison and plotting). Ideally, once a method is decided on this would be applied to commuting zone-level data which would need to be summarise/collated in some way for plotting.
 
 ```{r, include = FALSE}
 
@@ -276,9 +281,9 @@ growth_rates <- mines_cz %>%
 
 ```
 
-### CZ GDP growth conditional on state and national level
+## CZ GDP growth conditional on state and national level
 
-```{r, fig.height = 10}
+```{r, echo = FALSE, fig.height = 10}
 
 trend_forms <- c("trend" = "diff_log_gdp_total ~ diff_log_gdp_total_state + diff_log_gdp_total_natl", 
                  "trend_pc" = "diff_log_gdp_total_pc ~ diff_log_gdp_total_pc_state + diff_log_gdp_total_pc_natl")
@@ -317,9 +322,9 @@ trend_hist <- cz_trends %>%
   ggplot() + 
   geom_histogram(aes(x = trend), bins = 75, fill = "blue", alpha = 0.5) +
   geom_vline(aes(xintercept = percentiles$p25trend), 
-             color = "darkgreen", linetype = "dashed", size = 0.5) +
+             color = "darkgreen", linetype = "dashed") +
   geom_vline(aes(xintercept = percentiles$p75trend), 
-             color = "purple", linetype = "dashed", size = 0.5) +
+             color = "purple", linetype = "dashed") +
   labs(x = "CZ Trend Coefficient", title = "Distribution of CZ Trend Coefficients", y = "Frequency") +
   annotate("text", x = percentiles$p25trend, y = 90, label = "25th Percentile", color = "darkgreen", angle = 90, vjust = -0.5) +
   annotate("text", x = percentiles$p75trend, y = 90, label = "75th Percentile", color = "purple", angle = 90, vjust = 1.5) +
@@ -330,9 +335,9 @@ trend_pc_hist <- cz_trends %>%
   ggplot() + 
   geom_histogram(aes(x = trend_pc), bins = 75, fill = "magenta", alpha = 0.5) +
   geom_vline(aes(xintercept = percentiles$p25trend_pc), 
-             color = "coral", linetype = "dashed", size = 0.5) +
+             color = "coral", linetype = "dashed") +
   geom_vline(aes(xintercept = percentiles$p75trend_pc), 
-             color = "slateblue", linetype = "dashed", size = 1) +
+             color = "slateblue", linetype = "dashed") +
   labs(x = "CZ Trend Coefficient", title = "Distribution of CZ Trend Coefficients (pc)", y = "Frequency") +
   annotate("text", x = percentiles$p25trend_pc, y = 65, label = "25th Percentile", color = "coral", angle = 90, vjust = -0.5) +
   annotate("text", x = percentiles$p75trend_pc, y = 65, label = "75th Percentile", color = "slateblue", angle = 90, vjust = 1.5) +
@@ -356,37 +361,43 @@ cz_trends %>%
 
 
 
-### Running models on declining vs. growing regions
-```{r}
+## Running IV models on declining vs. growing sub-groups
+```{r, echo = FALSE}
 
 mines_cz_decl <- cz_trends %>% 
   select(cz_id, contains("trend"), contains("growing"), contains("declining")) %>% 
   left_join(mines_cz, ., by = "cz_id")
 
-run_model(selected_base_models, filter(mines_cz_decl, declining_pc)) %>% etable()
-run_model(selected_base_models, filter(mines_cz_decl, !declining_pc)) %>% etable()
 run_model(selected_iv_models, filter(mines_cz_decl, declining_pc)) %>% etable()
 run_model(selected_iv_models, filter(mines_cz_decl, !declining_pc)) %>% etable()
 
-run_model(selected_base_models, filter(mines_cz_decl, declining_pc_extreme)) %>% etable()
-run_model(selected_base_models, filter(mines_cz_decl, growing_pc_extreme)) %>% etable()
 run_model(selected_iv_models, filter(mines_cz_decl, declining_pc_extreme)) %>% etable()
 run_model(selected_iv_models, filter(mines_cz_decl, growing_pc_extreme)) %>% etable()
 
 ```
 
+## Running base models on declining vs. growing sub-groups
+```{r, echo = FALSE}
 
-# Removing outliers - really high-income commuting zones!!!
+run_model(selected_base_models, filter(mines_cz_decl, declining_pc)) %>% etable()
+run_model(selected_base_models, filter(mines_cz_decl, !declining_pc)) %>% etable()
 
-As you can see in the scatterplot below, there is a somewhat non-linear relationship between property taxes and elementary expenditure as property taxes collected rise. This happens largely as a result of very high-income commuting zones. Therefore, I exclude any county that spends more than 28k per pupil to avoid any distorting effects. This removes 12 counties (~2% of the sample) This could benefit from more robust outlier detection. This outlier exclusion weakens our results (and the validity of our instrument choice) in the production-based IV regression. Worth noting and thinking about!!
-```{r}
+run_model(selected_base_models, filter(mines_cz_decl, declining_pc_extreme)) %>% etable()
+run_model(selected_base_models, filter(mines_cz_decl, growing_pc_extreme)) %>% etable()
+
+```
+
+## Removing outliers - really high-income commuting zones!
+
+As you can see in the scatterplot below, there is a somewhat non-linear relationship between property taxes and elementary expenditure as property taxes collected rise. This happens largely as a result of very high-income commuting zones. Therefore, I exclude any commuting zone that spends more than 28k per pupil to avoid any distorting effects. This removes 12 counties (~2% of the sample) This could benefit from more robust outlier detection. This outlier exclusion weakens our results (and the validity of our instrument choice) in the production-based IV regression. Worth noting and thinking about!!
+```{r, echo = FALSE}
 
 mines_no_outliers <- mines_cz %>% 
   group_by(cz_id) %>% 
   filter(!any(log_Elem_Educ_Total_Exp_pp > 10.25)) %>% 
   ungroup
 
-mines_no_outliers %>% 
+mines_cz%>% 
   ggplot(aes(x = log_Elem_Educ_Total_Exp_pp, y = log_Property_Tax_pp, colour = share_own_discrete)) +
   geom_jitter() +
     #geom_smooth(method=lm, colour = "black", linetype = "dashed") +
@@ -405,75 +416,50 @@ run_model(iv_coaln_tax, mines_no_outliers) %>% etable()
 
 # Summary statistics with coal production
 
+All dollar values are reported in thousands.
+
 ```{r}
 
 # Variables of interest for descriptive statistics
 vars <- c("Property_Tax", "Total_IG_Revenue", "Total_Fed_IG_Revenue", "Total_State_IG_Revenue", "Total_Educ_Total_Exp", "Elem_Educ_Total_Exp") # Total_Revenu
 
 mines_cz %>%
-  mutate(across(c(vars, paste0(vars, "_pp"), gdp_total, gdp_priv_ind, gdp_o_g_mining_quarr_21), ~./1000)) %>%  # gdp_govt, 
-  dplyr::select(year, Enrollment, all_of(vars), paste0(vars, "_pp"), gdp_o_g_mining_quarr_21, pop_total, pop_school_age, gdp_total, gdp_priv_ind, total_active_n, total_active_prod) %>%  # gdp_govt, 
-  # rename("ESA Expenditure" = esa_tot_exp, 
-  #        "ESA Expenditure per pupil" = esa_tot_exp_pp, 
-  #        "Revenue" = "Total_Revenue", 
-  #        "Property Tax" = "Property_Tax",
-  #        "IG Revenue" = "Total_IG_Revenue", 
-  #        "Federal IG Revenue" = "Total_Fed_IG_Revenue", 
-  #        "State IG Revenue" = "Total_State_IG_Revenue",
-  #        "Expenditure" = "Total_Expenditure",
-  #        "Revenue per pupil" = "Total_Revenue_pp", 
-  #        "Property Tax per pupil" = "Property_Tax_pp",
-  #        "IG Revenue per pupil" = "Total_IG_Revenue_pp", 
-  #        "Federal IG Revenue per pupil" = "Total_Fed_IG_Revenue_pp", 
-  #        "State IG Revenue per pupil" = "Total_State_IG_Revenue_pp",
-  #        "Expenditure per pupil" = "Total_Expenditure_pp",
-  #        "Population" = pop_total,
-  #        "School Age Population" = pop_school_age, 
-  #        "GDP" = gdp_total,
-  #        "Private Industry GDP" = gdp_priv_ind, 
-  #        "Government GDP" = gdp_govt, 
-  #        "Oil, gas, mining GDP" = gdp_o_g_mining_quarr_21) %>% 
-  #dplyr::group_split(year < 2007) %>% 
-  #    purrr::iwalk(.,~{
-  #      .x %>% 
-          dplyr::select(-year) %>% 
+  select(Enrollment, pop_total, Elem_Educ_Total_Exp_pp, Property_Tax_pp, Total_IG_Revenue_pp, Total_Fed_IG_Revenue_pp, 
+         Total_State_IG_Revenue_pp, gdp_total_pc, gdp_priv_ind_pc, gdp_o_g_mining_quarr_21_pc,
+         Elem_Educ_Total_Exp, Property_Tax, Total_IG_Revenue, Total_Fed_IG_Revenue, 
+         Total_State_IG_Revenue, gdp_total, gdp_priv_ind, gdp_o_g_mining_quarr_21, total_active_n, total_active_prod) %>% 
+  mutate(across(c(gdp_total, gdp_priv_ind, gdp_o_g_mining_quarr_21, gdp_total_pc, gdp_priv_ind_pc, gdp_o_g_mining_quarr_21_pc))) %>%  # gdp_govt, 
           data.frame() %>%
-          stargazer(digits = 0, digits.extra = 3, covariate.labels = c("ESA Expenditure", 
-         "ESA Expenditure per pupil",
+          stargazer(digits = 0, digits.extra = 3, covariate.labels = c(
          "Enrollment",
-         "Revenue", 
-         "Property Tax",
-         "IG Revenue", 
-         "Federal IG Revenue",
-         "State IG Revenue",
-         "Expenditure",
-         "Revenue per pupil", 
+         "Population",
+         "Elem. Expenditure per pupil",
          "Property Tax per pupil",
          "IG Revenue per pupil", 
          "Federal IG Revenue per pupil", 
          "State IG Revenue per pupil",
-         "Expenditure per pupil",
-         "Population",
-         "School Age Population", 
+         "GDP per capita",
+         "GDP pc - Private Industry", 
+         "GDP pc - Oil, gas, mining",
+         "Elem. Expenditure",
+         "Property Tax",
+         "IG Revenue", 
+         "Federal IG Revenue", 
+         "State IG Revenue",
          "GDP",
          "GDP - Private Industry", 
-         "GDP - Government", 
          "GDP - Oil, gas, mining",
          "Active Coal Mines",
-         "Coal Produced (k short tons)"), type = "latex")
+         "Coal Produced (k short tons)"), type = "text")
 
 
 ```
 
+# Bartik Instrument
 
+The following implements a wage and employment based Bartik instrument specific to coal, oil & gas, fossil fuel, and overall extraction sectors, separately. The wage instrument provides some promising uses for oil& gas, fossil fuel, and extraction based employment, NOT coal. The employment based instrument does not provide useful results. Again, this needs to be converted to commuting zones!
 
-
-
-## Bartik
-
-#### Bartik Instrument
-
-```{r}
+```{r, echo = FALSE}
 
 mines_restr <- readRDS(here('data/out/regression_data_complete_fips.RDS'))
 
@@ -515,7 +501,7 @@ ss_labs <- as_labeller(c("ss_emp_coal_2001" = "Coal",
 
 
 sswage <- ss_df %>% 
-  dplyr::select(fips, year,ss_emp_coal_2001, ss_emp_oil_gas_2001, ss_emp_extraction_2001) %>% 
+  dplyr::select(fips, year, ss_emp_coal_2001, ss_emp_oil_gas_2001, ss_emp_extraction_2001) %>% 
   pivot_longer(contains("ss")) %>% 
   group_by(fips) %>% 
   filter(any(!is.na(value))) %>% 
@@ -568,7 +554,7 @@ bartik <- arrangeGrob(grid.arrange(sswage, ss_coal, ncol = 1))
 ```
 
 
-##### Wage Instrument
+## Wage Instrument
 
 ```{r}
 
@@ -576,37 +562,70 @@ scaled_ss <- ss_df %>%
   mutate(across(contains("ss"), ~./1000000000))
 
 
-feols(log_Elem_Educ_Total_Exp_pp ~ log_gdp_total_pc +
-        sw(ss_wage_coal_2001, ss_wage_coal_2005, ss_wage_coal_2011,
-           ss_wage_oil_gas_2001, ss_wage_oil_gas_2005, ss_wage_oil_gas_2011,
-           ss_wage_ff_2001, ss_wage_ff_2005, ss_wage_ff_2011,
-            ss_wage_extraction_2001, ss_wage_extraction_2005, ss_wage_extraction_2011) | cz_id + year, data = scaled_ss, se = "cluster", cluster = "cz_id") %>% etable()
+ss_wage_instruments = c(#ss_wage_coal_2001, 
+   #ss_wage_coal_2005, 
+   #ss_wage_coal_2011,
+   "ss_wage_oil_gas_2001", 
+   "ss_wage_oil_gas_2005", 
+   #ss_wage_oil_gas_2011,
+   #ss_wage_ff_2001, 
+   #ss_wage_ff_2005, 
+   "ss_wage_ff_2011",
+   "ss_wage_extraction_2001",
+   "ss_wage_extraction_2005")
+   #ss_wage_extraction_2011)
+
+ss_wage_forms <- list()
+for(ss in ss_wage_instruments){
+  ss_wage_forms <- append(paste0("log_Total_Educ_Total_Exp_pp ~ log_Total_State_IG_Revenue_pp + log_Total_Fed_IG_Revenue_pp | cz_id + year | log_Property_Tax_pp ~ ", ss), ss_wage_forms)
+} 
+
+run_model(ss_wage_forms, scaled_ss) %>% etable(headers = ss_wage_instruments)
 
 
 ```
 
-##### Employment Instrument
+## Employment Instrument
 
-```{r}
-feols(log_Elem_Educ_Total_Exp_pp ~ log_gdp_total_pc +
-        sw(ss_emp_coal_2001, ss_emp_coal_2005, ss_emp_coal_2011,
-           ss_emp_oil_gas_2001, ss_emp_oil_gas_2005, ss_emp_oil_gas_2011,
-           ss_emp_ff_2001, ss_emp_ff_2005, ss_emp_ff_2011,
-            ss_emp_extraction_2001, ss_emp_extraction_2005, ss_emp_extraction_2011) | cz_id + year, data = scaled_ss, se = "cluster", cluster = "cz_id") %>% etable()
+Excluded as nothing is significant here!
+
+```{r, include = FALSE}
+
+ss_emp_instruments = c(
+  "ss_emp_coal_2001",
+  "ss_emp_coal_2005",
+  "ss_emp_coal_2011",
+  "ss_emp_oil_gas_2001",
+  "ss_emp_oil_gas_2005",
+  "ss_emp_oil_gas_2011",
+  "ss_emp_ff_2001",
+  "ss_emp_ff_2005",
+  "ss_emp_ff_2011",
+  "ss_emp_extraction_2001",
+  "ss_emp_extraction_2005",
+  "ss_emp_extraction_2011")
+
+ss_emp_forms <- list()
+for(ss in ss_emp_instruments){
+  ss_emp_forms <- append(paste0("log_Total_Educ_Total_Exp_pp ~ log_Total_State_IG_Revenue_pp + log_Total_Fed_IG_Revenue_pp | cz_id + year | log_Property_Tax_pp ~ ", ss), ss_emp_forms)
+} 
+
+run_model(ss_emp_forms, scaled_ss) %>% etable(headers = ss_emp_instruments)
+
 ```
 
-### PANELVAR
+<!-- #### PANELVAR -->
 
-```{r}
-# library(panelvar)
-# 
-# test_pvar <- pvargmm(
-#   dependent_vars = c("Elem_Educ_Total_Exp", "log_Property_Tax", "log_gdp_priv_ind"),
-#   lags = 1, 
-#   panel_identifier = c("cz_id", "year"),
-#   steps = c("twostep"),
-#   data = data.frame(mines_cz)
-# )
+<!-- ```{r} -->
+<!-- # library(panelvar) -->
+<!-- #  -->
+<!-- # test_pvar <- pvargmm( -->
+<!-- #   dependent_vars = c("Elem_Educ_Total_Exp", "log_Property_Tax", "log_gdp_priv_ind"), -->
+<!-- #   lags = 1,  -->
+<!-- #   panel_identifier = c("cz_id", "year"), -->
+<!-- #   steps = c("twostep"), -->
+<!-- #   data = data.frame(mines_cz) -->
+<!-- # ) -->
 
 
-```
+<!-- ``` -->
