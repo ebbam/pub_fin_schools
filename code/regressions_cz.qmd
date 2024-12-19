@@ -21,10 +21,10 @@ The following document summarises the progress made thus far on Chapter 1: Local
 
 Updates since last time:
 
-1. After reading more work on US economic geography, it became clear that aggregating counties up to commuting zones was the better choice for analysis at sub-state level as these areas more accurately represent local labour markets/economies/commuting zones ([Fowler et al. 2024](https://www.nature.com/articles/s41597-024-03829-5), [David Dorn's Resource Page](https://www.ddorn.net/data.htm#Local%20Labor%20Market%20Geography)).
-2. Below, I provide some baseline regressions to demonstrate the relationships between key variables in the dataset. 
-3. Next, I turn to an instrumental variable application in which I use coal mine counts and production volumes as an instrument for property taxes. Coal mine counts do not serve as good instruments but coal production passes relevance and exogeneity restrictions. I believe a strong argument can be made for the exclusion restriction to be satisfied. I provide supporting statistical tests for all that demonstrate the unfitness of coal mine counts but fitness of coal production. Along this line, we can hopefully discuss other sources of variation in industrial/economic productivity that might lead to property value spirals (positive or negative) to test the property tax channel. 
-4. I identify declining vs. growing regions by estimating commuting-zone growth rates conditional on state and national level growth rates. Using this distinction (on both a per capita and total gdp bases and a lenient vs. stringent magnitude threshold), I rerun the key regressions identified in steps 2 and 3 on the subgroups (declining and growing regions). Interpretation remains to be done. 
+1.  After reading more work on US economic geography, it became clear that aggregating counties up to commuting zones was the better choice for analysis at sub-state level as these areas more accurately represent local labour markets/economies/commuting zones ([Fowler et al. 2024](https://www.nature.com/articles/s41597-024-03829-5), [David Dorn's Resource Page](https://www.ddorn.net/data.htm#Local%20Labor%20Market%20Geography)).
+2.  Below, I provide some baseline regressions to demonstrate the relationships between key variables in the dataset.
+3.  Next, I turn to an instrumental variable application in which I use coal mine counts and production volumes as an instrument for property taxes. Coal mine counts do not serve as good instruments but coal production passes relevance and exogeneity restrictions. I believe a strong argument can be made for the exclusion restriction to be satisfied. I provide supporting statistical tests for all that demonstrate the unfitness of coal mine counts but fitness of coal production. Along this line, we can hopefully discuss other sources of variation in industrial/economic productivity that might lead to property value spirals (positive or negative) to test the property tax channel.
+4.  I identify declining vs. growing regions by estimating commuting-zone growth rates conditional on state and national level growth rates. Using this distinction (on both a per capita and total gdp bases and a lenient vs. stringent magnitude threshold), I rerun the key regressions identified in steps 2 and 3 on the subgroups (declining and growing regions). Interpretation remains to be done.
 
 Note: Any warnings about "missing observations" or "NA being removed" relates to the lags incorporated, except in the Bartik estimations.
 
@@ -103,6 +103,46 @@ mean_df <- mines_cz %>%
                        log_Total_Educ_Total_Exp_pp = mean(log_Total_Educ_Total_Exp_pp, na.rm = TRUE))
 
 ```
+## Summary statistics with coal production
+
+All dollar values are reported in thousands.
+
+```{r}
+
+# Variables of interest for descriptive statistics
+vars <- c("Property_Tax", "Total_IG_Revenue", "Total_Fed_IG_Revenue", "Total_State_IG_Revenue", "Total_Educ_Total_Exp", "Elem_Educ_Total_Exp") # Total_Revenu
+
+mines_cz %>%
+  select(Enrollment, pop_total, Elem_Educ_Total_Exp_pp, Property_Tax_pp, Total_IG_Revenue_pp, Total_Fed_IG_Revenue_pp, 
+         Total_State_IG_Revenue_pp, gdp_total_pc, gdp_priv_ind_pc, gdp_o_g_mining_quarr_21_pc,
+         Elem_Educ_Total_Exp, Property_Tax, Total_IG_Revenue, Total_Fed_IG_Revenue, 
+         Total_State_IG_Revenue, gdp_total, gdp_priv_ind, gdp_o_g_mining_quarr_21, total_active_n, total_active_prod) %>% 
+  mutate(across(c(gdp_total, gdp_priv_ind, gdp_o_g_mining_quarr_21, gdp_total_pc, gdp_priv_ind_pc, gdp_o_g_mining_quarr_21_pc))) %>%  # gdp_govt, 
+          data.frame() %>%
+          stargazer(digits = 0, digits.extra = 3, covariate.labels = c(
+         "Enrollment",
+         "Population",
+         "Elem. Expenditure per pupil",
+         "Property Tax per pupil",
+         "IG Revenue per pupil", 
+         "Federal IG Revenue per pupil", 
+         "State IG Revenue per pupil",
+         "GDP per capita",
+         "GDP pc - Private Industry", 
+         "GDP pc - Oil, gas, mining",
+         "Elem. Expenditure",
+         "Property Tax",
+         "IG Revenue", 
+         "Federal IG Revenue", 
+         "State IG Revenue",
+         "GDP",
+         "GDP - Private Industry", 
+         "GDP - Oil, gas, mining",
+         "Active Coal Mines",
+         "Coal Produced (k short tons)"), type = "text")
+
+
+```
 
 # Descriptive Regression Results
 
@@ -165,8 +205,7 @@ run_model(educ_gdp_statetrends, mines_cz) %>%
 
 #### Incorporating time lags
 
-Education expenditure has a highly relevant time dependence. The effect of increases in GDP two years prior has the greatest effect on current education expenditure, implying a delayed effect of commuting zone-level economic growth on public education expenditure.
-First 6 do not include state time trends; second 6 do.
+Education expenditure has a highly relevant time dependence. The effect of increases in GDP two years prior has the greatest effect on current education expenditure, implying a delayed effect of commuting zone-level economic growth on public education expenditure. First 6 do not include state time trends; second 6 do.
 
 ```{r, echo = FALSE, warning = FALSE}
 
@@ -188,6 +227,7 @@ run_model(educ_coal, mines_cz) %>%
 ```
 
 ### TWFE panel with state-level trends
+
 Incorporates a deterministic state-level time trend.
 
 ```{r, message = FALSE}
@@ -196,17 +236,19 @@ run_model(educ_coal_statetrends, mines_cz) %>% etable(drop = "*time")
 
 ```
 
-### Dealing with endogeneity
+# Instrumental Variable Approach
 
 There is a significant endogeneity concern in using total active production and active mines as the treatment variable. Therefore, I have tried two instrumental variable approaches below and aim to add results using production- and employment-based Bartik instruments.
 
-#### Instrumental Variable
-
 We consider using total active coal production or total active coal mines as an instrument affecting education expenditure through property taxes or GDP. We know that property taxes have an endogenous relationship with education expenditure, however, in theory, mine closures/activity is unlikely to affect education expenditure, except via property taxes. We test this hypothesis below.
 
-##### Using coal production and mine activity as instruments for per capita property tax
+As a reminder, the intuition behind the idea is:
 
-To my eye, production volumes perform quite well as instrumental variables (passign both stage F tests, exogeneity test (albeit somewhat weakly), and Wald test). Incorporating lagged forms of production (columsn 1.1 and 1.2) is even stronger. 
+![](images/IV_strategy.png)
+
+## Using coal production and mine activity as instruments for per capita property tax
+
+To my eye, production volumes perform quite well as instrumental variables (passign both stage F tests, exogeneity test (albeit somewhat weakly), and Wald test). Incorporating lagged forms of production (columns 1.1 and 1.2) is even stronger.
 
 ```{r, message = FALSE, warnings = FALSE}
 
@@ -215,7 +257,7 @@ run_model(iv_coaln_tax, mines_cz) %>% etable(headers = c("INSTR: Total Active N"
 
 ```
 
-##### Using coal production and mine activity as instruments for per capita gdp
+## Using coal production and mine activity as instruments for per capita gdp
 
 All pass a first-stage F-test with high statistic and low p-value; however, less than satisfactory on the Wu-Hausman endogeneity test.
 
@@ -238,15 +280,6 @@ run_model(iv_coaln_gdp, mines_cz) %>% etable(headers = c("INSTR: Total Active N"
 #           )
 
 ```
-
-# Main Regressions of interest
-
-```{r}
-
-run_model(selected_base_models, mines_cz) %>% etable()
-
-```
-
 
 # Declining vs. Growing Regions
 
@@ -359,24 +392,24 @@ cz_trends %>%
 
 ```
 
-
-
 ## Running IV models on declining vs. growing sub-groups
+
 ```{r, echo = FALSE}
 
 mines_cz_decl <- cz_trends %>% 
   select(cz_id, contains("trend"), contains("growing"), contains("declining")) %>% 
   left_join(mines_cz, ., by = "cz_id")
 
-run_model(selected_iv_models, filter(mines_cz_decl, declining_pc)) %>% etable()
-run_model(selected_iv_models, filter(mines_cz_decl, !declining_pc)) %>% etable()
+run_model(selected_iv_models, filter(mines_cz_decl, declining_pc)) %>% etable(headers = c("INSTR: Total Active Prod", "INSTR: (l1) Total Active Prod","INSTR: Total Active Prod", "INSTR: (l1) Total Active Prod"))
+run_model(selected_iv_models, filter(mines_cz_decl, !declining_pc)) %>% etable(headers = c("INSTR: Total Active Prod", "INSTR: (l1) Total Active Prod","INSTR: Total Active Prod", "INSTR: (l1) Total Active Prod"))
 
-run_model(selected_iv_models, filter(mines_cz_decl, declining_pc_extreme)) %>% etable()
-run_model(selected_iv_models, filter(mines_cz_decl, growing_pc_extreme)) %>% etable()
+run_model(selected_iv_models, filter(mines_cz_decl, declining_pc_extreme)) %>% etable(headers = c("INSTR: Total Active Prod", "INSTR: (l1) Total Active Prod","INSTR: Total Active Prod", "INSTR: (l1) Total Active Prod"))
+run_model(selected_iv_models, filter(mines_cz_decl, growing_pc_extreme)) %>% etable(headers = c("INSTR: Total Active Prod", "INSTR: (l1) Total Active Prod","INSTR: Total Active Prod", "INSTR: (l1) Total Active Prod"))
 
 ```
 
 ## Running base models on declining vs. growing sub-groups
+
 ```{r, echo = FALSE}
 
 run_model(selected_base_models, filter(mines_cz_decl, declining_pc)) %>% etable()
@@ -389,7 +422,8 @@ run_model(selected_base_models, filter(mines_cz_decl, growing_pc_extreme)) %>% e
 
 ## Removing outliers - really high-income commuting zones!
 
-As you can see in the scatterplot below, there is a somewhat non-linear relationship between property taxes and elementary expenditure as property taxes collected rise. This happens largely as a result of very high-income commuting zones. Therefore, I exclude any commuting zone that spends more than 28k per pupil to avoid any distorting effects. This removes 12 counties (~2% of the sample) This could benefit from more robust outlier detection. This outlier exclusion weakens our results (and the validity of our instrument choice) in the production-based IV regression. Worth noting and thinking about!!
+As you can see in the scatterplot below, there is a somewhat non-linear relationship between property taxes and elementary expenditure as property taxes collected rise. This happens largely as a result of very high-income commuting zones. Therefore, I exclude any commuting zone that spends more than 28k per pupil to avoid any distorting effects. This removes 12 counties (\~2% of the sample) This could benefit from more robust outlier detection. This outlier exclusion weakens our results (and the validity of our instrument choice) in the production-based IV regression. Worth noting and thinking about!!
+
 ```{r, echo = FALSE}
 
 mines_no_outliers <- mines_cz %>% 
@@ -414,46 +448,6 @@ run_model(iv_coaln_tax, mines_no_outliers) %>% etable()
 
 ```
 
-# Summary statistics with coal production
-
-All dollar values are reported in thousands.
-
-```{r}
-
-# Variables of interest for descriptive statistics
-vars <- c("Property_Tax", "Total_IG_Revenue", "Total_Fed_IG_Revenue", "Total_State_IG_Revenue", "Total_Educ_Total_Exp", "Elem_Educ_Total_Exp") # Total_Revenu
-
-mines_cz %>%
-  select(Enrollment, pop_total, Elem_Educ_Total_Exp_pp, Property_Tax_pp, Total_IG_Revenue_pp, Total_Fed_IG_Revenue_pp, 
-         Total_State_IG_Revenue_pp, gdp_total_pc, gdp_priv_ind_pc, gdp_o_g_mining_quarr_21_pc,
-         Elem_Educ_Total_Exp, Property_Tax, Total_IG_Revenue, Total_Fed_IG_Revenue, 
-         Total_State_IG_Revenue, gdp_total, gdp_priv_ind, gdp_o_g_mining_quarr_21, total_active_n, total_active_prod) %>% 
-  mutate(across(c(gdp_total, gdp_priv_ind, gdp_o_g_mining_quarr_21, gdp_total_pc, gdp_priv_ind_pc, gdp_o_g_mining_quarr_21_pc))) %>%  # gdp_govt, 
-          data.frame() %>%
-          stargazer(digits = 0, digits.extra = 3, covariate.labels = c(
-         "Enrollment",
-         "Population",
-         "Elem. Expenditure per pupil",
-         "Property Tax per pupil",
-         "IG Revenue per pupil", 
-         "Federal IG Revenue per pupil", 
-         "State IG Revenue per pupil",
-         "GDP per capita",
-         "GDP pc - Private Industry", 
-         "GDP pc - Oil, gas, mining",
-         "Elem. Expenditure",
-         "Property Tax",
-         "IG Revenue", 
-         "Federal IG Revenue", 
-         "State IG Revenue",
-         "GDP",
-         "GDP - Private Industry", 
-         "GDP - Oil, gas, mining",
-         "Active Coal Mines",
-         "Coal Produced (k short tons)"), type = "text")
-
-
-```
 
 # Bartik Instrument
 
@@ -553,7 +547,6 @@ bartik <- arrangeGrob(grid.arrange(sswage, ss_coal, ncol = 1))
 
 ```
 
-
 ## Wage Instrument
 
 ```{r}
@@ -617,15 +610,23 @@ run_model(ss_emp_forms, scaled_ss) %>% etable(headers = ss_emp_instruments)
 <!-- #### PANELVAR -->
 
 <!-- ```{r} -->
-<!-- # library(panelvar) -->
-<!-- #  -->
-<!-- # test_pvar <- pvargmm( -->
-<!-- #   dependent_vars = c("Elem_Educ_Total_Exp", "log_Property_Tax", "log_gdp_priv_ind"), -->
-<!-- #   lags = 1,  -->
-<!-- #   panel_identifier = c("cz_id", "year"), -->
-<!-- #   steps = c("twostep"), -->
-<!-- #   data = data.frame(mines_cz) -->
-<!-- # ) -->
 
+<!-- # library(panelvar) -->
+
+<!-- #  -->
+
+<!-- # test_pvar <- pvargmm( -->
+
+<!-- #   dependent_vars = c("Elem_Educ_Total_Exp", "log_Property_Tax", "log_gdp_priv_ind"), -->
+
+<!-- #   lags = 1,  -->
+
+<!-- #   panel_identifier = c("cz_id", "year"), -->
+
+<!-- #   steps = c("twostep"), -->
+
+<!-- #   data = data.frame(mines_cz) -->
+
+<!-- # ) -->
 
 <!-- ``` -->
