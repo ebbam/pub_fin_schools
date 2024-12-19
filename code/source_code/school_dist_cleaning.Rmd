@@ -631,6 +631,7 @@ code_match <- mines_df %>%
 # Should be central place to add more vars if necessary
 vars_grab <- c("real_gdp_priv_ind",
                "real_gdp_total",
+               "real_gdp_o_g_mining_quarr_21",
                "real_Elem_Educ_Total_Exp", 
                "real_Total_Educ_Total_Exp",
                "real_Property_Tax", 
@@ -640,9 +641,23 @@ vars_grab <- c("real_gdp_priv_ind",
                "real_Total_IG_Revenue",
                "real_Tot_Local_IG_Rev",
                "real_Total_Rev_Own_Sources",
+               "real_Total_Taxes",
                "Enrollment", 
                "pop_total",
-               "n_school_districts")
+               "pop_school_age",
+               "n_school_districts",
+               "underground_active_n",
+               "underground_active_prod",
+               "surface_active_n",
+               "surface_active_prod",
+               "total_active_n",
+               "total_active_prod",
+               "surface_n",
+               "surface_prod",
+               "underground_n",
+               "underground_prod",
+               "total_n",
+               "total_prod")
 
 vars_grab_restr <- c("real_gdp_priv_ind",
                      "real_gdp_priv_ind_pc",
@@ -660,30 +675,37 @@ vars_grab_restr <- c("real_gdp_priv_ind",
                "real_Total_State_IG_Revenue",
                "real_Tot_Local_IG_Rev",
                "real_Total_Rev_Own_Sources",
+               "real_Total_Taxes",
                "Enrollment", 
                "pop_total", 
+               "pop_school_age",
                "n_school_districts")
   
 ## Summarise to Commuting Zone Level
 mines_cz <- mines_df %>%
-  select(cz_id, year, fips, any_of(vars_grab)) %>% 
+  select(cz_id, year, fips, state, any_of(vars_grab)) %>% 
   group_by(cz_id, year) %>%
   summarise(across(vars_grab, ~sum(., na.rm = TRUE)),
-            n_fips = n_distinct(fips)) %>% 
+            n_fips = n_distinct(fips),
+            # Grabs the states of each commuting zone, in cases in which the commiuting zone overlaps multiple states the most common one is retained
+            main_state = names(sort(table(state), decreasing = TRUE))[1], # Most common value
+            # Also retains a list of all states encompassed by the CZ
+            all_states = paste(unique(state), collapse = ":")) %>% 
   ungroup %>% 
   mutate(real_Elem_Educ_Total_Exp_pp = real_Elem_Educ_Total_Exp/Enrollment,
          real_Total_Educ_Total_Exp_pp = real_Total_Educ_Total_Exp/Enrollment,
          real_gdp_priv_ind_pc = real_gdp_priv_ind/pop_total,
          real_gdp_total_pc = real_gdp_total/pop_total,
+         real_gdp_o_g_mining_quarr_21_pc = real_gdp_o_g_mining_quarr_21/pop_total,
          real_Property_Tax_pp = real_Property_Tax/Enrollment,
          real_Total_Fed_IG_Revenue_pp = real_Total_Fed_IG_Revenue/Enrollment,
          real_Total_IG_Revenue_pp = real_Total_IG_Revenue/Enrollment,
          real_Total_State_IG_Revenue_pp = real_Total_State_IG_Revenue/Enrollment,
          real_Tot_Local_IG_Rev_pp = real_Tot_Local_IG_Rev/Enrollment,
          real_Total_Rev_Own_Sources_pp = real_Total_Rev_Own_Sources/Enrollment,
-         across(!c(cz_id, year, n_fips, Enrollment, pop_total), ~log((.*1000) + 1), .names = "log_{.col}"),
-         across(c(Enrollment, pop_total), ~log(.+1), .names = "log_{.col}"),
-         across(!c(cz_id, year, n_fips), ~. - dplyr::lag(., 1), .names = "diff_{.col}"),
+         across(!c(cz_id, year, main_state, all_states, n_fips, Enrollment, pop_total, pop_school_age), ~log((.*1000) + 1), .names = "log_{.col}"),
+         across(c(Enrollment, pop_total, pop_school_age), ~log(.+1), .names = "log_{.col}"),
+         across(!c(cz_id, year, n_fips, main_state, all_states), ~. - dplyr::lag(., 1), .names = "diff_{.col}"),
          time = year - 2000) %>% 
   group_by(cz_id) %>% 
   # first-difference of all variable
@@ -693,12 +715,15 @@ mines_cz <- mines_df %>%
         share_own = sum(real_Total_Rev_Own_Sources, na.rm = TRUE)/sum(real_Elem_Educ_Total_Exp),
         share_own_discrete = case_when(share_own > 0.5 ~ "1 = high",
                                         share_own < 0.25 ~ "3 = low",
-                                        TRUE ~ "2 = medium")) %>% 
+                                        TRUE ~ "2 = medium"),
+         # Currently only GDP controls contain diff
+         across(contains('gdp'), list(l1 = ~dplyr::lag(., 1), l2 = ~dplyr::lag(., 2)), .names = "{.fn}_{.col}")) %>%
   ungroup
 
 #mines_cz %>% saveRDS(here("data/out/cz_dataset.RDS"))
 
 ## Summarise to Commuting Zone Level
+## Before it can be used, this needs to align with the transformations in the above CZ dataset (some missing like shares, lags of gdp)
 mines_cz_1990 <- mines_df %>%
   select(cz_id_1990, year, fips, vars_grab) %>% 
   group_by(cz_id_1990, year) %>%
