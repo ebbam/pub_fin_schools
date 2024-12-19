@@ -400,11 +400,16 @@ mines_cz_decl <- cz_trends %>%
   select(cz_id, contains("trend"), contains("growing"), contains("declining")) %>% 
   left_join(mines_cz, ., by = "cz_id")
 
+print("Declining")
 run_model(selected_iv_models, filter(mines_cz_decl, declining_pc)) %>% etable(headers = c("INSTR: Total Active Prod", "INSTR: (l1) Total Active Prod","INSTR: Total Active Prod", "INSTR: (l1) Total Active Prod"))
+print("Growing")
 run_model(selected_iv_models, filter(mines_cz_decl, !declining_pc)) %>% etable(headers = c("INSTR: Total Active Prod", "INSTR: (l1) Total Active Prod","INSTR: Total Active Prod", "INSTR: (l1) Total Active Prod"))
 
+print("Extreme Decline (25th percentile of growth rates)")
 run_model(selected_iv_models, filter(mines_cz_decl, declining_pc_extreme)) %>% etable(headers = c("INSTR: Total Active Prod", "INSTR: (l1) Total Active Prod","INSTR: Total Active Prod", "INSTR: (l1) Total Active Prod"))
-run_model(selected_iv_models, filter(mines_cz_decl, growing_pc_extreme)) %>% etable(headers = c("INSTR: Total Active Prod", "INSTR: (l1) Total Active Prod","INSTR: Total Active Prod", "INSTR: (l1) Total Active Prod"))
+
+print("Extreme Decline (75th percentile of growth rates)")
+run_model(selected_iv_models, filter(mines_cz_decl, growing_pc_extreme)) %>% etable(headers = c("INSTR: Total Active Prod", "INSTR: (l1) Total Active Prod","INSTR: Total Active Prod", "INSTR: (l1) Total Active Prod"), title = "Hello")
 
 ```
 
