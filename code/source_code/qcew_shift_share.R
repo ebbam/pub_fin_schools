@@ -5,8 +5,8 @@ library(usmap)
 library(conflicted)
 library(zoo)
 conflict_prefer_all("dplyr", quiet = TRUE)
-source(here("code/dicts.R"))
-
+source(here("code/source_code/dicts.R"))
+source(here("code/source_code/useful_functions.R"))
 
 # Source: https://www.bls.gov/cew/downloadable-data-files.htm.  - CSVs Single Files: Annual Averages
 
@@ -153,4 +153,37 @@ full %>% select(fips, year, contains("ss_emp_oil_gas")) %>%
 full %>% select(fips, year, contains("ss_emp_oil_gas")) %>% 
   group_by(fips) %>% filter(!any(is.na(ss_emp_oil_gas_2001)) | !any(is.na(ss_emp_oil_gas_2005)) | !any(is.na(ss_emp_oil_gas_2011))) %>% 
   ungroup %>% summarise(across(ss_emp_oil_gas_2001:ss_emp_oil_gas_2011, ~sum(is.na(.))))
+
+
+
+################### Create CZ dataset
+source(here("code/source_code/cz_cleaning.R"))
+
+shift_share <- temp %>% 
+  filter(industry_code %in% c('10', '21', '2121', '211') & agglvl_code %in% c(70, 74, 76, 75) & disclosure_code != "N") %>%
+  group_by(fips, year, industry_code, fips_state) %>% 
+  summarise(across(where(is.numeric), sum)) %>% 
+  ungroup %>% 
+  pivot_wider(id_cols = c(fips, year, fips_state), names_from = industry_code, values_from = c(annual_avg_emplvl, total_annual_wages)) %>%
+  # Balance the panel
+  complete(fips, year) %>%
+  group_by(fips) %>% 
+  mutate(across(where(is.numeric), ~ na.approx(., maxgap = 7, na.rm = FALSE))) %>% #filter(!all(is.na(annual_avg_emplvl_2121))) %>% ggplot(aes(x = year, y = annual_avg_emplvl_2121, color = fips)) + geom_line() + facet_wrap(~fips_state)
+  ungroup %>%
+  # Calculates share of employment and wage per industry in each county 
+  mutate(share_emp_coal = annual_avg_emplvl_2121/annual_avg_emplvl_10,
+         share_emp_extraction = annual_avg_emplvl_21/annual_avg_emplvl_10,
+         share_emp_ff = (annual_avg_emplvl_2121 + annual_avg_emplvl_211)/annual_avg_emplvl_10,
+         share_emp_oil_gas =  annual_avg_emplvl_211/annual_avg_emplvl_10,
+         share_wage_coal = total_annual_wages_2121/total_annual_wages_10,
+         share_wage_extraction = total_annual_wages_21/total_annual_wages_10,
+         share_wage_ff = (total_annual_wages_2121 + total_annual_wages_211)/total_annual_wages_10,
+         share_wage_oil_gas =  total_annual_wages_211/total_annual_wages_10) %>% 
+  group_by(fips) %>% 
+  mutate(across(annual_avg_emplvl_10:total_annual_wages_2121,  .fns = list(l1 = ~lag(.x), fd = ~.x - lag(.x)), .names = "{.fn}_{.col}")) %>% ungroup
+
+
+temp %>% 
+  filter(industry_code %in% c('10', '21', '2121', '211') & agglvl_code %in% c(70, 74, 76, 75) & disclosure_code != "N") %>% 
+  select(fips, year) %>% group_by(fips) %>% summarise(n = n()) %>% filter(n != 22)
 
