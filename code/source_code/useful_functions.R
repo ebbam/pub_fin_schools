@@ -90,6 +90,7 @@ mute_outliers <- function(df, var_outliers, sds = 3){
 # # Function to convert standard fips codes to BEA fips codes
 # # FIPS modifications - inconsistent FIPS codes between BEA sources and others
 # # the following creates a lookup process for replacing standard FIPS codes with their BEA equivalents
-# bea_fips <- read_excel(here("data/out/FIPSModificationsVA.xlsx"), skip = 1, col_types = c("text", "text","text","text"))
-# getfips <- bea_fips$`BEA FIPS`
-# names(getfips) <- bea_fips$FIPS
+## Taken from coal project: coal_usa/replication_code/data/FIPSModificationsVA.xlsx
+bea_fips <- read_excel(here("data/out/FIPSModificationsVA.xlsx"), skip = 1, col_types = c("text", "text","text","text"))
+getfips <- bea_fips$`BEA FIPS`
+names(getfips) <- bea_fips$FIPS
