@@ -5,9 +5,9 @@
 # PSU keep record of comparable US labour market geographies: https://sites.psu.edu/psucz/
 # David Dorn's website with references and crosswalks: https://www.ddorn.net/data.htm
 
-
-# Current county-level dataset
-mines_restr <- readRDS(here('data/temp/mines_restr.RDS'))
+library(here)
+library(readxl)
+library(tidyverse)
 
 # Commuting zones
 czs <- read_xls(here('data/out/cz00_eqv_v1.xls')) %>%
@@ -19,5 +19,3 @@ czs <- read_xls(here('data/out/cz00_eqv_v1.xls')) %>%
   mutate(fips = ifelse(fips == "46113", "46102", fips)) 
 
 
-# Testing whether all fips are present in commuting zones data - confirmed!
-czs %>% pull(fips) %>% setdiff(unique(mines_restr$fips), .) %>% length == 0

@@ -45,6 +45,7 @@ library(viridis)
 library(datasets)
 library(broom)
 library(fixest)
+library(paletteer)
 library(readxl)
 library(ggrepel)
 library(plm)
@@ -390,6 +391,93 @@ cz_trends %>%
 cz_trends %>% 
   filter(growing_extreme != growing_pc_extreme) %>% nrow()/nrow(cz_trends)
 
+theme_update(plot.background = element_rect(fill = "#fafaf5", color = "#fafaf5"),
+             panel.background = element_rect(fill = NA, color = NA),
+             panel.border = element_rect(fill = NA, color = NA),
+             panel.grid.major.x = element_blank(),
+             panel.grid.minor = element_blank(),
+             axis.text.x = element_blank(),
+             axis.text.y = element_text(size = 10),
+             axis.ticks = element_blank(),
+             axis.title.y = element_text(size = 13,
+                                         margin = margin(r = 10)),
+             legend.title = element_text(size = 9),
+             plot.margin = margin(10, 25, 10, 25))
+
+cz_trends_plot <- cz_trends %>% 
+  left_join(., distinct(select(mines_cz, cz_id, main_state)), by = "cz_id")
+
+cz_trends_plot$state = sapply(cz_trends_plot$main_state, get_state) 
+cz_trends_plot$region = sapply(cz_trends_plot$state, get_region)
+
+cz_states <- cz_trends_plot %>% 
+  group_by(state) %>% 
+  arrange(state, trend_pc) %>% 
+  mutate(midpt = ifelse(row_number() == round((max(row_number()) - min(row_number()))/2),1, NA)) %>% 
+  ungroup %>% 
+  mutate(midpt = row_number() * midpt) %>% 
+  mutate(cz_id = factor(cz_id, levels = cz_id)) %>%
+  ggplot(aes(cz_id, trend_pc)) +
+  geom_segment(aes(x=cz_id ,xend=cz_id, y=0, yend=trend_pc, color = state)) +
+  geom_point( color="darkblue", size=0.5) +
+  geom_label(aes(midpt, 0.15,
+                   label = state,
+                   color = state),
+               fill = NA,
+               family = "Special Elite",
+               fontface = "bold",
+               label.padding = unit(.2, "lines"),
+               label.r = unit(.25, "lines"),
+               label.size = .05,
+             size = 3) +
+  coord_flip() +
+  labs(x = "Commuting Zones by State", y = "Trend Coefficient") +
+  theme(axis.text.y=element_blank(),
+        axis.ticks.y=element_blank(),
+        legend.position = "none")
+
+cz_trend <- cz_trends_plot %>% 
+  arrange(trend_pc) %>% 
+  mutate(cz_id = factor(cz_id, levels = cz_id)) %>% 
+  ggplot(aes(cz_id, trend_pc)) +
+  geom_segment(aes(x=cz_id ,xend=cz_id, y=0, yend=trend_pc, color = cz_id)) +
+  geom_point( color="darkblue", size=0.5) +
+  coord_flip() +
+  labs(x = "Commuting Zones", y = "Trend Coefficient") +
+    theme(axis.text.y=element_blank(),
+        axis.ticks.y=element_blank(),
+        legend.position = "none")
+
+cz_regions <- cz_trends_plot %>% 
+  group_by(region) %>% 
+  arrange(region, trend_pc) %>% 
+  mutate(midpt = ifelse(row_number() == round((max(row_number()) - min(row_number()))/2),1, NA)) %>% 
+  ungroup %>% 
+  mutate(midpt = row_number() * midpt) %>% 
+  mutate(cz_id = factor(cz_id, levels = cz_id)) %>%
+  ggplot(aes(cz_id, trend_pc)) +
+  geom_segment(aes(x=cz_id ,xend=cz_id, y=0, yend=trend_pc, color = region)) +
+  geom_point( color="darkblue", size=0.5) +
+  geom_label(aes(midpt, 0.08,
+                   label = region,
+                   color = region),
+               fill = NA,
+               family = "Special Elite",
+               fontface = "bold",
+               label.padding = unit(.2, "lines"),
+               label.r = unit(.25, "lines"),
+               label.size = .05,
+             size = 6) +
+  coord_flip() +
+  labs(x = "Commuting Zones by State", y = "Trend Coefficient") +
+  theme(axis.text.y=element_blank(),
+        axis.ticks.y=element_blank(),
+        legend.position = "none") +
+ scale_color_brewer(palette = "Set2")
+
+
+cz_regions + cz_states + cz_trend
+
 ```
 
 ## Running IV models on declining vs. growing sub-groups
@@ -635,3 +723,14 @@ run_model(ss_emp_forms, scaled_ss) %>% etable(headers = ss_emp_instruments)
 <!-- # ) -->
 
 <!-- ``` -->
+
+
+# Additional instruments
+## Green investments
+## Energy mix
+### Community owned energy
+```{r}
+
+```
+
+
