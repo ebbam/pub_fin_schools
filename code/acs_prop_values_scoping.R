@@ -22,7 +22,6 @@ census_key = "0b9039bd3038272ab0afe94e28911dcb9b9b7d43"
 #DP03_0092E	Estimate!!INCOME AND BENEFITS (IN 2022 INFLATION-ADJUSTED DOLLARS)!!Median earnings for workers (dollars)
 
 #Information about missing data in ACS: https://www.census.gov/programs-surveys/acs/guidance/estimates.html
-```{r}
 # Educational attainment
 api_list = list("median_earnings" = "DP03_0092E",	#Estimate!!INCOME AND BENEFITS (IN 2022 INFLATION-ADJUSTED DOLLARS)!!Median earnings for workers (dollars)
                 "ed_25_over_bachelors_or_higher" = "DP02_0068PE",
