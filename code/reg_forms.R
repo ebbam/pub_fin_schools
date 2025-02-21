@@ -6,6 +6,14 @@ run_model <- function(mods, df){
   return(res)
 }
 
+run_model_fips <- function(mods, df){
+  res <- list()
+  for(k in mods){
+    res <- append(res, list(feols(as.formula(k), data = df, se = "cluster", cluster = "fips", panel.id = ~fips+year)))
+  }
+  return(res)
+}
+
 # Property Tax ~ gdp
 
 prop_taxes = c(log_Property_Tax ~ log_gdp_total + sw0(l(log_gdp_total, 1:4)) | cz_id + year, 
@@ -80,4 +88,19 @@ selected_iv_models = c(log_Elem_Educ_Total_Exp_pp ~ log_Total_State_IG_Revenue_p
                     log_Elem_Educ_Total_Exp_pp ~ log_Total_State_IG_Revenue_pp + log_Total_Fed_IG_Revenue_pp | cz_id + year | log_gdp_total_pc ~ total_active_prod,
                     # Using the lag of total active production as an instrument for per capita property tax
                     log_Elem_Educ_Total_Exp_pp ~ log_Total_State_IG_Revenue_pp + log_Total_Fed_IG_Revenue_pp | cz_id + year | log_gdp_total_pc ~ l(total_active_prod,1))
+
+
+solar_iv_models = c(log_Elem_Educ_Total_Exp_pp ~ log_Total_State_IG_Revenue_pp + log_Total_Fed_IG_Revenue_pp | cz_id + year | log_Property_Tax_pp ~ pv_p_area,
+                       log_Elem_Educ_Total_Exp_pp ~ log_Total_State_IG_Revenue_pp + log_Total_Fed_IG_Revenue_pp | cz_id + year | log_Property_Tax_pp ~ pv_p_cap_ac,
+                    log_Elem_Educ_Total_Exp_pp ~ log_Total_State_IG_Revenue_pp + log_Total_Fed_IG_Revenue_pp | cz_id + year | log_Property_Tax_pp ~ pv_p_cap_dc,
+                       log_Elem_Educ_Total_Exp_pp ~ log_Total_State_IG_Revenue_pp + log_Total_Fed_IG_Revenue_pp | cz_id + year | log_gdp_total_pc ~ pv_p_area,
+                       log_Elem_Educ_Total_Exp_pp ~ log_Total_State_IG_Revenue_pp + log_Total_Fed_IG_Revenue_pp | cz_id + year | log_gdp_total_pc ~ pv_p_cap_ac,
+                    log_Elem_Educ_Total_Exp_pp ~ log_Total_State_IG_Revenue_pp + log_Total_Fed_IG_Revenue_pp | cz_id + year | log_gdp_total_pc ~ pv_p_cap_dc)
+
+solar_iv_models_pc = c(log_Elem_Educ_Total_Exp_pp ~ log_Total_State_IG_Revenue_pp + log_Total_Fed_IG_Revenue_pp | cz_id + year | log_Property_Tax_pp ~ pv_p_area_pc,
+                    log_Elem_Educ_Total_Exp_pp ~ log_Total_State_IG_Revenue_pp + log_Total_Fed_IG_Revenue_pp | cz_id + year | log_Property_Tax_pp ~ pv_p_cap_ac_pc,
+                    log_Elem_Educ_Total_Exp_pp ~ log_Total_State_IG_Revenue_pp + log_Total_Fed_IG_Revenue_pp | cz_id + year | log_Property_Tax_pp ~ pv_p_cap_dc_pc,
+                    log_Elem_Educ_Total_Exp_pp ~ log_Total_State_IG_Revenue_pp + log_Total_Fed_IG_Revenue_pp | cz_id + year | log_gdp_total_pc ~ pv_p_area_pc,
+                    log_Elem_Educ_Total_Exp_pp ~ log_Total_State_IG_Revenue_pp + log_Total_Fed_IG_Revenue_pp | cz_id + year | log_gdp_total_pc ~ pv_p_cap_ac_pc,
+                    log_Elem_Educ_Total_Exp_pp ~ log_Total_State_IG_Revenue_pp + log_Total_Fed_IG_Revenue_pp | cz_id + year | log_gdp_total_pc ~ pv_p_cap_dc_pc)
 
