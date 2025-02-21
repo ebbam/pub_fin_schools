@@ -8,6 +8,7 @@
 library(here)
 library(readxl)
 library(tidyverse)
+conflict_prefer_all("dplyr", quiet = TRUE)
 
 # Commuting zones
 czs <- read_xls(here('data/out/cz00_eqv_v1.xls')) %>%
@@ -16,6 +17,7 @@ czs <- read_xls(here('data/out/cz00_eqv_v1.xls')) %>%
          cz_id= 2,
          cz_population = 3,
          cz_id_1990 = 4) %>% 
-  mutate(fips = ifelse(fips == "46113", "46102", fips)) 
+  mutate(fips = ifelse(fips == "46113", "46102", fips),
+         cz_id = as.character(cz_id))
 
 

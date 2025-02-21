@@ -12,7 +12,7 @@ format:
 params:
   font_size: 6
 editor_options: 
-  chunk_output_type: inline
+  chunk_output_type: console
 ---
 
 # Introduction
@@ -21,10 +21,16 @@ The following document summarises the progress made thus far on Chapter 1: Local
 
 Updates since last time:
 
+1.  Converted the Bartik instruments using wage and employment shares in various fossil fuel industries to commuting zone level to test pass-through via property taxes and local GDP. Might be worth reconsidering specification/economic theory here?     
+2. Incorporated data on large-scale solar panel installations. For now use these as instrument on property taxes and local GDP as previously done with coal mine activity.        
+3. I wonder if there is a way to bring together the logic behind a Bartik instrument and the calculations on local growth/decline. 
+
+Recall the work from the previous meeting:
+
 1.  After reading more work on US economic geography, it became clear that aggregating counties up to commuting zones was the better choice for analysis at sub-state level as these areas more accurately represent local labour markets/economies/commuting zones ([Fowler et al. 2024](https://www.nature.com/articles/s41597-024-03829-5), [David Dorn's Resource Page](https://www.ddorn.net/data.htm#Local%20Labor%20Market%20Geography)).
 2.  Below, I provide some baseline regressions to demonstrate the relationships between key variables in the dataset.
 3.  Next, I turn to an instrumental variable application in which I use coal mine counts and production volumes as an instrument for property taxes. Coal mine counts do not serve as good instruments but coal production passes relevance and exogeneity restrictions. I believe a strong argument can be made for the exclusion restriction to be satisfied. I provide supporting statistical tests for all that demonstrate the unfitness of coal mine counts but fitness of coal production. Along this line, we can hopefully discuss other sources of variation in industrial/economic productivity that might lead to property value spirals (positive or negative) to test the property tax channel.
-4.  I identify declining vs. growing regions by estimating commuting-zone growth rates conditional on state and national level growth rates. Using this distinction (on both a per capita and total gdp bases and a lenient vs. stringent magnitude threshold), I rerun the key regressions identified in steps 2 and 3 on the subgroups (declining and growing regions). Interpretation remains to be done.
+4.  I identify declining vs. growing regions by estimating commuting-zone growth rates conditional on state and national level growth rates. Using this distinction (on both a per capita and total gdp bases and a lenient vs. stringent magnitude threshold), I rerun the key regressions identified in steps 2 and 3 on the subgroups (declining and growing regions).
 
 Note: Any warnings about "missing observations" or "NA being removed" relates to the lags incorporated, except in the Bartik estimations.
 
@@ -44,6 +50,7 @@ library(here)
 library(viridis)
 library(datasets)
 library(broom)
+library(fipio)
 library(fixest)
 library(paletteer)
 library(readxl)
@@ -51,7 +58,7 @@ library(ggrepel)
 library(plm)
 library(getspanel)
 library(usmap)
-library(gridExtra)
+library(patchwork)
 library(kableExtra)
 library(lattice)
 library(lubridate)
@@ -71,7 +78,7 @@ library(ggplotify)
 source(here('code/source_code/useful_functions.R'))
 source(here('code/source_code/dicts.R'))
 source(here('code/reg_forms.R'))
-
+source(here('code/source_code/cz_cleaning.R'))
 conflict_prefer_all("dplyr", quiet = TRUE)
 
 setFixest_etable(fitstat = ~ . + ivf1 + ivf1.p + ivf2 + ivf2.p + wh + wh.p + ivwaldall + ivwaldall.p, se.below = TRUE)
@@ -208,7 +215,7 @@ run_model(educ_gdp_statetrends, mines_cz) %>%
 
 Education expenditure has a highly relevant time dependence. The effect of increases in GDP two years prior has the greatest effect on current education expenditure, implying a delayed effect of commuting zone-level economic growth on public education expenditure. First 6 do not include state time trends; second 6 do.
 
-```{r, echo = FALSE, warning = FALSE}
+```{r, echo = FALSE, warnings = FALSE}
 
 run_model(educ_gdp_lags, mines_cz) %>% etable(drop = "*time", headers = rep(c("w.o State Trends", "w. State Trends"), 3))
 
@@ -317,10 +324,12 @@ growth_rates <- mines_cz %>%
 
 ## CZ GDP growth conditional on state and national level
 
-```{r, echo = FALSE, fig.height = 10}
+```{r, echo = FALSE, fig.height = 10, warning = FALSE}
 
 trend_forms <- c("trend" = "diff_log_gdp_total ~ diff_log_gdp_total_state + diff_log_gdp_total_natl", 
-                 "trend_pc" = "diff_log_gdp_total_pc ~ diff_log_gdp_total_pc_state + diff_log_gdp_total_pc_natl")
+                "trend_pc" = "diff_log_gdp_total_pc ~ diff_log_gdp_total_pc_state + diff_log_gdp_total_pc_natl")
+                # "trend_pc" = "diff_log_gdp_total_pc ~ diff_log_gdp_total_pc_state")
+                 #"trend_pc" = "diff_log_gdp_total_pc ~ diff_log_gdp_total_pc_natl")
 
 for(k in names(trend_forms)){
   # runs model of growth rate in gdp_total and gdp_total_pc conditional on state and national growth rates
@@ -469,7 +478,7 @@ cz_regions <- cz_trends_plot %>%
                label.size = .05,
              size = 6) +
   coord_flip() +
-  labs(x = "Commuting Zones by State", y = "Trend Coefficient") +
+  labs(x = "Commuting Zones by Region", y = "Trend Coefficient") +
   theme(axis.text.y=element_blank(),
         axis.ticks.y=element_blank(),
         legend.position = "none") +
@@ -496,7 +505,7 @@ run_model(selected_iv_models, filter(mines_cz_decl, !declining_pc)) %>% etable(h
 print("Extreme Decline (25th percentile of growth rates)")
 run_model(selected_iv_models, filter(mines_cz_decl, declining_pc_extreme)) %>% etable(headers = c("INSTR: Total Active Prod", "INSTR: (l1) Total Active Prod","INSTR: Total Active Prod", "INSTR: (l1) Total Active Prod"))
 
-print("Extreme Decline (75th percentile of growth rates)")
+print("Extreme Growth (75th percentile of growth rates)")
 run_model(selected_iv_models, filter(mines_cz_decl, growing_pc_extreme)) %>% etable(headers = c("INSTR: Total Active Prod", "INSTR: (l1) Total Active Prod","INSTR: Total Active Prod", "INSTR: (l1) Total Active Prod"), title = "Hello")
 
 ```
@@ -546,20 +555,23 @@ run_model(iv_coaln_tax, mines_no_outliers) %>% etable()
 
 The following implements a wage and employment based Bartik instrument specific to coal, oil & gas, fossil fuel, and overall extraction sectors, separately. The wage instrument provides some promising uses for oil& gas, fossil fuel, and extraction based employment, NOT coal. The employment based instrument does not provide useful results. Again, this needs to be converted to commuting zones!
 
-```{r, echo = FALSE}
+```{r, echo = FALSE, warnings = FALSE}
 
-mines_restr <- readRDS(here('data/out/regression_data_complete_fips.RDS'))
+mines_cz <- readRDS(here("data/out/cz_dataset.RDS")) %>% 
+  # rename all variables that contain monetary values to exclude "real" - all values in this dataset DO have real values!!! see school_dist_cleaning.Rmd
+  rename_with(~gsub("real_", "", .x, fixed = TRUE))
 
-ss <- readRDS(here("data/temp/shift_shares_base_01_05_11.RDS"))
+ss <- readRDS(here("data/temp/shift_shares_cz_base_01_05_11.RDS")) %>% 
+  mutate(cz_id = as.character(cz_id))
 
-ss %>% 
-  #filter(!(substr(cz_id, 1,2) %in% c("02", "15", "51", "09", "24"))) %>% 
-  pull(fips) %>% 
-  unique %>% 
-  setdiff(unique(mines_restr$fips), .)
+# ss %>% 
+#   #filter(!(substr(fips, 1,2) %in% c("02", "15", "51", "09", "24"))) %>% 
+#   pull(cz_id) %>% 
+#   unique %>% 
+#   setdiff(unique(mines_cz$cz_id), .)
 
-ss_df <- mines_restr %>% 
-  left_join(., ss, by = c("year", "fips"))
+ss_df <- mines_cz %>% 
+  left_join(., ss, by = c("year", "cz_id"))
 
 
 # library(ShiftShareSE)
@@ -587,13 +599,14 @@ ss_labs <- as_labeller(c("ss_emp_coal_2001" = "Coal",
 
 
 
-sswage <- ss_df %>% 
-  dplyr::select(fips, year, ss_emp_coal_2001, ss_emp_oil_gas_2001, ss_emp_extraction_2001) %>% 
+sswage <- #ss_df %>% 
+  ss %>% 
+  dplyr::select(cz_id, year, ss_emp_coal_2001, ss_emp_oil_gas_2001, ss_emp_extraction_2001) %>% 
   pivot_longer(contains("ss")) %>% 
-  group_by(fips) %>% 
+  group_by(cz_id) %>% 
   filter(any(!is.na(value))) %>% 
   ungroup %>% 
-  ggplot(aes(x = year, y = value, group = fips)) +
+  ggplot(aes(x = year, y = value, group = cz_id)) +
   geom_line(alpha = 0.2, color = "darkblue") + 
   facet_wrap(~name, scales = "free", labeller = ss_labs) +
   xlab("Year") +
@@ -610,14 +623,15 @@ sswage <- ss_df %>%
         plot.background = element_blank(),
         plot.title = element_text(hjust=0.5))
   
-ss_coal <- ss_df %>% 
-  dplyr::select(fips, year,ss_wage_coal_2001, ss_wage_oil_gas_2001, ss_wage_extraction_2001) %>% 
+ss_coal <- #ss_df %>%
+  ss %>% 
+  dplyr::select(cz_id, year,ss_wage_coal_2001, ss_wage_oil_gas_2001, ss_wage_extraction_2001) %>% 
   pivot_longer(contains("ss")) %>% 
-  group_by(fips) %>% 
+  group_by(cz_id) %>% 
   filter(any(!is.na(value))) %>% 
   ungroup %>% 
   mutate(value = value/1000000) %>%  
-  ggplot(aes(x = year, y = value, group = fips)) +
+  ggplot(aes(x = year, y = value, group = cz_id)) +
   geom_line(alpha = 0.2, color = "violetred3") + 
   facet_wrap(~name, scales = "free", labeller = ss_labs) +
   xlab("Year") +
@@ -634,103 +648,245 @@ ss_coal <- ss_df %>%
         plot.background = element_blank(),
         plot.title = element_text(hjust=0.5))
 
-bartik <- arrangeGrob(grid.arrange(sswage, ss_coal, ncol = 1))
+sswage / ss_coal
+
+scaled_ss <- ss_df %>%
+  mutate(across(contains("ss"), ~./1000000000))
 
 #ggsave(here("output/plots/bartik_graphs.jpg"), bartik, width = 25, height = 25, units = "cm")
 
 ```
 
-## Wage Instrument
-
-```{r}
-
-scaled_ss <- ss_df %>%
-  mutate(across(contains("ss"), ~./1000000000))
-
-
-ss_wage_instruments = c(#ss_wage_coal_2001, 
-   #ss_wage_coal_2005, 
-   #ss_wage_coal_2011,
-   "ss_wage_oil_gas_2001", 
-   "ss_wage_oil_gas_2005", 
-   #ss_wage_oil_gas_2011,
-   #ss_wage_ff_2001, 
-   #ss_wage_ff_2005, 
-   "ss_wage_ff_2011",
-   "ss_wage_extraction_2001",
-   "ss_wage_extraction_2005")
-   #ss_wage_extraction_2011)
-
-ss_wage_forms <- list()
-for(ss in ss_wage_instruments){
-  ss_wage_forms <- append(paste0("log_Total_Educ_Total_Exp_pp ~ log_Total_State_IG_Revenue_pp + log_Total_Fed_IG_Revenue_pp | cz_id + year | log_Property_Tax_pp ~ ", ss), ss_wage_forms)
-} 
-
-run_model(ss_wage_forms, scaled_ss) %>% etable(headers = ss_wage_instruments)
-
-
-```
-
-## Employment Instrument
-
-Excluded as nothing is significant here!
-
-```{r, include = FALSE}
-
-ss_emp_instruments = c(
-  "ss_emp_coal_2001",
-  "ss_emp_coal_2005",
-  "ss_emp_coal_2011",
-  "ss_emp_oil_gas_2001",
-  "ss_emp_oil_gas_2005",
-  "ss_emp_oil_gas_2011",
-  "ss_emp_ff_2001",
-  "ss_emp_ff_2005",
-  "ss_emp_ff_2011",
-  "ss_emp_extraction_2001",
-  "ss_emp_extraction_2005",
-  "ss_emp_extraction_2011")
-
-ss_emp_forms <- list()
-for(ss in ss_emp_instruments){
-  ss_emp_forms <- append(paste0("log_Total_Educ_Total_Exp_pp ~ log_Total_State_IG_Revenue_pp + log_Total_Fed_IG_Revenue_pp | cz_id + year | log_Property_Tax_pp ~ ", ss), ss_emp_forms)
-} 
-
-run_model(ss_emp_forms, scaled_ss) %>% etable(headers = ss_emp_instruments)
-
-```
-
-<!-- #### PANELVAR -->
+<!-- ## Coal Instruments -->
 
 <!-- ```{r} -->
 
-<!-- # library(panelvar) -->
 
-<!-- #  -->
 
-<!-- # test_pvar <- pvargmm( -->
+<!-- ss_coal_instruments = c("ss_wage_coal_2001", -->
+<!--    #"ss_wage_coal_2005", -->
+<!--    #"ss_wage_coal_2011", -->
+<!--    "ss_emp_coal_2001") -->
+<!--   #"ss_emp_coal_2005", -->
+<!--   #"ss_emp_coal_2011") -->
 
-<!-- #   dependent_vars = c("Elem_Educ_Total_Exp", "log_Property_Tax", "log_gdp_priv_ind"), -->
+<!-- ss_coal_instruments_res <- list() -->
+<!-- for(ss in ss_coal_instruments){ -->
+<!--   ss_coal_instruments_res  <- append(paste0("log_Total_Educ_Total_Exp_pp ~ log_Total_State_IG_Revenue_pp + log_Total_Fed_IG_Revenue_pp | cz_id + year | log_Property_Tax_pp ~ ", ss), ss_coal_instruments_res) -->
+<!-- } -->
 
-<!-- #   lags = 1,  -->
+<!-- run_model(ss_coal_instruments_res, scaled_ss) %>% etable(headers = ss_coal_instruments) -->
 
-<!-- #   panel_identifier = c("cz_id", "year"), -->
-
-<!-- #   steps = c("twostep"), -->
-
-<!-- #   data = data.frame(mines_cz) -->
-
-<!-- # ) -->
 
 <!-- ``` -->
 
 
-# Additional instruments
-## Green investments
-## Energy mix
-### Community owned energy
+## Oil and Gas Instruments
+
 ```{r}
+
+
+ss_oil_gas_instruments <- c(
+   "ss_wage_oil_gas_2001", 
+   #"ss_wage_oil_gas_2005", 
+   #"ss_wage_oil_gas_2011",
+   "ss_emp_oil_gas_2001"
+  #"ss_emp_oil_gas_2005",
+  #"ss_emp_oil_gas_2011"
+  )
+
+ss_oil_gas_instruments_res <- list()
+for(ss in ss_oil_gas_instruments){
+  ss_oil_gas_instruments_res  <- append(paste0("log_Total_Educ_Total_Exp_pp ~ log_Total_State_IG_Revenue_pp + log_Total_Fed_IG_Revenue_pp | cz_id + year | log_Property_Tax_pp ~ ", ss), ss_oil_gas_instruments_res)
+} 
+
+run_model(ss_oil_gas_instruments_res, scaled_ss) %>% etable(headers = ss_oil_gas_instruments)
+
 
 ```
 
+## Fossil Fuel Instruments
+
+```{r}
+
+ss_ff_instruments <- c(
+   "ss_wage_ff_2001",
+   #"ss_wage_ff_2005",
+  # "ss_wage_ff_2011",
+   "ss_emp_ff_2001"
+   #"ss_emp_ff_2005",
+   #"ss_emp_ff_2011"
+  )
+
+ss_ff_instruments_res <- list()
+for(ss in ss_ff_instruments){
+  ss_ff_instruments_res  <- append(paste0("log_Total_Educ_Total_Exp_pp ~ log_Total_State_IG_Revenue_pp + log_Total_Fed_IG_Revenue_pp | cz_id + year | log_Property_Tax_pp ~ ", ss), ss_ff_instruments_res)
+} 
+
+run_model(ss_ff_instruments_res, scaled_ss) %>% etable(headers = ss_ff_instruments)
+
+
+```
+
+## Extraction Instruments
+
+```{r}
+
+ss_extraction_instruments <- c(
+   "ss_wage_extraction_2001",
+   #"ss_wage_extraction_2005",
+   #"ss_wage_extraction_2011",
+   "ss_emp_extraction_2001")
+   #"ss_emp_extraction_2005",
+   #"ss_emp_extraction_2011")
+
+ss_extraction_instruments_res <- list()
+for(ss in ss_extraction_instruments){
+  ss_extraction_instruments_res  <- append(paste0("log_Total_Educ_Total_Exp_pp ~ log_Total_State_IG_Revenue_pp + log_Total_Fed_IG_Revenue_pp | cz_id + year | log_Property_Tax_pp ~ ", ss), ss_extraction_instruments_res)
+} 
+
+run_model(ss_extraction_instruments_res, scaled_ss) %>% etable(headers = ss_extraction_instruments)
+
+
+```
+
+# Additional instruments: Green investments
+
+## US large-scale solar photovoltaics database
+This dataset includes data on large-scale installations of solar PV across counties. The latest release includes data on 4,185 facilities covering 47 states (plus the District of Columbia). 
+
+Source: https://energy.usgs.gov/uspvdb/data/
+
+```{r, warnings = FALSE, echo = FALSE}
+
+
+spv_fips <- read.csv(here('data/raw/us_large_scale_solar_pv/uspvdbCSV/uspvdb_v2_0_20240801.csv')) %>% 
+  tibble %>% 
+  mutate(p_county = ifelse(p_state == "CA" & p_county == "San" & p_name == "Lockhart Solar PV II", "San Bernardino", p_county)) %>% 
+  mutate(fips = as_fips(p_state, p_county),
+         fips = case_when(fips == "12" & p_state == "FL" & p_county == "St Lucie" ~ "12111",
+                fips == "12" & p_state == "FL" & p_county == "Miami Dade" ~ "12086",
+                fips == "18" & p_state == "IN" & p_county == "St Joseph" ~ "18141",
+                fips == "24" & p_state == "MD" & p_county == "Queen Annes" ~ "24035", 
+                fips == "24" & p_state == "MD" & p_county == "Prince Georges" ~ "24033",
+                fips == "26" & p_state == "MI" & p_county == "St Joseph" ~ "26149",
+                fips == "35" & p_state == "NM" & p_county == "Dona Ana" ~ "35013",
+                fips == "36" & p_state == "NY" & p_county == "St Lawrence" ~ "36089",
+                fips == "51" & p_state == "VA" & p_county == "Chesapeake City" ~ "51550",
+                fips == "51" & p_state == "VA" & p_county == "Suffolk City" ~ "51800",
+                TRUE ~ fips),
+         fips = case_when(!is.na(getfips[fips]) ~ getfips[fips],
+                          TRUE ~ fips)) %>% 
+    rename(year = p_year)
+
+spv_cz <- spv_fips %>% 
+    left_join(., czs, by = c("fips"), multiple = "first") %>% 
+  group_by(year, cz_id) %>% 
+         summarise(across(c(p_area, p_cap_ac, p_cap_dc), ~sum(., na.rm = TRUE), .names = "pv_{.col}"))
+
+mines_cz_solar <- left_join(mines_cz, spv_cz, by = c("cz_id", "year")) %>% 
+  group_by(cz_id) %>% 
+  fill(pv_p_area, .direction = "down") %>% 
+  fill(pv_p_cap_ac, .direction = "down") %>% 
+  fill(pv_p_cap_dc, .direction = "down") %>% 
+  ungroup %>% 
+  mutate(across(c(pv_p_area, pv_p_cap_ac, pv_p_cap_dc), ~./pop_total, .names = "{.col}_pc"))
+ 
+# run_model(solar_iv_models, mines_cz_solar) %>% 
+#   etable()
+source(here('code/reg_forms.R'))
+
+run_model(solar_iv_models_pc, mines_cz_solar) %>% 
+  etable()
+
+```
+
+<!-- ```{r, echo = FALSE, warnings = FALSE} -->
+<!-- mines_restr <- readRDS(here("data/out/regression_data_complete_fips.RDS"))  -->
+
+<!-- spv_fips <- spv_fips %>%  -->
+<!--   group_by(year, fips) %>%  -->
+<!--          summarise(across(c(p_area, p_cap_ac, p_cap_dc), ~sum(., na.rm = TRUE), .names = "pv_{.col}")) -->
+
+<!-- mines_fips_solar <- left_join(mines_restr, spv_fips, by = c("fips", "year")) %>%  -->
+<!--   group_by(fips) %>%  -->
+<!--   fill(pv_p_area, .direction = "down") %>%  -->
+<!--   fill(pv_p_cap_ac, .direction = "down") %>%  -->
+<!--   fill(pv_p_cap_dc, .direction = "down") %>%  -->
+<!--   ungroup %>%  -->
+<!--   mutate(across(c(pv_p_area, pv_p_cap_ac, pv_p_cap_dc), ~./pop_total, .names = "{.col}_pc")) -->
+
+<!-- solar_iv_models = c(log_Elem_Educ_Total_Exp_pp ~ log_Total_State_IG_Revenue_pp + log_Total_Fed_IG_Revenue_pp | fips + year | log_Property_Tax_pp ~ pv_p_area, -->
+<!--                        log_Elem_Educ_Total_Exp_pp ~ log_Total_State_IG_Revenue_pp + log_Total_Fed_IG_Revenue_pp | fips + year | log_Property_Tax_pp ~ pv_p_cap_ac, -->
+<!--                     log_Elem_Educ_Total_Exp_pp ~ log_Total_State_IG_Revenue_pp + log_Total_Fed_IG_Revenue_pp | fips + year | log_Property_Tax_pp ~ pv_p_cap_dc, -->
+<!--                        log_Elem_Educ_Total_Exp_pp ~ log_Total_State_IG_Revenue_pp + log_Total_Fed_IG_Revenue_pp | fips + year | log_gdp_total_pc ~ pv_p_area, -->
+<!--                        log_Elem_Educ_Total_Exp_pp ~ log_Total_State_IG_Revenue_pp + log_Total_Fed_IG_Revenue_pp | fips + year | log_gdp_total_pc ~ pv_p_cap_ac, -->
+<!--                     log_Elem_Educ_Total_Exp_pp ~ log_Total_State_IG_Revenue_pp + log_Total_Fed_IG_Revenue_pp | fips + year | log_gdp_total_pc ~ pv_p_cap_dc) -->
+
+<!-- solar_iv_models_pc = c(log_Elem_Educ_Total_Exp_pp ~ log_Total_State_IG_Revenue_pp + log_Total_Fed_IG_Revenue_pp | fips + year | log_Property_Tax_pp ~ pv_p_area_pc, -->
+<!--                     log_Elem_Educ_Total_Exp_pp ~ log_Total_State_IG_Revenue_pp + log_Total_Fed_IG_Revenue_pp | fips + year | log_Property_Tax_pp ~ pv_p_cap_ac_pc, -->
+<!--                     log_Elem_Educ_Total_Exp_pp ~ log_Total_State_IG_Revenue_pp + log_Total_Fed_IG_Revenue_pp | fips + year | log_Property_Tax_pp ~ pv_p_cap_dc_pc, -->
+<!--                     log_Elem_Educ_Total_Exp_pp ~ log_Total_State_IG_Revenue_pp + log_Total_Fed_IG_Revenue_pp | fips + year | log_gdp_total_pc ~ pv_p_area_pc, -->
+<!--                     log_Elem_Educ_Total_Exp_pp ~ log_Total_State_IG_Revenue_pp + log_Total_Fed_IG_Revenue_pp | fips + year | log_gdp_total_pc ~ pv_p_cap_ac_pc, -->
+<!--                     log_Elem_Educ_Total_Exp_pp ~ log_Total_State_IG_Revenue_pp + log_Total_Fed_IG_Revenue_pp | fips + year | log_gdp_total_pc ~ pv_p_cap_dc_pc) -->
+
+<!-- run_model_fips(solar_iv_models, mines_fips_solar) %>%  -->
+<!--   etable() -->
+
+<!-- run_model_fips(solar_iv_models_pc, mines_fips_solar) %>%  -->
+<!--   etable() -->
+
+<!-- ``` -->
+
+<!-- ```{r, warnings = FALSE, echo = FALSE} -->
+<!-- library(fipio) -->
+
+<!-- spv <- read.csv(here('data/raw/us_large_scale_solar_pv/uspvdbCSV/uspvdb_v2_0_20240801.csv')) %>%  -->
+<!--   tibble %>%  -->
+<!--   mutate(p_county = ifelse(p_state == "CA" & p_county == "San" & p_name == "Lockhart Solar PV II", "San Bernardino", p_county)) %>%  -->
+<!--   mutate(fips = as_fips(p_state, p_county), -->
+<!--          fips = case_when(fips == "12" & p_state == "FL" & p_county == "St Lucie" ~ "12111", -->
+<!--                 fips == "12" & p_state == "FL" & p_county == "Miami Dade" ~ "12086", -->
+<!--                 fips == "18" & p_state == "IN" & p_county == "St Joseph" ~ "18141", -->
+<!--                 fips == "24" & p_state == "MD" & p_county == "Queen Annes" ~ "24035",  -->
+<!--                 fips == "24" & p_state == "MD" & p_county == "Prince Georges" ~ "24033", -->
+<!--                 fips == "26" & p_state == "MI" & p_county == "St Joseph" ~ "26149", -->
+<!--                 fips == "35" & p_state == "NM" & p_county == "Dona Ana" ~ "35013", -->
+<!--                 fips == "36" & p_state == "NY" & p_county == "St Lawrence" ~ "36089", -->
+<!--                 fips == "51" & p_state == "VA" & p_county == "Chesapeake City" ~ "51550", -->
+<!--                 fips == "51" & p_state == "VA" & p_county == "Suffolk City" ~ "51800", -->
+<!--                 TRUE ~ fips), -->
+<!--          fips = case_when(!is.na(getfips[fips]) ~ getfips[fips], -->
+<!--                           TRUE ~ fips)) %>%  -->
+<!--     rename(year = p_year) %>%  -->
+<!--   group_by(fips) %>%  -->
+<!--   complete(case_id, year = 2000:2023, fill = list(NA)) %>%  -->
+<!--   left_join(., czs, by = c("fips"), multiple = "first") %>%  -->
+<!--   group_by(case_id) %>%  -->
+<!--   fill(p_area, .direction = "down") %>%  -->
+<!--   fill(p_cap_ac, .direction = "down") %>%  -->
+<!--   fill(p_cap_dc, .direction = "down") %>%  -->
+<!--   ungroup %>%  -->
+<!--   group_by(year, cz_id) %>%  -->
+<!--          summarise(across(c(p_area, p_cap_ac, p_cap_dc), ~sum(., na.rm = TRUE), .names = "pv_{.col}")) -->
+
+<!-- mines_cz_solar <- left_join(mines_cz, spv, by = c("cz_id", "year")) %>%  -->
+<!--   group_by(cz_id) %>%  -->
+<!--   fill(pv_p_area, .direction = "down") %>%  -->
+<!--   fill(pv_p_cap_ac, .direction = "down") %>%  -->
+<!--   fill(pv_p_cap_dc, .direction = "down") %>%  -->
+<!--   ungroup %>%  -->
+<!--   mutate(across(c(pv_p_area, pv_p_cap_ac, pv_p_cap_dc), ~./pop_total, .names = "{.col}_pc")) -->
+
+<!-- # run_model(solar_iv_models, mines_cz_solar) %>%  -->
+<!-- #   etable() -->
+
+<!-- run_model(solar_iv_models_pc, mines_cz_solar) %>%  -->
+<!--   etable() -->
+
+<!-- ``` -->
+
+## Also interesting...
+### Energy mix
+### Community owned energy
 
