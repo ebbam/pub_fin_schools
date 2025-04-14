@@ -11,7 +11,6 @@ code/results_files/
 *.icloud
 *.Rapp.history
 
-data/raw/BEA_county_econ_stats
 data/raw/CAGDP2
 data/raw/CAGDP9
 data/out/old
@@ -56,3 +55,8 @@ data/raw/QCEW/2018.annual.singlefile.csv
 data/raw/QCEW/2020.annual.singlefile.csv
 data/raw/QCEW/2021.annual.singlefile.csv
 data/raw/QCEW/2022.annual.singlefile.csv
+
+data/raw/BEA_county_econ_stats/**/*.zip
+data/raw/BEA_county_econ_stats/**/*.csv
+!data/raw/BEA_county_econ_stats/**/*ALL_AREAS*.csv
+
