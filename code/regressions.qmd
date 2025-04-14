@@ -83,6 +83,8 @@ conflict_prefer_all("dplyr", quiet = TRUE)
 
 setFixest_etable(fitstat = ~ . + ivf1 + ivf1.p + ivf2 + ivf2.p + wh + wh.p + ivwaldall + ivwaldall.p, se.below = TRUE)
 
+unit_id = "cz_id"
+
 ```
 
 # Data
@@ -99,9 +101,30 @@ All data used is reported annually at the commuting zone level. Therefore, no ti
 
 ```{r, echo = FALSE, message = FALSE, warnings = FALSE, fig.height = 10}
 
-mines_cz <- readRDS(here("data/out/cz_dataset.RDS")) %>% 
+if(unit_id == "cz_id"){
+  print(paste0("Running analysis on CZs (", unit_id, ")."))
+  mines_cz <- readRDS(here("data/out/cz_dataset.RDS")) %>% 
   # rename all variables that contain monetary values to exclude "real" - all values in this dataset DO have real values!!! see school_dist_cleaning.Rmd
-  rename_with(~gsub("real_", "", .x, fixed = TRUE))
+  rename_with(~gsub("real_", "", .x, fixed = TRUE)) %>% 
+    mutate(unit = get(unit_id)) %>% 
+    rename(state = main_state)
+  
+  ss <- readRDS(here("data/temp/shift_shares_cz_base_01_05_11.RDS")) %>% 
+  mutate(unit = get(unit_id))
+  
+}else if(unit_id == "fips"){
+  print(paste0("Running analysis on counties (", unit_id, ")."))
+  mines_cz <- readRDS(here("data/out/regression_data_complete_fips.RDS")) %>% 
+    mutate(unit = get(unit_id)) %>% 
+      group_by(unit) %>%
+    arrange(unit, year) %>% 
+  mutate(across(c(starts_with("log_gdp_total") | starts_with("log_gdp_priv_ind")), ~.- dplyr::lag(., 1), .names = "diff_{.col}")) %>% 
+  ungroup 
+  
+    ss <- readRDS(here("data/temp/shift_shares_base_01_05_11.RDS")) %>% 
+  mutate(unit = get(unit_id)) 
+}else{
+  stop("You need to specify fips or cz_id as the panel unit.")}
 
 mean_df <- mines_cz %>% 
   group_by(year) %>%
@@ -151,6 +174,30 @@ mines_cz %>%
 
 
 ```
+
+# Dataset coverage    
+~ 9% of students are enrolled in private schools
+```{r}
+
+natl_coverage <- mines_cz %>%
+  select(year, Enrollment, pop_school_age) %>%
+  group_by(year) %>%
+  summarise(across(c(Enrollment, pop_school_age), ~sum(., na.rm = TRUE))) %>%
+  mutate(pupils_covered = Enrollment/(pop_school_age*(14/15)))
+
+all_ff_states <- readRDS(here("data/temp/shift_shares_base_01_05_11.RDS")) %>% 
+  mutate(state = substr(fips, start = 1, stop = 2)) %>% group_by(state) %>% filter(any(annual_avg_emplvl_211 > 100)) %>% 
+  ungroup %>% 
+  arrange(annual_avg_emplvl_211) %>% 
+  pull(state) %>% 
+  unique %>% 
+  lapply(., get_state)
+  
+mines_restr_2021 <- mines_cz %>% filter(year == 2021) %>% 
+  select(unit, log_Property_Tax_pp, log_Elem_Educ_Total_Exp_pp, log_gdp_priv_ind_pc)
+
+```
+
 
 # Descriptive Regression Results
 
@@ -252,7 +299,7 @@ We consider using total active coal production or total active coal mines as an 
 
 As a reminder, the intuition behind the idea is:
 
-![](images/IV_strategy.png)
+![](output/IV_strategy.png)
 
 ## Using coal production and mine activity as instruments for per capita property tax
 
@@ -281,7 +328,7 @@ run_model(iv_coaln_gdp, mines_cz) %>% etable(headers = c("INSTR: Total Active N"
 # getspanel
 # isatpanel(data = mines_cz, 
 #           formula = "Total_Educ_Total_Exp_pp ~ gdp_total_pc + gdp_priv_ind_pc + gdp_o_g_mining_quarr_21_pc + gdp_govt_pc",
-#           index = c("cz_id","year"),
+#           index = c("unit","year"),
 #          iis = TRUE,
 #          t.pval =0.01
 #          # SIS = TRUE 
@@ -296,13 +343,13 @@ What would be great is to be able to econometrically test when a commuting zone 
 ```{r, include = FALSE}
 
 state_lev <- mines_cz %>% 
-  group_by(main_state, year) %>% 
+  group_by(state, year) %>% 
   summarise(across(c(gdp_priv_ind, gdp_total, pop_total), ~sum(., na.rm = TRUE))) %>% 
   ungroup %>% 
   mutate(gdp_priv_ind_pc = gdp_priv_ind/pop_total,
          gdp_total_pc = gdp_total/pop_total,
-         across(!c(main_state, year), ~log(. + 1), .names = "log_{.col}")) %>% 
-  group_by(main_state) %>% 
+         across(!c(state, year), ~log(. + 1), .names = "log_{.col}")) %>% 
+  group_by(state) %>% 
   mutate(across(contains("log"), ~.- dplyr::lag(., 1), .names = "diff_{.col}")) %>% 
   ungroup 
 
@@ -316,8 +363,8 @@ natl_lev <- mines_cz %>%
          across(contains("log"), ~.- dplyr::lag(., 1), .names = "diff_{.col}"))
 
 growth_rates <- mines_cz %>% 
-  select(cz_id, names(state_lev)) %>%
-  left_join(., state_lev, by = c("main_state", "year"), suffix = c("", "_state")) %>% 
+  select(unit, names(state_lev)) %>%
+  left_join(., state_lev, by = c("state", "year"), suffix = c("", "_state")) %>% 
   left_join(., natl_lev, by = c("year"), suffix = c("", "_natl"))
 
 ```
@@ -334,7 +381,7 @@ trend_forms <- c("trend" = "diff_log_gdp_total ~ diff_log_gdp_total_state + diff
 for(k in names(trend_forms)){
   # runs model of growth rate in gdp_total and gdp_total_pc conditional on state and national growth rates
    cz_trends = growth_rates %>% 
-    group_by(cz_id) %>% 
+    group_by(unit) %>% 
     do(model = lm(as.formula(trend_forms[k]), data = .)) %>% 
     ungroup %>% 
     mutate(!!k := map_dbl(model, ~ pluck(coef(.x), "(Intercept)")))
@@ -343,7 +390,7 @@ for(k in names(trend_forms)){
 }
 
 cz_trends <- trend %>% 
-  left_join(., trend_pc, by = "cz_id")
+  left_join(., trend_pc, by = "unit")
 
 percentiles <- cz_trends %>%
   summarize(
@@ -414,9 +461,9 @@ theme_update(plot.background = element_rect(fill = "#fafaf5", color = "#fafaf5")
              plot.margin = margin(10, 25, 10, 25))
 
 cz_trends_plot <- cz_trends %>% 
-  left_join(., distinct(select(mines_cz, cz_id, main_state)), by = "cz_id")
+  left_join(., distinct(select(mines_cz, unit, state)), by = "unit")
 
-cz_trends_plot$state = sapply(cz_trends_plot$main_state, get_state) 
+cz_trends_plot$state = sapply(cz_trends_plot$state, get_state) 
 cz_trends_plot$region = sapply(cz_trends_plot$state, get_region)
 
 cz_states <- cz_trends_plot %>% 
@@ -425,9 +472,9 @@ cz_states <- cz_trends_plot %>%
   mutate(midpt = ifelse(row_number() == round((max(row_number()) - min(row_number()))/2),1, NA)) %>% 
   ungroup %>% 
   mutate(midpt = row_number() * midpt) %>% 
-  mutate(cz_id = factor(cz_id, levels = cz_id)) %>%
-  ggplot(aes(cz_id, trend_pc)) +
-  geom_segment(aes(x=cz_id ,xend=cz_id, y=0, yend=trend_pc, color = state)) +
+  mutate(unit = factor(unit, levels = unit)) %>%
+  ggplot(aes(unit, trend_pc)) +
+  geom_segment(aes(x=unit ,xend=unit, y=0, yend=trend_pc, color = state)) +
   geom_point( color="darkblue", size=0.5) +
   geom_label(aes(midpt, 0.15,
                    label = state,
@@ -447,9 +494,9 @@ cz_states <- cz_trends_plot %>%
 
 cz_trend <- cz_trends_plot %>% 
   arrange(trend_pc) %>% 
-  mutate(cz_id = factor(cz_id, levels = cz_id)) %>% 
-  ggplot(aes(cz_id, trend_pc)) +
-  geom_segment(aes(x=cz_id ,xend=cz_id, y=0, yend=trend_pc, color = cz_id)) +
+  mutate(unit = factor(unit, levels = unit)) %>% 
+  ggplot(aes(unit, trend_pc)) +
+  geom_segment(aes(x=unit ,xend=unit, y=0, yend=trend_pc, color = unit)) +
   geom_point( color="darkblue", size=0.5) +
   coord_flip() +
   labs(x = "Commuting Zones", y = "Trend Coefficient") +
@@ -463,9 +510,9 @@ cz_regions <- cz_trends_plot %>%
   mutate(midpt = ifelse(row_number() == round((max(row_number()) - min(row_number()))/2),1, NA)) %>% 
   ungroup %>% 
   mutate(midpt = row_number() * midpt) %>% 
-  mutate(cz_id = factor(cz_id, levels = cz_id)) %>%
-  ggplot(aes(cz_id, trend_pc)) +
-  geom_segment(aes(x=cz_id ,xend=cz_id, y=0, yend=trend_pc, color = region)) +
+  mutate(unit = factor(unit, levels = unit)) %>%
+  ggplot(aes(unit, trend_pc)) +
+  geom_segment(aes(x=unit ,xend=unit, y=0, yend=trend_pc, color = region)) +
   geom_point( color="darkblue", size=0.5) +
   geom_label(aes(midpt, 0.08,
                    label = region,
@@ -494,8 +541,8 @@ cz_regions + cz_states + cz_trend
 ```{r, echo = FALSE}
 
 mines_cz_decl <- cz_trends %>% 
-  select(cz_id, contains("trend"), contains("growing"), contains("declining")) %>% 
-  left_join(mines_cz, ., by = "cz_id")
+  select(unit, contains("trend"), contains("growing"), contains("declining")) %>% 
+  left_join(mines_cz, ., by = "unit")
 
 print("Declining")
 run_model(selected_iv_models, filter(mines_cz_decl, declining_pc)) %>% etable(headers = c("INSTR: Total Active Prod", "INSTR: (l1) Total Active Prod","INSTR: Total Active Prod", "INSTR: (l1) Total Active Prod"))
@@ -529,7 +576,7 @@ As you can see in the scatterplot below, there is a somewhat non-linear relation
 ```{r, echo = FALSE}
 
 mines_no_outliers <- mines_cz %>% 
-  group_by(cz_id) %>% 
+  group_by(unit) %>% 
   filter(!any(log_Elem_Educ_Total_Exp_pp > 10.25)) %>% 
   ungroup
 
@@ -557,21 +604,18 @@ The following implements a wage and employment based Bartik instrument specific 
 
 ```{r, echo = FALSE, warnings = FALSE}
 
-mines_cz <- readRDS(here("data/out/cz_dataset.RDS")) %>% 
-  # rename all variables that contain monetary values to exclude "real" - all values in this dataset DO have real values!!! see school_dist_cleaning.Rmd
-  rename_with(~gsub("real_", "", .x, fixed = TRUE))
-
-ss <- readRDS(here("data/temp/shift_shares_cz_base_01_05_11.RDS")) %>% 
-  mutate(cz_id = as.character(cz_id))
+# mines_cz <- readRDS(here("data/out/cz_dataset.RDS")) %>% 
+#   # rename all variables that contain monetary values to exclude "real" - all values in this dataset DO have real values!!! see school_dist_cleaning.Rmd
+#   rename_with(~gsub("real_", "", .x, fixed = TRUE))
 
 # ss %>% 
 #   #filter(!(substr(fips, 1,2) %in% c("02", "15", "51", "09", "24"))) %>% 
-#   pull(cz_id) %>% 
+#   pull(unit) %>% 
 #   unique %>% 
-#   setdiff(unique(mines_cz$cz_id), .)
+#   setdiff(unique(mines_cz$unit), .)
 
 ss_df <- mines_cz %>% 
-  left_join(., ss, by = c("year", "cz_id"))
+  left_join(., ss, by = c("year", "unit"))
 
 
 # library(ShiftShareSE)
@@ -601,12 +645,12 @@ ss_labs <- as_labeller(c("ss_emp_coal_2001" = "Coal",
 
 sswage <- #ss_df %>% 
   ss %>% 
-  dplyr::select(cz_id, year, ss_emp_coal_2001, ss_emp_oil_gas_2001, ss_emp_extraction_2001) %>% 
+  dplyr::select(unit, year, ss_emp_coal_2001, ss_emp_oil_gas_2001, ss_emp_extraction_2001) %>% 
   pivot_longer(contains("ss")) %>% 
-  group_by(cz_id) %>% 
+  group_by(unit) %>% 
   filter(any(!is.na(value))) %>% 
   ungroup %>% 
-  ggplot(aes(x = year, y = value, group = cz_id)) +
+  ggplot(aes(x = year, y = value, group = unit)) +
   geom_line(alpha = 0.2, color = "darkblue") + 
   facet_wrap(~name, scales = "free", labeller = ss_labs) +
   xlab("Year") +
@@ -625,13 +669,13 @@ sswage <- #ss_df %>%
   
 ss_coal <- #ss_df %>%
   ss %>% 
-  dplyr::select(cz_id, year,ss_wage_coal_2001, ss_wage_oil_gas_2001, ss_wage_extraction_2001) %>% 
+  dplyr::select(unit, year,ss_wage_coal_2001, ss_wage_oil_gas_2001, ss_wage_extraction_2001) %>% 
   pivot_longer(contains("ss")) %>% 
-  group_by(cz_id) %>% 
+  group_by(unit) %>% 
   filter(any(!is.na(value))) %>% 
   ungroup %>% 
   mutate(value = value/1000000) %>%  
-  ggplot(aes(x = year, y = value, group = cz_id)) +
+  ggplot(aes(x = year, y = value, group = unit)) +
   geom_line(alpha = 0.2, color = "violetred3") + 
   facet_wrap(~name, scales = "free", labeller = ss_labs) +
   xlab("Year") +
@@ -672,7 +716,7 @@ scaled_ss <- ss_df %>%
 
 <!-- ss_coal_instruments_res <- list() -->
 <!-- for(ss in ss_coal_instruments){ -->
-<!--   ss_coal_instruments_res  <- append(paste0("log_Total_Educ_Total_Exp_pp ~ log_Total_State_IG_Revenue_pp + log_Total_Fed_IG_Revenue_pp | cz_id + year | log_Property_Tax_pp ~ ", ss), ss_coal_instruments_res) -->
+<!--   ss_coal_instruments_res  <- append(paste0("log_Total_Educ_Total_Exp_pp ~ log_Total_State_IG_Revenue_pp + log_Total_Fed_IG_Revenue_pp | unit + year | log_Property_Tax_pp ~ ", ss), ss_coal_instruments_res) -->
 <!-- } -->
 
 <!-- run_model(ss_coal_instruments_res, scaled_ss) %>% etable(headers = ss_coal_instruments) -->
@@ -697,7 +741,7 @@ ss_oil_gas_instruments <- c(
 
 ss_oil_gas_instruments_res <- list()
 for(ss in ss_oil_gas_instruments){
-  ss_oil_gas_instruments_res  <- append(paste0("log_Total_Educ_Total_Exp_pp ~ log_Total_State_IG_Revenue_pp + log_Total_Fed_IG_Revenue_pp | cz_id + year | log_Property_Tax_pp ~ ", ss), ss_oil_gas_instruments_res)
+  ss_oil_gas_instruments_res  <- append(paste0("log_Total_Educ_Total_Exp_pp ~ log_Total_State_IG_Revenue_pp + log_Total_Fed_IG_Revenue_pp | unit + year | log_Property_Tax_pp ~ ", ss), ss_oil_gas_instruments_res)
 } 
 
 run_model(ss_oil_gas_instruments_res, scaled_ss) %>% etable(headers = ss_oil_gas_instruments)
@@ -720,7 +764,7 @@ ss_ff_instruments <- c(
 
 ss_ff_instruments_res <- list()
 for(ss in ss_ff_instruments){
-  ss_ff_instruments_res  <- append(paste0("log_Total_Educ_Total_Exp_pp ~ log_Total_State_IG_Revenue_pp + log_Total_Fed_IG_Revenue_pp | cz_id + year | log_Property_Tax_pp ~ ", ss), ss_ff_instruments_res)
+  ss_ff_instruments_res  <- append(paste0("log_Total_Educ_Total_Exp_pp ~ log_Total_State_IG_Revenue_pp + log_Total_Fed_IG_Revenue_pp | unit + year | log_Property_Tax_pp ~ ", ss), ss_ff_instruments_res)
 } 
 
 run_model(ss_ff_instruments_res, scaled_ss) %>% etable(headers = ss_ff_instruments)
@@ -742,13 +786,31 @@ ss_extraction_instruments <- c(
 
 ss_extraction_instruments_res <- list()
 for(ss in ss_extraction_instruments){
-  ss_extraction_instruments_res  <- append(paste0("log_Total_Educ_Total_Exp_pp ~ log_Total_State_IG_Revenue_pp + log_Total_Fed_IG_Revenue_pp | cz_id + year | log_Property_Tax_pp ~ ", ss), ss_extraction_instruments_res)
+  ss_extraction_instruments_res  <- append(paste0("log_Total_Educ_Total_Exp_pp ~ log_Total_State_IG_Revenue_pp + log_Total_Fed_IG_Revenue_pp | unit + year | log_Property_Tax_pp ~ ", ss), ss_extraction_instruments_res)
 } 
 
 run_model(ss_extraction_instruments_res, scaled_ss) %>% etable(headers = ss_extraction_instruments)
 
 
 ```
+
+
+### PANELVAR
+```{r}
+
+# library(panelvar)
+# 
+# test_pvar <- pvargmm(
+#   dependent_vars = c("Elem_Educ_Total_Exp", "log_Property_Tax", "log_gdp_priv_ind"),
+#   lags = 1, 
+#   panel_identifier = c("fips", "year"),
+#   steps = c("twostep"),
+#   data = data.frame(mines_restr)
+# )
+
+
+```
+
 
 # Additional instruments: Green investments
 
@@ -779,24 +841,29 @@ spv_fips <- read.csv(here('data/raw/us_large_scale_solar_pv/uspvdbCSV/uspvdb_v2_
                           TRUE ~ fips)) %>% 
     rename(year = p_year)
 
-spv_cz <- spv_fips %>% 
+if(unit_id == "cz_id"){
+  spv <- spv_fips %>% 
     left_join(., czs, by = c("fips"), multiple = "first") %>% 
-  group_by(year, cz_id) %>% 
-         summarise(across(c(p_area, p_cap_ac, p_cap_dc), ~sum(., na.rm = TRUE), .names = "pv_{.col}"))
+    rename(unit = cz_id)
+}else if(unit_id == "fips"){
+  spv <- spv_fips %>% 
+    rename(unit = fips)
+}
 
-mines_cz_solar <- left_join(mines_cz, spv_cz, by = c("cz_id", "year")) %>% 
-  group_by(cz_id) %>% 
+
+mines_solar <- spv %>% 
+  group_by(year, unit) %>% 
+  summarise(across(c(p_area, p_cap_ac, p_cap_dc), ~sum(., na.rm = TRUE), .names = "pv_{.col}")) %>% left_join(mines_cz, spv, by = c("unit", "year")) %>% 
+  group_by(unit) %>% 
   fill(pv_p_area, .direction = "down") %>% 
   fill(pv_p_cap_ac, .direction = "down") %>% 
   fill(pv_p_cap_dc, .direction = "down") %>% 
   ungroup %>% 
   mutate(across(c(pv_p_area, pv_p_cap_ac, pv_p_cap_dc), ~./pop_total, .names = "{.col}_pc"))
  
-# run_model(solar_iv_models, mines_cz_solar) %>% 
-#   etable()
 source(here('code/reg_forms.R'))
 
-run_model(solar_iv_models_pc, mines_cz_solar) %>% 
+run_model(solar_iv_models_pc, mines_solar) %>% 
   etable()
 
 ```
@@ -867,11 +934,11 @@ run_model(solar_iv_models_pc, mines_cz_solar) %>%
 <!--   fill(p_cap_ac, .direction = "down") %>%  -->
 <!--   fill(p_cap_dc, .direction = "down") %>%  -->
 <!--   ungroup %>%  -->
-<!--   group_by(year, cz_id) %>%  -->
+<!--   group_by(year, unit) %>%  -->
 <!--          summarise(across(c(p_area, p_cap_ac, p_cap_dc), ~sum(., na.rm = TRUE), .names = "pv_{.col}")) -->
 
-<!-- mines_cz_solar <- left_join(mines_cz, spv, by = c("cz_id", "year")) %>%  -->
-<!--   group_by(cz_id) %>%  -->
+<!-- mines_cz_solar <- left_join(mines_cz, spv, by = c("unit", "year")) %>%  -->
+<!--   group_by(unit) %>%  -->
 <!--   fill(pv_p_area, .direction = "down") %>%  -->
 <!--   fill(pv_p_cap_ac, .direction = "down") %>%  -->
 <!--   fill(pv_p_cap_dc, .direction = "down") %>%  -->
