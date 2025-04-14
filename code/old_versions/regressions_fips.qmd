@@ -927,7 +927,7 @@ ggplot(state_lev,
 ```{r}
 
 for(fip in unique(mines_restr$fips)){
-  gdp_var <- %>% %>% 
+  gdp_var <-mines_restr %>% 
     filter(fips == fip) %>% 
     pull(real_gdp_priv_ind)
   
