@@ -50,6 +50,8 @@ ind_codes <- read_excel(here("data/raw/QCEW/industry-titles.xlsx"))
 # }
 
 #saveRDS(df_list_filtered, here("data/temp/qcew_compiled_raw_ff.RDS"))
+# temp_test <- readRDS(here("data/temp/qcew_compiled_raw_ff.RDS"))
+
 # temp <- temp_test %>% 
 #   do.call("rbind", .) %>% 
 #   filter(substr(area_fips, 3,5) != "000" & substr(area_fips, 3,5) != "999") %>%  
@@ -60,9 +62,7 @@ ind_codes <- read_excel(here("data/raw/QCEW/industry-titles.xlsx"))
 #   filter(!(fips %in% c("51560", "51515")) & !(fips == "46113" & year <= 2015)) %>% 
 #   mutate(fips = ifelse(fips == "46113", "46102", fips))
 # 
-# temp_test <- readRDS(here("data/temp/qcew_compiled_raw_ff.RDS"))
-df_list_natl <- readRDS(here('data/raw/QCEW/natl_all_industries_99_08.RDS')) %>%
-  rbind(readRDS(here("data/raw/QCEW/natl_all_industries_09_22.RDS")))
+
 
 # # National rates
 # natl_rates <- temp_test %>% 
@@ -90,6 +90,9 @@ df_list_natl <- readRDS(here('data/raw/QCEW/natl_all_industries_99_08.RDS')) %>%
 ################### National ###################################################
 ################################################################################
 ################################################################################
+df_list_natl <- readRDS(here('data/raw/QCEW/natl_all_industries_99_08.RDS')) %>%
+  rbind(readRDS(here("data/raw/QCEW/natl_all_industries_09_22.RDS")))
+
 # National rates
 natl_rates_plot <- df_list_natl %>% 
   group_by(year, industry_code) %>%
