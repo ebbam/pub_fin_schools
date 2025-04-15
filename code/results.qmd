@@ -70,7 +70,7 @@ source(here('code/source_code/useful_functions.R'))
 source(here('code/source_code/dicts.R'))
 source(here('code/source_code/cz_cleaning.R'))
 
-unit_id = "fips"
+unit_id = "cz_id"
 
 ```
 
@@ -82,14 +82,47 @@ unit_id = "fips"
 
 ```{r, echo = FALSE, message = FALSE, warnings = FALSE, fig.height = 10, include = FALSE}
 
-mines_restr <- readRDS(here("data/out/regression_data_complete_fips.RDS")) %>% 
-  group_by(fips) %>%
-    arrange(fips, year) %>% 
-  mutate(across(c(starts_with("log_real_gdp_total") | starts_with("log_real_gdp_priv_ind") | starts_with("log_real_gdp_total_pc") | starts_with("log_real_gdp_priv_ind_pc")), ~.- dplyr::lag(., 1), .names = "diff_{.col}")) %>% 
-  ungroup  
+# mines_restr <- readRDS(here("data/out/regression_data_complete_fips.RDS")) %>% 
+#   group_by(fips) %>%
+#     arrange(fips, year) %>% 
+#   mutate(across(c(starts_with("log_real_gdp_total") | starts_with("log_real_gdp_priv_ind")), ~.- dplyr::lag(., 1), .names = "diff_{.col}")) %>% 
+#   ungroup  
+# 
+# mines_cz <- readRDS(here("data/out/cz_dataset.RDS"))
+# mines_cz_1990 <- readRDS(here("data/out/cz_1990_dataset.RDS"))
 
-mines_cz <- readRDS(here("data/out/cz_dataset.RDS"))
-mines_cz_1990 <- readRDS(here("data/out/cz_1990_dataset.RDS"))
+if(unit_id == "cz_id"){
+  print(paste0("Running analysis on CZs (", unit_id, ")."))
+  mines_restr <- readRDS(here("data/out/cz_dataset.RDS")) %>% 
+  # rename all variables that contain monetary values to exclude "real" - all values in this dataset DO have real values!!! see school_dist_cleaning.Rmd
+  #rename_with(~gsub("real_", "", .x, fixed = TRUE)) %>% 
+    mutate(unit = get(unit_id)) %>% 
+    rename(state = main_state)
+  
+  states_input <- readRDS(here("data/out/regression_data_complete_fips.RDS")) %>% 
+    select(state, state_name) %>% 
+    distinct %>% 
+    left_join(., distinct(select(mines_restr, state, unit)), by = "state")
+    
+  ss <- readRDS(here("data/temp/shift_shares_cz_base_01_05_11.RDS")) %>% 
+  mutate(unit = get(unit_id))
+  
+}else if(unit_id == "fips"){
+  print(paste0("Running analysis on counties (", unit_id, ")."))
+  mines_restr <- readRDS(here("data/out/regression_data_complete_fips.RDS")) %>% 
+    mutate(unit = get(unit_id)) %>% 
+      group_by(unit) %>%
+    arrange(unit, year) %>% 
+  mutate(across(c(starts_with("log_real_gdp_total") | starts_with("log_real_gdp_priv_ind")), ~.- dplyr::lag(., 1), .names = "diff_{.col}")) %>% 
+  ungroup 
+  
+  states_input <- mines_restr %>% select(fips, state, state_name) %>% distinct %>% rename(unit = fips)
+  
+    ss <- readRDS(here("data/temp/shift_shares_base_01_05_11.RDS")) %>% 
+  mutate(unit = get(unit_id)) 
+}else{
+  stop("You need to specify fips or cz_id as the panel unit.")}
+
 
 ```
 
@@ -138,37 +171,39 @@ mines_tots <- mines_restr %>%
 
 ## Summarise to State Level
 mines_state <- mines_tots %>%
-  select(state_name, fips, cz_id, year, fips, vars_grab) %>% 
-  group_by(state_name, year) %>%
+  select(state, unit, year, vars_grab) %>% 
+  group_by(state, year) %>%
   summarise(across(vars_grab, ~sum(., na.rm = TRUE)),
-            n_fips = n_distinct(fips),
-            n_cz = n_distinct(cz_id)) %>% 
+            n_unit = n_distinct(unit)) %>% 
   ungroup %>% 
   mutate(real_Elem_Educ_Total_Exp_pp = real_Elem_Educ_Total_Exp/Enrollment,
          real_Total_Educ_Total_Exp_pp = real_Total_Educ_Total_Exp/Enrollment,
          real_gdp_priv_ind_pc = real_gdp_priv_ind/pop_total,
          real_gdp_total_pc = real_gdp_total/pop_total,
          real_Property_Tax_pp = real_Property_Tax/Enrollment,
-         across(!c(state_name, year, n_fips, n_cz), ~log(.), .names = "log_{.col}"),
-         across(!c(state_name, year, n_fips, n_cz), ~. - dplyr::lag(., 1), .names = "diff_{.col}"),
-         time = year - 2000)
+         across(!c(state, year, n_unit), ~log(.), .names = "log_{.col}"),
+                  time = year - 2000) %>% 
+  group_by(state) %>% 
+  arrange(state, year) %>% 
+         mutate(across(!c(year, n_unit), ~. - dplyr::lag(., 1), .names = "diff_{.col}")) %>% 
+  ungroup
+
       
 ## Summarise to natl level
 mines_natl <- mines_tots %>%
-  select(state_name, fips, cz_id, year, fips, vars_grab) %>% 
+  select(state, unit, year, vars_grab) %>% 
   group_by(year) %>%
   summarise(across(vars_grab, ~sum(., na.rm = TRUE)),
-            n_fips = n_distinct(fips),
-            n_cz = n_distinct(cz_id),
-            n_state = n_distinct(state_name)) %>% 
+            n_unit = n_distinct(unit),
+            n_state = n_distinct(state)) %>% 
   ungroup %>% 
   mutate(real_Elem_Educ_Total_Exp_pp = real_Elem_Educ_Total_Exp/Enrollment,
          real_Total_Educ_Total_Exp_pp = real_Total_Educ_Total_Exp/Enrollment,
          real_gdp_priv_ind_pc = real_gdp_priv_ind/pop_total,
          real_gdp_total_pc = real_gdp_total/pop_total,
          real_Property_Tax_pp = real_Property_Tax/Enrollment,
-         across(!c(year, n_fips, n_cz, n_state), ~log(.), .names = "log_{.col}"),
-         across(!c(year, n_fips, n_cz, n_state,), ~. - dplyr::lag(., 1), .names = "diff_{.col}"),
+         across(!c(year, n_unit, n_state), ~log(.), .names = "log_{.col}"),
+         across(!c(year, n_unit, n_state,), ~. - dplyr::lag(., 1), .names = "diff_{.col}"),
          time = year - 2000,
          id = "USA")
 
@@ -179,27 +214,13 @@ mean_df <- mines_tots %>%
                        log_real_Total_Educ_Total_Exp = mean(log_real_Total_Educ_Total_Exp, na.rm = TRUE),
                        log_real_Total_Educ_Total_Exp_pp = mean(log_real_Total_Educ_Total_Exp_pp, na.rm = TRUE))
 
-mean_df_cz <- mines_cz %>% 
-  group_by(year) %>%
-             summarise(real_Total_Educ_Total_Exp = mean(real_Total_Educ_Total_Exp, na.rm = TRUE),
-                       real_Total_Educ_Total_Exp_pp = mean(real_Total_Educ_Total_Exp_pp, na.rm = TRUE),
-                       log_real_Total_Educ_Total_Exp = mean(log_real_Total_Educ_Total_Exp, na.rm = TRUE),
-                       log_real_Total_Educ_Total_Exp_pp = mean(log_real_Total_Educ_Total_Exp_pp, na.rm = TRUE))
+# mean_df_cz <- mines_cz %>% 
+#   group_by(year) %>%
+#              summarise(real_Total_Educ_Total_Exp = mean(real_Total_Educ_Total_Exp, na.rm = TRUE),
+#                        real_Total_Educ_Total_Exp_pp = mean(real_Total_Educ_Total_Exp_pp, na.rm = TRUE),
+#                        log_real_Total_Educ_Total_Exp = mean(log_real_Total_Educ_Total_Exp, na.rm = TRUE),
+#                        log_real_Total_Educ_Total_Exp_pp = mean(log_real_Total_Educ_Total_Exp_pp, na.rm = TRUE))
 
-
-```
-
-```{r}
-
-if(unit_id == "both"){
-  lister = list("cz_id" = mines_cz, "fips" = mines_restr) 
-}else if(unit_id == "cz_id"){
-  lister = list("cz_id" = mines_cz) 
-}else if(unit_id == "fips"){
-  lister = list("fips" = mines_restr) 
-}else{
-  stop("Need to specify a unit_id for the following functions.")
-}
 
 ```
 
@@ -215,11 +236,11 @@ if(unit_id == "both"){
 
 # Dataframe to easily match state names and CZ ids if necessary}
 # To be resolved: when a CZ is present in multiple states
-code_match <- mines_restr %>% 
-  select(fips, state_name, cz_id, cz_id_1990) %>% 
-  distinct
+# code_match <- mines_restr %>% 
+#   select(unit, state, cz_id, cz_id_1990) %>% 
+#   distinct
 
-# Pass a dataframe with distinct ids (ie. state_name, CZ, or fips)
+# Pass a dataframe with distinct ids (ie. state, CZ, or fips)
 # Dataframe should only have variables that should be transformed in line with all calls in the following function
 
 data_transform <- function(df, vars, unit_id, time_id){
@@ -251,18 +272,27 @@ rel_vars <- c("real_Elem_Educ_Total_Exp", "real_Elem_Educ_Total_Exp_pp",
               "log_real_Total_Educ_Total_Exp", "log_real_Total_Educ_Total_Exp_pp", 
               "log_real_gdp_total", "log_real_gdp_total_pc")
 
-fips_trends_dat <- data_transform(mines_restr, rel_vars, "fips", "year") %>% 
-  left_join(., code_match, by = "fips")
+if(unit_id == "fips"){
+  fips_trends_dat <- data_transform(mines_restr, rel_vars, "unit", "year") %>% 
+  left_join(., states_input, by = c("unit")) #%>% 
+  #left_join(., code_match, by = "unit")
+}else if(unit_id == "cz_id"){
+    fips_trends_dat <- data_transform(mines_restr, rel_vars, "unit", "year") %>% 
+  left_join(., states_input, by = c("unit"))
+}
 
-cz_trends_dat <- data_transform(mines_cz, rel_vars, "cz_id", "year") %>% 
-  left_join(., distinct(select(code_match, -fips)), multiple = "first", by = "cz_id")
-
-cz_1990_trends_dat <- data_transform(mines_cz_1990, rel_vars, "cz_id_1990", "year") %>% 
-  left_join(., distinct(select(code_match, -fips)), multiple = "first", by = "cz_id_1990")
+# cz_trends_dat <- data_transform(mines_cz, rel_vars, "cz_id", "year") %>% 
+#   left_join(., distinct(select(code_match, -fips)), multiple = "first", by = "cz_id")
+# 
+# cz_1990_trends_dat <- data_transform(mines_cz_1990, rel_vars, "cz_id_1990", "year") %>% 
+#   left_join(., distinct(select(code_match, -fips)), multiple = "first", by = "cz_id_1990")
 
 #cz_1990_trends_dat %>% saveRDS(here('data/temp/cz_1990_trends_dat.rds'))
 
-state_trends_dat <- data_transform(mines_state, rel_vars, "state_name", "year")
+state_trends_dat <- states_input %>% 
+  select(state, state_name) %>% 
+  distinct %>% 
+  left_join(data_transform(mines_state, rel_vars, "state", "year"), ., by = "state")
 
 natl_trends_dat <- data_transform(mines_natl, rel_vars, "id", "year")
 
@@ -343,7 +373,7 @@ Some current options:
 
 ```{r, echo = FALSE, cache = TRUE}
 
-trends <- feols(log_real_gdp_priv_ind ~ time:as.factor(state_name) | state_name + year, data = mines_state, se = "cluster", cluster = "state_name", panel.id = ~state_name+year)
+trends <- feols(log_real_gdp_priv_ind ~ time:as.factor(state) | state + year, data = mines_state, se = "cluster", cluster = "state", panel.id = ~state+year)
 
 #trends %>% etable(., se.below = TRUE)
 
@@ -382,10 +412,10 @@ natl_pivoted <- natl_trends_dat %>%
 
 ## State level trends with national trend reference line
 state_trends_dat %>% 
-  filter(state_name != "ME") %>% 
-  select(state_name, year, contains('delta') & contains('log_real_Elem_Educ_Total_Exp_pp')) %>% 
-  pivot_longer(!c(state_name, year)) %>% 
-  ggplot(aes(x = year, y = value, colour = state_name)) +
+  filter(state != "ME") %>% 
+  select(state, year, contains('delta') & contains('log_real_Elem_Educ_Total_Exp_pp')) %>% 
+  pivot_longer(!c(state, year)) %>% 
+  ggplot(aes(x = year, y = value, colour = state)) +
       geom_line() +
   geom_line(data = natl_pivoted, aes(x = year, y = value), colour = "black") +
           facet_wrap(~name, scales = "free") +
@@ -397,26 +427,26 @@ state_trends_dat %>%
 
 ```{r, fig.height = 10, echo = FALSE}
 
-filter(state_trends_dat, year == 2018) %>%
-  rename(state = state_name) %>%
-  plot_usmap(data = ., values = "real_Elem_Educ_Total_Exp_pp", regions = "states", exclude = c("AK", "HI")) +
-  scale_fill_gradient(low = "thistle1", high = "purple4", na.value = "grey98") +
-    theme(panel.background = element_rect(color = "white", fill = "white"),
-        plot.title = element_text(face = "bold"), legend.background=element_blank(), legend.title = element_text("hello")) +
-    labs(title = "State Level Elem. Ed. Exp. pp (2018)")
+# filter(state_trends_dat, year == 2018) %>%
+#   rename(state = state_name) %>%
+#   plot_usmap(data = ., values = "real_Elem_Educ_Total_Exp_pp", regions = "states", exclude = c("AK", "HI")) +
+#   scale_fill_gradient(low = "thistle1", high = "purple4", na.value = "grey98") +
+#     theme(panel.background = element_rect(color = "white", fill = "white"),
+#         plot.title = element_text(face = "bold"), legend.background=element_blank(), legend.title = element_text("hello")) +
+#     labs(title = "State Level Elem. Ed. Exp. pp (2018)")
 
 ```
 
 ```{r, fig.height = 10, echo = FALSE}
 
-filter(state_trends_dat, year == 2018) %>%
-  rename(state = state_name) %>%
-  plot_usmap(data = ., values = "real_Total_Educ_Total_Exp_pp", regions = "states", exclude = c("AK", "HI")) +
-  scale_fill_gradient(low = "thistle1", high = "purple4", na.value = "grey98") +
-  #scale_fill_distiller(colours=c(bl,"white", re), name = "", direction = 1, na.value = "gray90", limits = c(-1, 1)) +
-    theme(panel.background = element_rect(color = "white", fill = "white"),
-        plot.title = element_text(face = "bold"), legend.background=element_blank(), legend.title = element_text("hello")) +
-    labs(title = "State Level Elem. Ed. Exp. pp (2018)")
+# filter(state_trends_dat, year == 2018) %>%
+#   rename(state = state_name) %>%
+#   plot_usmap(data = ., values = "real_Total_Educ_Total_Exp_pp", regions = "states", exclude = c("AK", "HI")) +
+#   scale_fill_gradient(low = "thistle1", high = "purple4", na.value = "grey98") +
+#   #scale_fill_distiller(colours=c(bl,"white", re), name = "", direction = 1, na.value = "gray90", limits = c(-1, 1)) +
+#     theme(panel.background = element_rect(color = "white", fill = "white"),
+#         plot.title = element_text(face = "bold"), legend.background=element_blank(), legend.title = element_text("hello")) +
+#     labs(title = "State Level Elem. Ed. Exp. pp (2018)")
 
 ```
 
@@ -425,42 +455,42 @@ filter(state_trends_dat, year == 2018) %>%
 ::: panel-tabset
 ```{r, echo = FALSE, results = 'asis', fig.height = 12}
 
-temp_cz <- cz_trends_dat %>% 
-  filter(year > 2001 & state_name != "ME") %>% 
-  mutate(delta_ma3_log_real_Elem_Educ_Total_Exp_pp = ifelse(year == 2002, 0, delta_ma3_log_real_Elem_Educ_Total_Exp_pp))
+# temp_cz <- cz_trends_dat %>% 
+#   filter(year > 2001 & state != "ME") %>% 
+#   mutate(delta_ma3_log_real_Elem_Educ_Total_Exp_pp = ifelse(year == 2002, 0, delta_ma3_log_real_Elem_Educ_Total_Exp_pp))
 
 temp_natl <- natl_trends_dat %>% 
   filter(year > 2001) %>% 
   mutate(delta_ma3_log_real_Elem_Educ_Total_Exp_pp = ifelse(year == 2002, 0, delta_ma3_log_real_Elem_Educ_Total_Exp_pp))
 
 temp_state <- state_trends_dat %>% 
-  filter(year > 2001 & state_name != "ME") %>% 
+  filter(year > 2001 & state != "ME") %>% 
   mutate(delta_ma3_log_real_Elem_Educ_Total_Exp_pp = ifelse(year == 2002, 0, delta_ma3_log_real_Elem_Educ_Total_Exp_pp))
-
-## CZ level trends by state with national trend reference line
-for(k in names(select(temp_cz, contains('delta') & contains('log_real_Elem_Educ_Total_Exp_pp')))){
-  cat('##### ', k, ' \n')
-    p <- temp_cz %>% 
-      filter(state_name != "ME") %>% 
-      select(state_name, cz_id, year, k) %>% 
-      pivot_longer(!c(state_name, year, cz_id)) %>% 
-      ggplot(aes(x = year, y = value, colour = cz_id)) +
-      geom_line() +
-      geom_line(data = temp_natl, aes(x = year, y = get(k)), colour = "black", linetype = "dashed") +
-      geom_line(data = temp_state, aes(x = year, y = get(k)), colour = "red", linetype = "dashed") +
-      theme_minimal() +
-      theme(legend.position = 'none', strip.text = element_text(size = 12)) +
-      scale_colour_viridis(discrete = TRUE) + 
-      facet_wrap(~state_name, ncol = 7, scales = "free") +
-      labs(title = paste0("Trends: ", k), 
-           subtitle = "Commuting Zones",
-           x = "Year",
-           y = k) 
-    
-    print(p)
-              cat('\n')
-              cat('\n')
-              }
+# 
+# ## CZ level trends by state with national trend reference line
+# for(k in names(select(temp_cz, contains('delta') & contains('log_real_Elem_Educ_Total_Exp_pp')))){
+#   cat('##### ', k, ' \n')
+#     p <- temp_cz %>% 
+#       filter(state != "ME") %>% 
+#       select(state, cz_id, year, k) %>% 
+#       pivot_longer(!c(state, year, cz_id)) %>% 
+#       ggplot(aes(x = year, y = value, colour = cz_id)) +
+#       geom_line() +
+#       geom_line(data = temp_natl, aes(x = year, y = get(k)), colour = "black", linetype = "dashed") +
+#       geom_line(data = temp_state, aes(x = year, y = get(k)), colour = "red", linetype = "dashed") +
+#       theme_minimal() +
+#       theme(legend.position = 'none', strip.text = element_text(size = 12)) +
+#       scale_colour_viridis(discrete = TRUE) + 
+#       facet_wrap(~state, ncol = 7, scales = "free") +
+#       labs(title = paste0("Trends: ", k), 
+#            subtitle = "Commuting Zones",
+#            x = "Year",
+#            y = k) 
+#     
+#     print(p)
+#               cat('\n')
+#               cat('\n')
+#               }
 
 ```
 
@@ -470,27 +500,27 @@ for(k in names(select(temp_cz, contains('delta') & contains('log_real_Elem_Educ_
 ```{r, echo = FALSE, results = 'asis', fig.height = 12}
 
 temp_fips <- fips_trends_dat %>%
-  filter(year > 2001 & state_name != "ME") %>%
+  filter(year > 2001) %>%  #& state_name != "ME") %>%
   mutate(delta_ma3_log_real_Elem_Educ_Total_Exp_pp = ifelse(year == 2002, 0, delta_ma3_log_real_Elem_Educ_Total_Exp_pp))
 
 
 for(k in names(select(fips_trends_dat, contains('delta') & contains('log_real_Elem_Educ_Total_Exp_pp')))){
   cat('##### ', k, ' \n')
   p <- temp_fips %>%
-    filter(state_name != "ME") %>%
-    select(state_name, fips, year, k) %>%
-    pivot_longer(!c(state_name, year, fips)) %>%
-    ggplot(aes(x = year, y = value, colour = fips)) +
+   # filter(state != "ME") %>%
+    select(state, unit, year, k) %>%
+    pivot_longer(!c(state, year, unit)) %>%
+    ggplot(aes(x = year, y = value, colour = unit)) +
     geom_line() +
     geom_line(data = temp_natl, aes(x = year, y = get(k)), colour = "black", linetype = "dashed") +
-    geom_line(data = filter(temp_state, state_name != "ME"), aes(x = year, y = get(k)), colour = "red", linetype = "dashed") +
+    geom_line(data = filter(temp_state, state != "ME"), aes(x = year, y = get(k)), colour = "red", linetype = "dashed") +
     theme_minimal() +
     theme(legend.position = 'none', strip.text = element_text(size = 12)) +
     scale_colour_viridis(discrete = TRUE) +
-    facet_wrap(~state_name, ncol = 7, scales = "free") +
+    facet_wrap(~state, ncol = 7, scales = "free") +
     theme(legend.position = 'none') +
     labs(title = paste0("Trends: ", k),
-         subtitle = "Counties",
+         subtitle = unit_id,
          x = "Year",
            y = k)
 
@@ -524,34 +554,34 @@ natl_trend_pc <- mines_natl %>%
   .$coefficients %>% pluck(1)
   
 county_ed_trends = mines_restr %>% 
-  group_by(fips, state_name) %>% 
+  group_by(unit, state) %>% 
   do(model = lm(diff_log_real_Elem_Educ_Total_Exp_pp ~ 1, data = .)) %>% 
   ungroup 
 
 county_ed_trends_controlled_natl = mines_restr %>% 
   left_join(., mines_natl, by = "year") %>% 
-  group_by(fips, state_name) %>% 
+  group_by(unit, state) %>% 
   do(model = lm(diff_log_real_Elem_Educ_Total_Exp_pp.x ~ 1 +  diff_log_real_Elem_Educ_Total_Exp_pp.y, data = .)) %>% 
   ungroup 
 
 county_ed_trends_controlled_state = mines_restr %>% 
-   left_join(., mines_state, by = c("year", "state_name")) %>% 
-  group_by(fips, state_name) %>% 
+   left_join(., mines_state, by = c("year", "state")) %>% 
+  group_by(unit, state) %>% 
   do(model = lm(diff_log_real_Elem_Educ_Total_Exp_pp.x ~ 1 + diff_log_real_Elem_Educ_Total_Exp_pp.y, data = .)) %>% 
   ungroup 
 
 county_ed_trends <- county_ed_trends %>% 
   rename("trend" = model) %>% 
-  left_join(., county_ed_trends_controlled_natl, by = c('fips', 'state_name')) %>% 
+  left_join(., county_ed_trends_controlled_natl, by = c('unit', 'state')) %>% 
   rename("trend_cont_natl" = model) %>% 
-  left_join(., county_ed_trends_controlled_state, by = c('fips', 'state_name')) %>% 
+  left_join(., county_ed_trends_controlled_state, by = c('unit', 'state')) %>% 
   rename("trend_cont_state" = model)
 
 county_ed_coefs <- tibble()
 county_ed_sensitivities <- tibble()
 for(k in 1:nrow(county_ed_trends)){
-  s <- county_ed_trends %>% slice(k) %>% pull(fips)
-  st <- county_ed_trends %>% slice(k) %>% pull(state_name)
+  s <- county_ed_trends %>% slice(k) %>% pull(unit)
+  st <- county_ed_trends %>% slice(k) %>% pull(state)
   t <- county_ed_trends %>% slice(k) %>% 
     pull(trend) %>% first %>% .$coefficients %>% pluck(1) 
   t_n <- county_ed_trends %>% slice(k) %>% 
@@ -570,7 +600,7 @@ for(k in 1:nrow(county_ed_trends)){
 }
 
 colnames(county_ed_coefs) <- names(county_ed_trends)
-colnames(county_ed_sensitivities) <- c("fips", "state_name", "sensitivity_state", "sensitivity_natl")
+colnames(county_ed_sensitivities) <- c("unit", "state", "sensitivity_state", "sensitivity_natl")
 county_ed_coefs <- county_ed_coefs %>% mutate(across(c(3:5), ~as.numeric(.)))
 county_ed_sensitivities <- county_ed_sensitivities %>% mutate(across(c(3:4), ~as.numeric(.)))
 
@@ -598,38 +628,44 @@ county_ed_coefs %>%
   theme_bw() +
   theme(legend.position = "bottom", legend.title = element_blank()) +
   scale_fill_brewer(palette = "Set2") +
-  labs(x = NULL, y = "No. of Counties")
+  labs(x = NULL, y = "No. of Counties") 
 
-# Education Expenditure
-trend_ed_plot_pc <- plot_usmap(data = mute_outliers(county_ed_coefs, "trend"), values = "var_muted", regions = "counties", col = "gray90", linewidth = 0.01, exclude = c("AK", "HI")) +
-  scale_fill_gradient2(midpoint = 0, na.value = "grey98") +
-  #scale_fill_distiller(colours=c(bl,"white", re), name = "", direction = 1, na.value = "gray90", limits = c(-1, 1)) +
-    theme(panel.background = element_rect(color = "white", fill = "white"),
-        plot.title = element_text(face = "bold"), legend.background=element_blank(), legend.title = element_blank()) +
-    labs(title = "County-level Trend in Elem. Ed. Exp. pp") +
-  ggplot2::geom_sf(data = dat, colour = "blue", fill = NA, linewidth = 0.1)
 
-# Education Expenditure
-trend_ed_natl_plot_pc <- plot_usmap(data = mute_outliers(county_ed_coefs, "trend_cont_natl"), values = "var_muted", regions = "counties", col = "gray90", linewidth = 0.01, exclude = c("AK", "HI")) +
-scale_fill_gradient2(na.value = "grey98", midpoint = 0) +
-  #scale_fill_distiller(colours=c(bl,"white", re), name = "", direction = 1, na.value = "gray90", limits = c(-1, 1)) +
-    theme(panel.background = element_rect(color = "white", fill = "white"),
-        plot.title = element_text(face = "bold"), legend.background=element_blank(), legend.position = "none") +
-    labs(title = "County-level Trend in Elem. Ed. Exp. pp",
-       subtitle = "Controlling for National Level Elem. Ed. Exp. pp") +
-  ggplot2::geom_sf(data = dat, colour = "blue", fill = NA, linewidth = 0.1)
-
-# Education Expenditure
-trend_ed_state_plot_pc <- plot_usmap(data = mute_outliers(county_ed_coefs, "trend_cont_state"), values = "var_muted", regions = "counties", col = "gray90", linewidth = 0.01, exclude = c("AK", "HI")) +
- scale_fill_gradient2(na.value = "grey98", midpoint = 0) +
-  #scale_fill_distiller(colours=c(bl,"white", re), name = "", direction = 1, na.value = "gray90", limits = c(-1, 1)) +
-    theme(panel.background = element_rect(color = "white", fill = "white"),
-        plot.title = element_text(face = "bold"), legend.background=element_blank(), legend.position = "none") +
-    labs(title = "County-level Trend in Elem. Ed. Exp. pp",
-       subtitle = "Controlling for State Level Elem. Ed. Exp. pp") +
-  ggplot2::geom_sf(data = dat, colour = "blue", fill = NA, linewidth = 0.1)
-
-trend_ed_plot_pc + trend_ed_state_plot_pc + trend_ed_natl_plot_pc
+if(unit_id == "fips"){
+  county_ed_temp <- county_ed_coefs %>% 
+    rename_with(~ unit_id, .cols = "unit")
+  
+  # Education Expenditure
+  trend_ed_plot_pc <- plot_usmap(data = mute_outliers(county_ed_temp, "trend"), values = "var_muted", regions = "counties", col = "gray90", linewidth = 0.01, exclude = c("AK", "HI")) +
+    scale_fill_gradient2(midpoint = 0, na.value = "grey98") +
+    #scale_fill_distiller(colours=c(bl,"white", re), name = "", direction = 1, na.value = "gray90", limits = c(-1, 1)) +
+      theme(panel.background = element_rect(color = "white", fill = "white"),
+          plot.title = element_text(face = "bold"), legend.background=element_blank(), legend.title = element_blank()) +
+      labs(title = "County-level Trend in Elem. Ed. Exp. pp") +
+    ggplot2::geom_sf(data = dat, colour = "blue", fill = NA, linewidth = 0.1)
+  
+  # Education Expenditure
+  trend_ed_natl_plot_pc <- plot_usmap(data = mute_outliers(county_ed_temp, "trend_cont_natl"), values = "var_muted", regions = "counties", col = "gray90", linewidth = 0.01, exclude = c("AK", "HI")) +
+  scale_fill_gradient2(na.value = "grey98", midpoint = 0) +
+    #scale_fill_distiller(colours=c(bl,"white", re), name = "", direction = 1, na.value = "gray90", limits = c(-1, 1)) +
+      theme(panel.background = element_rect(color = "white", fill = "white"),
+          plot.title = element_text(face = "bold"), legend.background=element_blank(), legend.position = "none") +
+      labs(title = "County-level Trend in Elem. Ed. Exp. pp",
+         subtitle = "Controlling for National Level Elem. Ed. Exp. pp") +
+    ggplot2::geom_sf(data = dat, colour = "blue", fill = NA, linewidth = 0.1)
+  
+  # Education Expenditure
+  trend_ed_state_plot_pc <- plot_usmap(data = mute_outliers(county_ed_temp, "trend_cont_state"), values = "var_muted", regions = "counties", col = "gray90", linewidth = 0.01, exclude = c("AK", "HI")) +
+   scale_fill_gradient2(na.value = "grey98", midpoint = 0) +
+    #scale_fill_distiller(colours=c(bl,"white", re), name = "", direction = 1, na.value = "gray90", limits = c(-1, 1)) +
+      theme(panel.background = element_rect(color = "white", fill = "white"),
+          plot.title = element_text(face = "bold"), legend.background=element_blank(), legend.position = "none") +
+      labs(title = "County-level Trend in Elem. Ed. Exp. pp",
+         subtitle = "Controlling for State Level Elem. Ed. Exp. pp") +
+    ggplot2::geom_sf(data = dat, colour = "blue", fill = NA, linewidth = 0.1)
+  
+  trend_ed_plot_pc + trend_ed_state_plot_pc + trend_ed_natl_plot_pc
+}
 
 #rm(natl_trend_pc)
 rm(county_ed_trends)
@@ -640,6 +676,8 @@ rm(county_ed_trends_controlled_state)
 
 ```{r}
 
+
+
 # Coefficient on state and national level trends
 county_ed_sensitivities %>% 
   pivot_longer(cols = contains("sensitivity")) %>% 
@@ -647,7 +685,11 @@ county_ed_sensitivities %>%
   geom_histogram(aes(x = value, fill = name), bins = 100, position = "identity") +
   scale_fill_brewer(palette = "Set2")
 
-plot_usmap(data = mute_outliers(county_ed_sensitivities, "sensitivity_natl"), values = "var_muted", regions = "counties", col = "gray90", linewidth = 0.01, exclude = c("AK", "HI")) +
+if(unit_id == "fips"){
+  county_ed_temp <- county_ed_sensitivities %>% 
+  rename_with(~ unit_id, .cols = "unit")
+  
+plot_usmap(data = mute_outliers(county_ed_temp, "sensitivity_natl"), values = "var_muted", regions = "counties", col = "gray90", linewidth = 0.01, exclude = c("AK", "HI")) +
   scale_fill_gradient2(na.value = "grey98", midpoint = 0) +
   #scale_fill_distiller(colours=c(bl,"white", re), name = "", direction = 1, na.value = "gray90", limits = c(-1, 1)) +
    theme(panel.background = element_rect(color = "white", fill = "white"),
@@ -656,14 +698,14 @@ plot_usmap(data = mute_outliers(county_ed_sensitivities, "sensitivity_natl"), va
   ggplot2::geom_sf(data = dat, colour = "blue", fill = NA, linewidth = 0.1)
 
 
-plot_usmap(data = mute_outliers(county_ed_sensitivities, "sensitivity_state"), values = "var_muted", regions = "counties", col = "gray90", linewidth = 0.01, exclude = c("AK", "HI")) +
+plot_usmap(data = mute_outliers(county_ed_temp, "sensitivity_state"), values = "var_muted", regions = "counties", col = "gray90", linewidth = 0.01, exclude = c("AK", "HI")) +
  scale_fill_gradient2(na.value = "grey98", midpoint = 0) +
   #scale_fill_distiller(colours=c(bl,"white", re), name = "", direction = 1, na.value = "gray90", limits = c(-1, 1)) +
     theme(panel.background = element_rect(color = "white", fill = "white"),
         plot.title = element_text(face = "bold"), legend.background=element_blank()) +
     labs(title = "County-level Sensitivity to State Trend in Elem. Ed. Exp. pp") +
    ggplot2::geom_sf(data = dat, colour = "blue", fill = NA, linewidth = 0.1)
-
+}
 
 ```
 ### Trends
@@ -686,34 +728,34 @@ natl_trend_pc <- mines_natl %>%
   .$coefficients %>% pluck(1)
   
 county_ed_trends = mines_restr %>% 
-  group_by(fips, state_name) %>% 
+  group_by(unit, state) %>% 
   do(model = lm(diff_log_real_Elem_Educ_Total_Exp_pp ~ 1, data = .)) %>% 
   ungroup 
 
 county_ed_trends_controlled_natl = mines_restr %>% 
   left_join(., mines_natl, by = "year") %>% 
-  group_by(fips, state_name) %>% 
+  group_by(unit, state) %>% 
   do(model = lm(diff_log_real_Elem_Educ_Total_Exp_pp.x ~ 1 +  diff_log_real_Elem_Educ_Total_Exp_pp.y, data = .)) %>% 
   ungroup 
 
 county_ed_trends_controlled_state = mines_restr %>% 
-   left_join(., mines_state, by = c("year", "state_name")) %>% 
-  group_by(fips, state_name) %>% 
+   left_join(., mines_state, by = c("year", "state")) %>% 
+  group_by(unit, state) %>% 
   do(model = lm(diff_log_real_Elem_Educ_Total_Exp_pp.x ~ 1 + diff_log_real_Elem_Educ_Total_Exp_pp.y, data = .)) %>% 
   ungroup 
 
 county_ed_trends <- county_ed_trends %>% 
   rename("trend" = model) %>% 
-  left_join(., county_ed_trends_controlled_natl, by = c('fips', 'state_name')) %>% 
+  left_join(., county_ed_trends_controlled_natl, by = c('unit', 'state')) %>% 
   rename("trend_cont_natl" = model) %>% 
-  left_join(., county_ed_trends_controlled_state, by = c('fips', 'state_name')) %>% 
+  left_join(., county_ed_trends_controlled_state, by = c('unit', 'state')) %>% 
   rename("trend_cont_state" = model)
 
 county_ed_coefs <- tibble()
 county_ed_sensitivities <- tibble()
 for(k in 1:nrow(county_ed_trends)){
-  s <- county_ed_trends %>% slice(k) %>% pull(fips)
-  st <- county_ed_trends %>% slice(k) %>% pull(state_name)
+  s <- county_ed_trends %>% slice(k) %>% pull(unit)
+  st <- county_ed_trends %>% slice(k) %>% pull(state)
   t <- county_ed_trends %>% slice(k) %>% 
     pull(trend) %>% first %>% .$coefficients %>% pluck(1) 
   t_n <- county_ed_trends %>% slice(k) %>% 
@@ -732,7 +774,7 @@ for(k in 1:nrow(county_ed_trends)){
 }
 
 colnames(county_ed_coefs) <- names(county_ed_trends)
-colnames(county_ed_sensitivities) <- c("fips", "state_name", "sensitivity_state", "sensitivity_natl")
+colnames(county_ed_sensitivities) <- c("unit", "state", "sensitivity_state", "sensitivity_natl")
 county_ed_coefs <- county_ed_coefs %>% mutate(across(c(3:5), ~as.numeric(.)))
 county_ed_sensitivities <- county_ed_sensitivities %>% mutate(across(c(3:4), ~as.numeric(.)))
 
@@ -762,36 +804,43 @@ county_ed_coefs %>%
   scale_fill_brewer(palette = "Set2") +
   labs(x = NULL, y = "No. of Counties")
 
-# Education Expenditure
-trend_ed_plot_pc <- plot_usmap(data = mute_outliers(county_ed_coefs, "trend"), values = "var_muted", regions = "counties", col = "gray90", linewidth = 0.01, exclude = c("AK", "HI")) +
-  scale_fill_gradient2(midpoint = 0, na.value = "grey98") +
-  #scale_fill_distiller(colours=c(bl,"white", re), name = "", direction = 1, na.value = "gray90", limits = c(-1, 1)) +
-    theme(panel.background = element_rect(color = "white", fill = "white"),
-        plot.title = element_text(face = "bold"), legend.background=element_blank(), legend.title = element_blank()) +
-    labs(title = "County-level Trend in Elem. Ed. Exp. pp") +
-  ggplot2::geom_sf(data = dat, colour = "blue", fill = NA, linewidth = 0.1)
 
-# Education Expenditure
-trend_ed_natl_plot_pc <- plot_usmap(data = mute_outliers(county_ed_coefs, "trend_cont_natl"), values = "var_muted", regions = "counties", col = "gray90", linewidth = 0.01, exclude = c("AK", "HI")) +
-scale_fill_gradient2(na.value = "grey98", midpoint = 0) +
-  #scale_fill_distiller(colours=c(bl,"white", re), name = "", direction = 1, na.value = "gray90", limits = c(-1, 1)) +
-    theme(panel.background = element_rect(color = "white", fill = "white"),
-        plot.title = element_text(face = "bold"), legend.background=element_blank(), legend.position = "none") +
-    labs(title = "County-level Trend in Elem. Ed. Exp. pp",
-       subtitle = "Controlling for National Level Elem. Ed. Exp. pp") +
-  ggplot2::geom_sf(data = dat, colour = "blue", fill = NA, linewidth = 0.1)
 
-# Education Expenditure
-trend_ed_state_plot_pc <- plot_usmap(data = mute_outliers(county_ed_coefs, "trend_cont_state"), values = "var_muted", regions = "counties", col = "gray90", linewidth = 0.01, exclude = c("AK", "HI")) +
- scale_fill_gradient2(na.value = "grey98", midpoint = 0) +
-  #scale_fill_distiller(colours=c(bl,"white", re), name = "", direction = 1, na.value = "gray90", limits = c(-1, 1)) +
-    theme(panel.background = element_rect(color = "white", fill = "white"),
-        plot.title = element_text(face = "bold"), legend.background=element_blank(), legend.position = "none") +
-    labs(title = "County-level Trend in Elem. Ed. Exp. pp",
-       subtitle = "Controlling for State Level Elem. Ed. Exp. pp") +
-  ggplot2::geom_sf(data = dat, colour = "blue", fill = NA, linewidth = 0.1)
-
-trend_ed_plot_pc + trend_ed_state_plot_pc + trend_ed_natl_plot_pc
+if(unit_id == "fips"){
+  county_ed_temp <- county_ed_coefs %>% 
+    rename_with(~ unit_id, .cols = "unit")
+  
+  # Education Expenditure
+  trend_ed_plot_pc <- plot_usmap(data = mute_outliers(county_ed_temp, "trend"), values = "var_muted", regions = "counties", col = "gray90", linewidth = 0.01, exclude = c("AK", "HI")) +
+    scale_fill_gradient2(midpoint = 0, na.value = "grey98") +
+    #scale_fill_distiller(colours=c(bl,"white", re), name = "", direction = 1, na.value = "gray90", limits = c(-1, 1)) +
+      theme(panel.background = element_rect(color = "white", fill = "white"),
+          plot.title = element_text(face = "bold"), legend.background=element_blank(), legend.title = element_blank()) +
+      labs(title = "County-level Trend in Elem. Ed. Exp. pp") +
+    ggplot2::geom_sf(data = dat, colour = "blue", fill = NA, linewidth = 0.1)
+  
+  # Education Expenditure
+  trend_ed_natl_plot_pc <- plot_usmap(data = mute_outliers(county_ed_temp, "trend_cont_natl"), values = "var_muted", regions = "counties", col = "gray90", linewidth = 0.01, exclude = c("AK", "HI")) +
+  scale_fill_gradient2(na.value = "grey98", midpoint = 0) +
+    #scale_fill_distiller(colours=c(bl,"white", re), name = "", direction = 1, na.value = "gray90", limits = c(-1, 1)) +
+      theme(panel.background = element_rect(color = "white", fill = "white"),
+          plot.title = element_text(face = "bold"), legend.background=element_blank(), legend.position = "none") +
+      labs(title = "County-level Trend in Elem. Ed. Exp. pp",
+         subtitle = "Controlling for National Level Elem. Ed. Exp. pp") +
+    ggplot2::geom_sf(data = dat, colour = "blue", fill = NA, linewidth = 0.1)
+  
+  # Education Expenditure
+  trend_ed_state_plot_pc <- plot_usmap(data = mute_outliers(county_ed_temp, "trend_cont_state"), values = "var_muted", regions = "counties", col = "gray90", linewidth = 0.01, exclude = c("AK", "HI")) +
+   scale_fill_gradient2(na.value = "grey98", midpoint = 0) +
+    #scale_fill_distiller(colours=c(bl,"white", re), name = "", direction = 1, na.value = "gray90", limits = c(-1, 1)) +
+      theme(panel.background = element_rect(color = "white", fill = "white"),
+          plot.title = element_text(face = "bold"), legend.background=element_blank(), legend.position = "none") +
+      labs(title = "County-level Trend in Elem. Ed. Exp. pp",
+         subtitle = "Controlling for State Level Elem. Ed. Exp. pp") +
+    ggplot2::geom_sf(data = dat, colour = "blue", fill = NA, linewidth = 0.1)
+  
+  trend_ed_plot_pc + trend_ed_state_plot_pc + trend_ed_natl_plot_pc
+}
 
 rm(natl_trend_pc)
 rm(county_ed_trends)
@@ -809,7 +858,7 @@ rm(county_ed_trends_controlled_state)
 mines_state %>%
   filter(year != 2001) %>%
   ggplot() +
-  geom_line(aes(x = year, y = diff_log_real_Elem_Educ_Total_Exp_pp, color = state_name))
+  geom_line(aes(x = year, y = diff_log_real_Elem_Educ_Total_Exp_pp, color = state))
 
 
 ```
@@ -820,23 +869,23 @@ mines_state %>%
 
 # Outliers
 
-mines_cz %>%
+mines_restr %>%
   filter(year != 2001) %>%
   ggplot() +
-  geom_line(aes(x = year, y = diff_log_real_Elem_Educ_Total_Exp_pp, color =  cz_id)) +
+  geom_line(aes(x = year, y = diff_log_real_Elem_Educ_Total_Exp_pp, color = unit)) +
   theme(legend.position = "none")
 
-mines_cz %>%
-  group_by(cz_id) %>%
-  mutate(across(diff_log_real_Elem_Educ_Total_Exp_pp, list(ma3 = ~rollmean(., 3, align = 'right', fill = NA),
-                                                           ma2 = ~rollmean(., 2, align = 'right', fill = NA)), .names = "{.fn}_{.col}")) %>%
-  ungroup %>%
-  left_join(., distinct(select(code_match, -fips)), multiple = "first", by = "cz_id") %>%
-  filter(year > 2003) %>%
-  ggplot() +
-  geom_line(aes(x = year, y = ma3_diff_log_real_Elem_Educ_Total_Exp_pp, color =  cz_id)) +
-  theme(legend.position = "none") +
-  facet_wrap(~state_name)
+# mines_cz %>%
+#   group_by(cz_id) %>%
+#   mutate(across(diff_log_real_Elem_Educ_Total_Exp_pp, list(ma3 = ~rollmean(., 3, align = 'right', fill = NA),
+#                                                            ma2 = ~rollmean(., 2, align = 'right', fill = NA)), .names = "{.fn}_{.col}")) %>%
+#   ungroup %>%
+#   left_join(., distinct(select(code_match, -unit)), multiple = "first", by = "cz_id") %>%
+#   filter(year > 2003) %>%
+#   ggplot() +
+#   geom_line(aes(x = year, y = ma3_diff_log_real_Elem_Educ_Total_Exp_pp, color =  cz_id)) +
+#   theme(legend.position = "none") +
+#   facet_wrap(~state)
 
 
 ```
@@ -849,15 +898,15 @@ mines_cz %>%
 
 pos_coefs <- mute_outliers(county_ed_coefs, "trend_cont_natl") %>%
   filter(var_muted != trend_cont_natl & var_muted > 0) %>%
-  pull(fips) %>% unique
+  pull(unit) %>% unique
 
 mines_restr %>%
-  filter(fips %in% pos_coefs) %>%
-  select(fips, year, log_real_Property_Tax_pp, log_real_Elem_Educ_Total_Exp_pp) %>%
-  pivot_longer(!c(fips, year)) %>%
+  filter(unit %in% pos_coefs) %>%
+  select(unit, year, log_real_Property_Tax_pp, log_real_Elem_Educ_Total_Exp_pp) %>%
+  pivot_longer(!c(unit, year)) %>%
   ggplot(aes(x = year, y = value, color = name)) +
   geom_line() +
-  facet_wrap(~fips, scales = "free")
+  facet_wrap(~unit, scales = "free")
 
 ```
 :::
@@ -872,16 +921,16 @@ mines_restr %>%
 # Outliers
 neg_coefs <- mute_outliers(county_ed_coefs, "trend_cont_natl") %>%
   filter(var_muted != trend_cont_natl & var_muted < 0) %>%
-  pull(fips) %>% unique
+  pull(unit) %>% unique
 
 if(length(neg_coefs) != 0){
 mines_restr %>%
-  filter(fips %in% neg_coefs) %>%
-  select(fips, year, log_real_Property_Tax_pp, log_real_Elem_Educ_Total_Exp_pp) %>%
-  pivot_longer(!c(fips, year)) %>%
+  filter(unit %in% neg_coefs) %>%
+  select(unit, year, log_real_Property_Tax_pp, log_real_Elem_Educ_Total_Exp_pp) %>%
+  pivot_longer(!c(unit, year)) %>%
   ggplot(aes(x = year, y = value, color = name)) +
   geom_line() +
-  facet_wrap(~fips, scales = "free")
+  facet_wrap(~unit, scales = "free")
 }
 
 ```
@@ -894,15 +943,15 @@ mines_restr %>%
 
 pos_coefs <- mute_outliers(county_ed_coefs, "trend_cont_natl") %>%
   filter(var_muted != trend_cont_natl & var_muted > 0) %>%
-  pull(fips) %>% unique
+  pull(unit) %>% unique
 
 mines_restr %>%
-  filter(fips %in% pos_coefs) %>%
-  select(fips, year, log_real_Property_Tax_pp, log_real_Elem_Educ_Total_Exp_pp) %>%
-  pivot_longer(!c(fips, year)) %>%
+  filter(unit %in% pos_coefs) %>%
+  select(unit, year, log_real_Property_Tax_pp, log_real_Elem_Educ_Total_Exp_pp) %>%
+  pivot_longer(!c(unit, year)) %>%
   ggplot(aes(x = year, y = value, color = name)) +
   geom_line() +
-  facet_wrap(~fips, scales = "free")
+  facet_wrap(~unit, scales = "free")
 
 ```
 :::
@@ -923,26 +972,26 @@ natl_trend <- gdp_annual %>%
   lm(diff_log_gdp_natl ~ 1, data = .) %>% 
   .$coefficients %>% pluck(1)
   
-county_trends = mines_restr %>% group_by(fips, state_name) %>% do(model = lm(diff_log_real_gdp_total ~ 1, data = .)) %>% ungroup 
+county_trends = mines_restr %>% group_by(unit, state) %>% do(model = lm(diff_log_real_gdp_total ~ 1, data = .)) %>% ungroup 
 
 county_trends_controlled_natl = mines_restr %>% 
   left_join(., gdp_annual, by = "year") %>% 
-  group_by(fips, state_name) %>% 
+  group_by(unit, state) %>% 
   do(model = lm(diff_log_real_gdp_total ~ 1 + diff_log_gdp_natl, data = .)) %>% 
   ungroup 
 
 
 county_trends_controlled_state = mines_restr %>% 
-  left_join(., mines_state, by = c("year", "state_name")) %>% 
-  group_by(fips, state_name) %>% 
+  left_join(., mines_state, by = c("year", "state")) %>% 
+  group_by(unit, state) %>% 
   do(model = lm(diff_log_real_gdp_total.x ~ 1 + diff_log_real_gdp_total.y, data = .)) %>% 
   ungroup 
 
-state_trends = mines_state %>% group_by(state_name) %>% do(model = lm(diff_log_real_gdp_total ~ 1, data = .)) %>% ungroup
+state_trends = mines_state %>% group_by(state) %>% do(model = lm(diff_log_real_gdp_total ~ 1, data = .)) %>% ungroup
 
 state_trends_controlled_natl = mines_state %>% 
   left_join(., gdp_annual, by = "year") %>% 
-  group_by(state_name) %>% 
+  group_by(state) %>% 
   do(model = lm(diff_log_real_gdp_total ~ 1 + diff_log_gdp_natl, data = .)) %>% 
   ungroup
 
@@ -950,22 +999,22 @@ natl_trend = gdp_annual %>% do(model = lm(diff_log_gdp_natl ~ 1, data = .)) %>% 
 
 county_trends <- county_trends %>% 
   rename("trend" = model) %>% 
-  left_join(., county_trends_controlled_natl, by = c('fips', 'state_name')) %>% 
+  left_join(., county_trends_controlled_natl, by = c('unit', 'state')) %>% 
   rename("trend_cont_natl" = model) %>% 
-  left_join(., county_trends_controlled_state, by = c('fips', 'state_name')) %>% 
+  left_join(., county_trends_controlled_state, by = c('unit', 'state')) %>% 
   rename("trend_cont_state" = model)
 
 
 state_trends <- state_trends %>%
   rename("trend" = model) %>%
-  left_join(., state_trends_controlled_natl, by = c('state_name')) %>%
+  left_join(., state_trends_controlled_natl, by = c('state')) %>%
   rename("trend_cont_natl" = model)
 
 
 county_coefs <- tibble()
 for(k in 1:nrow(county_trends)){
-  s <- county_trends %>% slice(k) %>% pull(fips)
-  st <- county_trends %>% slice(k) %>% pull(state_name)
+  s <- county_trends %>% slice(k) %>% pull(unit)
+  st <- county_trends %>% slice(k) %>% pull(state)
   t <- county_trends %>% slice(k) %>% 
     pull(trend) %>% first %>% .$coefficients %>% pluck(1) 
   t_n <- county_trends %>% slice(k) %>% 
@@ -989,29 +1038,29 @@ rm(county_trends_controlled_state)
 ```{r, echo = FALSE, cache = TRUE}
 
 county_trends_pc = mines_restr %>% 
-  group_by(fips, state_name) %>% 
+  group_by(unit, state) %>% 
   do(model = lm(diff_log_real_gdp_total_pc ~ 1, data = .)) %>% ungroup
 
 county_trends_controlled_natl_pc = mines_restr %>% 
   left_join(., gdp_annual, by = "year") %>% 
-  group_by(fips, state_name) %>% 
+  group_by(unit, state) %>% 
   do(model = lm(diff_log_real_gdp_total_pc ~ 1 + diff_log_gdp_natl_pc, data = .)) %>% 
   ungroup 
 
 county_trends_controlled_state_pc = mines_restr %>% 
-  left_join(., mines_state, by = c("year", "state_name")) %>% 
-  group_by(fips, state_name) %>% 
+  left_join(., mines_state, by = c("year", "state")) %>% 
+  group_by(unit, state) %>% 
   do(model = lm(diff_log_real_gdp_total_pc.x ~ 1 + diff_log_real_gdp_total_pc.y, data = .)) %>% 
   ungroup 
 
 state_trends_pc = mines_state %>% 
-  group_by(state_name) %>% 
+  group_by(state) %>% 
   do(model = lm(diff_log_real_gdp_total_pc ~ 1, data = .)) %>% 
   ungroup
 
 state_trends_controlled_natl_pc = mines_state %>%
   left_join(., gdp_annual, by = "year") %>% 
-  group_by(state_name) %>% 
+  group_by(state) %>% 
   do(model = lm(diff_log_real_gdp_total_pc ~ 1 + diff_log_gdp_natl_pc, data = .)) %>% 
   ungroup
 
@@ -1022,15 +1071,15 @@ natl_trend_pc = gdp_annual %>%
 
 county_trends_pc <- county_trends_pc %>% 
   rename("trend_pc" = model) %>% 
-  left_join(., county_trends_controlled_natl_pc, by = c('fips', 'state_name')) %>% 
+  left_join(., county_trends_controlled_natl_pc, by = c('unit', 'state')) %>% 
   rename("trend_cont_natl_pc" = model) %>% 
-  left_join(., county_trends_controlled_state_pc, by = c('fips', 'state_name')) %>% 
+  left_join(., county_trends_controlled_state_pc, by = c('unit', 'state')) %>% 
   rename("trend_cont_state_pc" = model)
 
 county_coefs_pc <- tibble()
 for(k in 1:nrow(county_trends_pc)){
-  s <- county_trends_pc %>% slice(k) %>% pull(fips)
-  st <- county_trends_pc %>% slice(k) %>% pull(state_name)
+  s <- county_trends_pc %>% slice(k) %>% pull(unit)
+  st <- county_trends_pc %>% slice(k) %>% pull(state)
   t <- county_trends_pc %>% slice(k) %>% 
     pull(trend_pc) %>% first %>% .$coefficients %>% pluck(1) 
   t_n <- county_trends_pc %>% slice(k) %>% 
@@ -1045,12 +1094,12 @@ colnames(county_coefs_pc) <- names(county_trends_pc)
 county_coefs_pc <- county_coefs_pc %>% mutate(across(c(3:5), ~as.numeric(.)))
 
 county_coefs_all <- county_coefs %>% 
-  left_join(county_coefs_pc, by = c("fips", "state_name"))
+  left_join(county_coefs_pc, by = c("unit", "state"))
 
 
 state_trends_pc <- state_trends_pc %>%
   rename("trend_pc" = model) %>%
-  left_join(., state_trends_controlled_natl_pc, by = c('state_name')) %>%
+  left_join(., state_trends_controlled_natl_pc, by = c('state')) %>%
   rename("trend_cont_natl_pc" = model)
 
 
@@ -1093,33 +1142,38 @@ county_coefs_all %>%
 ```{r, echo = FALSE, cache = TRUE, fig.height = 14}
 library(ggbrain)
 
-# Education Expenditure
-trend_plot_pc <- plot_usmap(data = county_coefs_all, values = "trend_pc", regions = "counties", col = "gray90", linewidth = 0.01, exclude = c("AK", "HI")) +
-scale_fill_gradient2(na.value = "grey98", midpoint = 0) +
-  #scale_fill_distiller(colours=c(bl,"white", re), name = "", direction = 1, na.value = "gray90", limits = c(-1, 1)) +
-    theme(panel.background = element_rect(color = "white", fill = "white"),
-        plot.title = element_text(face = "bold"), legend.background=element_blank()) +
-    labs(title = "County-level Trend in Real GDP PC")
-
-# Education Expenditure
-trend_natl_plot_pc <- plot_usmap(data = county_coefs_all, values = "trend_cont_natl_pc", regions = "counties", col = "gray90", linewidth = 0.01, exclude = c("AK", "HI")) +
-scale_fill_gradient2(na.value = "grey98", midpoint = 0) +
-  #scale_fill_distiller(colours=c(bl,"white", re), name = "", direction = 1, na.value = "gray90", limits = c(-1, 1)) +
-    theme(panel.background = element_rect(color = "white", fill = "white"),
-        plot.title = element_text(face = "bold"), legend.background=element_blank()) +
-    labs(title = "County-level Trend in Real GDP PC",
-       subtitle = "Controlling for National Level GDP PC")
-
-# Education Expenditure
-trend_state_plot_pc <- plot_usmap(data = county_coefs_all, values = "trend_cont_state_pc", regions = "counties", col = "gray90", linewidth = 0.01, exclude = c("AK", "HI")) +
-scale_fill_gradient2(na.value = "grey98", midpoint = 0) + 
-  #scale_fill_distiller(colours=c(bl,"white", re), name = "", direction = 1, na.value = "gray90", limits = c(-1, 1)) +
-    theme(panel.background = element_rect(color = "white", fill = "white"),
-        plot.title = element_text(face = "bold"), legend.background=element_blank()) +
-    labs(title = "County-level Trend in Real GDP PC",
-       subtitle = "Controlling for State Level GDP PC")
-
-trend_plot_pc / trend_state_plot_pc / trend_natl_plot_pc
+if(unit_id == "fips"){
+  county_coefs_temp <- county_coefs_all %>% 
+    rename_with(~ unit_id, .cols = "unit")
+  
+  # Education Expenditure
+  trend_plot_pc <- plot_usmap(data = county_coefs_temp, values = "trend_pc", regions = "counties", col = "gray90", linewidth = 0.01, exclude = c("AK", "HI")) +
+  scale_fill_gradient2(na.value = "grey98", midpoint = 0) +
+    #scale_fill_distiller(colours=c(bl,"white", re), name = "", direction = 1, na.value = "gray90", limits = c(-1, 1)) +
+      theme(panel.background = element_rect(color = "white", fill = "white"),
+          plot.title = element_text(face = "bold"), legend.background=element_blank()) +
+      labs(title = "County-level Trend in Real GDP PC")
+  
+  # Education Expenditure
+  trend_natl_plot_pc <- plot_usmap(data = county_coefs_temp, values = "trend_cont_natl_pc", regions = "counties", col = "gray90", linewidth = 0.01, exclude = c("AK", "HI")) +
+  scale_fill_gradient2(na.value = "grey98", midpoint = 0) +
+    #scale_fill_distiller(colours=c(bl,"white", re), name = "", direction = 1, na.value = "gray90", limits = c(-1, 1)) +
+      theme(panel.background = element_rect(color = "white", fill = "white"),
+          plot.title = element_text(face = "bold"), legend.background=element_blank()) +
+      labs(title = "County-level Trend in Real GDP PC",
+         subtitle = "Controlling for National Level GDP PC")
+  
+  # Education Expenditure
+  trend_state_plot_pc <- plot_usmap(data = county_coefs_temp, values = "trend_cont_state_pc", regions = "counties", col = "gray90", linewidth = 0.01, exclude = c("AK", "HI")) +
+  scale_fill_gradient2(na.value = "grey98", midpoint = 0) + 
+    #scale_fill_distiller(colours=c(bl,"white", re), name = "", direction = 1, na.value = "gray90", limits = c(-1, 1)) +
+      theme(panel.background = element_rect(color = "white", fill = "white"),
+          plot.title = element_text(face = "bold"), legend.background=element_blank()) +
+      labs(title = "County-level Trend in Real GDP PC",
+         subtitle = "Controlling for State Level GDP PC")
+  
+  trend_plot_pc / trend_state_plot_pc / trend_natl_plot_pc
+}
 
 ```
 
@@ -1128,7 +1182,7 @@ trend_plot_pc / trend_state_plot_pc / trend_natl_plot_pc
 state_coefs <- tibble()
 
 for(k in 1:nrow(state_trends)){
-  s <- state_trends %>% slice(k) %>% pull(state_name)
+  s <- state_trends %>% slice(k) %>% pull(state)
 
   t <- state_trends %>% slice(k) %>%
     pull(trend) %>% first %>% .$coefficients %>% pluck(1)
@@ -1143,7 +1197,7 @@ colnames(state_coefs) <- names(state_trends)
 state_coefs %>%
   mutate(across(contains("trend"), as.numeric)) %>% 
   tibble %>% 
-  pivot_longer(!state_name) %>% 
+  pivot_longer(!state) %>% 
   ggplot()+
   geom_histogram(aes(x = value, fill = name), bins = 15, position = "identity", alpha  = 0.7) +
   geom_vline(aes(xintercept = 0), color = "magenta", linetype = "dotted") +
@@ -1163,16 +1217,16 @@ The following isoltes those counties that have significant negative or positive 
 # Outliers
 neg_coefs <- mute_outliers(county_ed_coefs, "trend_cont_natl") %>% 
   filter(var_muted != trend_cont_natl & var_muted < 0) %>% 
-  pull(fips) %>% unique
+  pull(unit) %>% unique
 
 if(length(neg_coefs) != 0){
   mines_restr %>%
-    filter(fips %in% neg_coefs) %>%
-    select(fips, year, log_real_gdp_priv_ind_pc, log_real_Property_Tax_pp, log_real_Elem_Educ_Total_Exp_pp) %>% 
-    pivot_longer(!c(fips, year)) %>% 
+    filter(unit %in% neg_coefs) %>%
+    select(unit, year, log_real_gdp_priv_ind_pc, log_real_Property_Tax_pp, log_real_Elem_Educ_Total_Exp_pp) %>% 
+    pivot_longer(!c(unit, year)) %>% 
     ggplot(aes(x = year, y = value, color = name)) +
     geom_line() +
-    facet_wrap(~fips, scales = "free")
+    facet_wrap(~unit, scales = "free")
 }
 ```
 
@@ -1184,15 +1238,15 @@ if(length(neg_coefs) != 0){
 
 pos_coefs <- mute_outliers(county_coefs_all, "trend_cont_natl") %>% 
   filter(var_muted != trend_cont_natl & var_muted > 0) %>% 
-  pull(fips) %>% unique
+  pull(unit) %>% unique
 
 mines_restr %>%
-  filter(fips %in% pos_coefs) %>%
-  select(fips, year, log_real_gdp_priv_ind_pc, log_real_Property_Tax_pp, log_real_Elem_Educ_Total_Exp_pp) %>% 
-  pivot_longer(!c(fips, year)) %>% 
+  filter(unit %in% pos_coefs) %>%
+  select(unit, year, log_real_gdp_priv_ind_pc, log_real_Property_Tax_pp, log_real_Elem_Educ_Total_Exp_pp) %>% 
+  pivot_longer(!c(unit, year)) %>% 
   ggplot(aes(x = year, y = value, color = name)) +
   geom_line() +
-  facet_wrap(~fips, scales = "free")
+  facet_wrap(~unit, scales = "free")
 
 
 ```
@@ -1224,8 +1278,8 @@ macro_natl %>%
 
 # library(covFactorModel)
 # iX <- mines_restr %>% 
-#   select(fips, year, real_gdp_total) %>% 
-#   pivot_wider(names_from = "fips", values_from = "real_gdp_total") %>% 
+#   select(unit, year, real_gdp_total) %>% 
+#   pivot_wider(names_from = "unit", values_from = "real_gdp_total") %>% 
 #   mutate(year=as_date(year))
 # 
 # z <- read.zoo(iX, format = "%Y/%m/%d")
@@ -1250,7 +1304,7 @@ county_gdp <- readRDS(here("data/temp/gdp_controls.RDS")) %>%
   select(year, fips, real_gdp_total, real_gdp_priv_ind)
 
 # county_gdp %>%
-#   group_by(fips) %>%
+#   group_by(unit) %>%
 #   mutate(across(c(real_gdp_total, real_gdp_priv_ind), list(ma5 = ~rollmean(., 5, align = 'right', fill = NA),
 #                                                            ma3 = ~rollmean(., 3, align = 'right', fill = NA),
 #                                                            ma2 = ~rollmean(., 2, align = 'right', fill = NA)),
@@ -1311,14 +1365,14 @@ First-differences
 
 ```{r, echo = FALSE, cache = TRUE}
 
-state_list <- unique(mines_state$state_name)
+state_list <- unique(mines_state$state)
 
 acf_list <- list()
 
 for(s in 1:length(state_list)){
 
   ps <- mines_state %>%
-    filter(state_name == state_list[s]) %>%
+    filter(state == state_list[s]) %>%
     pull(diff_real_gdp_priv_ind) %>%
     acf(., na.action = na.pass, plot = FALSE)
   acf_list[[s]] <- ps
@@ -1346,13 +1400,13 @@ First-differences
 
 ```{r, echo = FALSE, cache = TRUE}
 
-state_list <- unique(mines_state$state_name)
+state_list <- unique(mines_state$state)
 
 acf_list <- list()
 
 for(s in 1:length(state_list)){
   ps <- mines_state %>%
-    filter(state_name == state_list[s]) %>%
+    filter(state == state_list[s]) %>%
     pull(diff_real_Elem_Educ_Total_Exp) %>%
     acf(., na.action = na.pass, plot = FALSE)
   acf_list[[s]] <- ps
@@ -1374,7 +1428,7 @@ ggplot(mines_state,
        aes(x= real_gdp_priv_ind,
            y= real_Elem_Educ_Total_Exp))+
   geom_point()+
-  facet_wrap(~state_name, scales = "free") +
+  facet_wrap(~state, scales = "free") +
   geom_smooth(fill="blue", alpha=0.1)+
   geom_smooth(method='lm', formula= y~x, se=FALSE, col="red",lty=2)+
   theme(axis.text.y = element_blank(),
@@ -1395,12 +1449,12 @@ ggplot(mines_state,
 for(s in 1:length(state_list[1:6])){
   gdp_var <- mines_state %>%
     filter(year != 2001) %>% 
-    filter(state_name == state_list[s]) %>%
+    filter(state == state_list[s]) %>%
     pull(diff_real_gdp_priv_ind)
   
   elem_ed_var <- mines_state %>%
     filter(year != 2001) %>% 
-    filter(state_name == state_list[s]) %>%
+    filter(state == state_list[s]) %>%
     pull(diff_real_Elem_Educ_Total_Exp)
   
   cor(gdp_var, elem_ed_var)
@@ -1417,4 +1471,5 @@ for(s in 1:length(state_list[1:6])){
 # cor.test(x, y, method=c("pearson", "kendall", "spearman"))
 
 ```
+
 
