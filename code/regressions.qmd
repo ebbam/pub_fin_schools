@@ -1,5 +1,5 @@
 ---
-title: "Effect of Industrial Shocks on Public Ed."
+title: "Regression Results"
 format: 
   html:
     embed-resources: true
@@ -174,30 +174,6 @@ mines_cz %>%
 
 
 ```
-
-# Dataset coverage    
-~ 9% of students are enrolled in private schools
-```{r}
-
-natl_coverage <- mines_cz %>%
-  select(year, Enrollment, pop_school_age) %>%
-  group_by(year) %>%
-  summarise(across(c(Enrollment, pop_school_age), ~sum(., na.rm = TRUE))) %>%
-  mutate(pupils_covered = Enrollment/(pop_school_age*(14/15)))
-
-all_ff_states <- readRDS(here("data/temp/shift_shares_base_01_05_11.RDS")) %>% 
-  mutate(state = substr(fips, start = 1, stop = 2)) %>% group_by(state) %>% filter(any(annual_avg_emplvl_211 > 100)) %>% 
-  ungroup %>% 
-  arrange(annual_avg_emplvl_211) %>% 
-  pull(state) %>% 
-  unique %>% 
-  lapply(., get_state)
-  
-mines_restr_2021 <- mines_cz %>% filter(year == 2021) %>% 
-  select(unit, log_Property_Tax_pp, log_Elem_Educ_Total_Exp_pp, log_gdp_priv_ind_pc)
-
-```
-
 
 # Descriptive Regression Results
 

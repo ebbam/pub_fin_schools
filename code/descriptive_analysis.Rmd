@@ -21,11 +21,19 @@ library(panelView)
 library(openxlsx)
 library(stargazer)
 library(usmap)
+library(viridis)
 library(fixest)
 library(datasets)
+library(patchwork)
+library(ggridges)
+library(ggbreak)
+library(ggrepel)
 
 source(here('code/source_code/dicts.R'))
 source(here('code/source_code/useful_functions.R'))
+source(here('code/source_code/cz_cleaning.R'))
+
+unit_id = "fips"
 
 ```
 
@@ -33,189 +41,847 @@ source(here('code/source_code/useful_functions.R'))
 ## Descriptive Statistics
 
 ```{r cars, echo = FALSE}
-temp_cleaned <- readRDS(here("data/out/school_district_cleaned.RDS")) %>% 
-  filter(year >= 1970) %>% select(-SchLevCode)
 
-temp_cleaned %>% 
-  pivot_longer(cols = !c(FIPSid, year, FIPS_Code_State, fips, Enrollment), names_to = "item", values_to = "amount")
+mines_restr <- readRDS(here("data/out/regression_data_complete_fips.RDS")) %>% 
+  group_by(fips) %>%
+    arrange(fips, year) %>% 
+  mutate(across(c(starts_with("log_real_gdp_total") | starts_with("log_real_gdp_priv_ind") | starts_with("log_real_gdp_total_pc") | starts_with("log_real_gdp_priv_ind_pc")), ~.- dplyr::lag(., 1), .names = "diff_{.col}")) %>% 
+  ungroup  
 
-temp_cleaned %>% 
-  select(FIPSid:Total_Revenue) %>% 
-  filter(Total_Revenue != 0) %>% 
-  complete(FIPSid, year) %>% 
-  filter(!is.na(Total_Revenue))
+mines_cz <- readRDS(here("data/out/cz_dataset.RDS"))
+mines_cz_1990 <- readRDS(here("data/out/cz_1990_dataset.RDS"))
 
 ```
 
-# Complete cases
-~ 10% missing values for the Total revenue category 
+```{r, echo = FALSE, warning = FALSE, message = FALSE}
 
-```{r, echo = FALSE}
-temp_short <- temp_cleaned %>% 
-  filter(year >= 1997)
+# Relevant vars for trend analysis below
+# Should be central place to add more vars if necessary
+vars_grab <- c("real_gdp_priv_ind",
+               "real_gdp_total",
+               "real_Elem_Educ_Total_Exp", 
+               "real_Total_Educ_Total_Exp",
+               "real_Property_Tax", 
+               "real_Total_Revenue",
+               "real_Total_Fed_IG_Revenue",
+               "real_Total_State_IG_Revenue",
+               "real_Total_IG_Revenue",
+               "real_Tot_Local_IG_Rev",
+               "real_Total_Rev_Own_Sources",
+               "Enrollment", 
+               "pop_total")
 
-complete_n <- temp_short %>% 
-  complete(FIPSid, year) %>% nrow()
+vars_grab_restr <- c("real_gdp_priv_ind",
+                     "real_gdp_priv_ind_pc",
+               "real_gdp_total",
+               "real_gdp_total_pc",
+               "real_Elem_Educ_Total_Exp",
+               "real_Elem_Educ_Total_Exp_pp",
+               "real_Total_Educ_Total_Exp",
+               "real_Total_Educ_Total_Exp_pp",
+               "real_Property_Tax", 
+               "real_Property_Tax_pp", 
+               "real_Total_Revenue",
+               "real_Total_Fed_IG_Revenue",
+               "real_Total_IG_Revenue",
+               "real_Total_State_IG_Revenue",
+               "real_Tot_Local_IG_Rev",
+               "real_Total_Rev_Own_Sources",
+               "Enrollment", 
+               "pop_total")
 
-# 89% of all possible district-year pairs are reported
-nrow(temp_short)/complete_n
-
-# 58 observations in which enrollment is reported by no other revenue categories...keep for now
-temp_short[rowSums(temp_short[6:264], na.rm = TRUE) ==0,] 
-
-```
-
-
-```{r, echo = FALSE}
-
-retained_vars <- temp_short %>% 
-  complete(FIPSid, year) %>%
-  summarise(across(everything(), ~sum(. == 0 | is.na(.)))) %>% 
-  t() %>% as.data.frame() %>% 
-  tibble::rownames_to_column("cat") %>% 
-  mutate(prop_missing = round(V1/complete_n, digits = 2)) %>% 
-  filter(prop_missing < .3) %>% 
-  pull(cat) %>% 
-  union(., names(select(temp_short, contains("Ed", ignore.case = FALSE))))
-
-temp_short %>% select(all_of(retained_vars)) %>% select(-fips) -> temp_short
-
-```
-
-# Reporting
-```{r}
-
-temp_cleaned %>% 
-  filter(Total_Revenue != 0) %>% 
-  group_by(FIPSid) %>% 
-  summarise(years = n()) %>% 
-  ggplot() +
-  geom_histogram(aes(x = years), binwidth = 3) + 
-  ggtitle("Histogram of reported years over 31-year period between 1970-2021")
-
-temp_cleaned %>% 
-  filter(Total_Revenue != 0) %>% 
+mines_tots <- mines_restr %>% 
+  #mutate(across(c(vars_grab_restr, paste0("log_", vars_grab_restr)), ~. - dplyr::lag(., 1), .names = "diff_{.col}")) %>% 
   group_by(year) %>% 
-  summarise(reporting = n()) %>% 
-  ggplot() +
-  geom_bar(aes(x = year, weight = reporting)) + 
-  ggtitle("Reporting over 31-year period between 1970-2021")
+  mutate(natl_pop = sum(pop_total, na.rm = TRUE)) %>% 
+  ungroup
+
+## Summarise to State Level
+mines_state <- mines_tots %>%
+  select(state_name, fips, cz_id, year, fips, vars_grab) %>% 
+  group_by(state_name, year) %>%
+  summarise(across(vars_grab, ~sum(., na.rm = TRUE)),
+            n_fips = n_distinct(fips),
+            n_cz = n_distinct(cz_id)) %>% 
+  ungroup %>% 
+  mutate(real_Elem_Educ_Total_Exp_pp = real_Elem_Educ_Total_Exp/Enrollment,
+         real_Total_Educ_Total_Exp_pp = real_Total_Educ_Total_Exp/Enrollment,
+         real_gdp_priv_ind_pc = real_gdp_priv_ind/pop_total,
+         real_gdp_total_pc = real_gdp_total/pop_total,
+         real_Property_Tax_pp = real_Property_Tax/Enrollment,
+         across(!c(state_name, year, n_fips, n_cz), ~log(.), .names = "log_{.col}"),
+         across(!c(state_name, year, n_fips, n_cz), ~. - dplyr::lag(., 1), .names = "diff_{.col}"),
+         time = year - 2000)
+      
+## Summarise to natl level
+mines_natl <- mines_tots %>%
+  select(state_name, fips, cz_id, year, fips, vars_grab) %>% 
+  group_by(year) %>%
+  summarise(across(vars_grab, ~sum(., na.rm = TRUE)),
+            n_fips = n_distinct(fips),
+            n_cz = n_distinct(cz_id),
+            n_state = n_distinct(state_name)) %>% 
+  ungroup %>% 
+  mutate(real_Elem_Educ_Total_Exp_pp = real_Elem_Educ_Total_Exp/Enrollment,
+         real_Total_Educ_Total_Exp_pp = real_Total_Educ_Total_Exp/Enrollment,
+         real_gdp_priv_ind_pc = real_gdp_priv_ind/pop_total,
+         real_gdp_total_pc = real_gdp_total/pop_total,
+         real_Property_Tax_pp = real_Property_Tax/Enrollment,
+         across(!c(year, n_fips, n_cz, n_state), ~log(.), .names = "log_{.col}"),
+         across(!c(year, n_fips, n_cz, n_state,), ~. - dplyr::lag(., 1), .names = "diff_{.col}"),
+         time = year - 2000,
+         id = "USA")
+
+mean_df <- mines_tots %>% 
+  group_by(year) %>%
+             summarise(real_Total_Educ_Total_Exp = mean(real_Total_Educ_Total_Exp, na.rm = TRUE),
+                       real_Total_Educ_Total_Exp_pp = mean(real_Total_Educ_Total_Exp_pp, na.rm = TRUE),
+                       log_real_Total_Educ_Total_Exp = mean(log_real_Total_Educ_Total_Exp, na.rm = TRUE),
+                       log_real_Total_Educ_Total_Exp_pp = mean(log_real_Total_Educ_Total_Exp_pp, na.rm = TRUE))
+
+mean_df_cz <- mines_cz %>% 
+  group_by(year) %>%
+             summarise(real_Total_Educ_Total_Exp = mean(real_Total_Educ_Total_Exp, na.rm = TRUE),
+                       real_Total_Educ_Total_Exp_pp = mean(real_Total_Educ_Total_Exp_pp, na.rm = TRUE),
+                       log_real_Total_Educ_Total_Exp = mean(log_real_Total_Educ_Total_Exp, na.rm = TRUE),
+                       log_real_Total_Educ_Total_Exp_pp = mean(log_real_Total_Educ_Total_Exp_pp, na.rm = TRUE))
+
+
+```
+
+```{r}
+
+if(unit_id == "both"){
+  lister = list("cz_id" = mines_cz, "fips" = mines_restr) 
+}else if(unit_id == "cz_id"){
+  lister = list("cz_id" = mines_cz) 
+}else if(unit_id == "fips"){
+  lister = list("fips" = mines_restr) 
+}else{
+  stop("Need to specify a unit_id for the following functions.")
+}
 
 ```
 
 
-# How many school districts per state
-```{r}
-temp_short %>% 
-  group_by(FIPS_Code_State) %>% 
-  summarise(n_dist = n_distinct(FIPSid)) %>% 
-  ggplot() +
-  geom_col(aes(x = fct_rev(fct_reorder(as.factor(FIPS_Code_State), n_dist)), y = n_dist)) +
-  labs(title = "Number of schools per state")
+Overall, expenditure on education per pupil has increased slightly in real USD.
+```{r, echo = FALSE, message = FALSE, warnings = FALSE}
 
-temp_short %>% 
-  group_by(FIPS_Code_State) %>% 
-  summarise(n_dist = n_distinct(FIPSid)) %>% 
-  ggplot() +
-  geom_histogram(aes(n_dist), bins = 10) + 
-  labs(title = "Histogram of number of school districts per state")
+for(k in names(lister)){
+  pp1 <- lister[[k]] %>% 
+    mutate(panel = case_when(year %in% 2000:2003 ~ "2000-2003",
+                             year %in% 2004:2007 ~ "2004-2007", 
+                             year %in% 2008:2011 ~ "2008-2011", 
+                             year %in% 2012:2015 ~ "2012-2015", 
+                             year %in% 2016:2021 ~ "2016-2021")) %>% 
+    ggplot(aes(x = log_real_Total_Educ_Total_Exp_pp, y = as.factor(year), fill = year)) +
+    geom_density_ridges(alpha = 0.7) +
+    theme_minimal() + 
+    scale_fill_viridis() +
+    theme(legend.position = "none") +
+    scale_y_discrete(limits = rev(levels(as.factor(lister[[k]]$year)))) +
+    labs(title = paste0("(", k,") ", "log Education Expenditure pp"), y = "Year", x = "(log) Total Education Expenditure per Pupil (Real USD)")
+  
+  pp2 <- lister[[k]] %>% 
+    filter(year > 2000) %>% 
+    ggplot(aes(x = log_real_gdp_total_pc, y = as.factor(year), fill = year)) +
+    geom_density_ridges(alpha = 0.7) +
+    theme_minimal() + 
+    scale_fill_viridis(option = "plasma") +
+    theme(legend.position = "none") +
+    scale_y_discrete(limits = rev(levels(as.factor(lister[[k]]$year)))) +
+    labs(title = paste0("(", k,") ", "log GDP pc per year"), y = "Year", x = "(log) GDP per Capita")
+  
+  
+  print(pp1 + pp2)
+}
 
 ```
 
-# Completeness
-```{r}
 
-for(k in unique(temp_short$FIPS_Code_State)){
-  print(k)
-  print(get_state(k))
-  temp_short %>% 
-  filter(FIPS_Code_State == k) %>% 
-  panelview(Total_Revenue != 0 ~ 1, index = c("FIPSid","year"), xlab = "Year", ylab = "School District", display.all = TRUE, type = "missing")
+When looking at the share of expenditure on elementary education coming from own sources (as opposed to state or national sources) we see a mean of 38.6%.
+```{r, echo = FALSE, message = FALSE, warnings = FALSE}
+
+pp1 <- mines_restr %>% 
+  ggplot() + 
+  geom_histogram(aes(x = share_own), fill = "darkgreen", alpha = 0.5, bins = 50) +
+  geom_vline(aes(xintercept = mean(share_own)),col='black', linetype = "dotted") +
+  theme_minimal() +
+  labs(x = "(Mean) Share of Expenditure on Elementary Education from Own Sources",
+       title = "Histogram: Share of Expenditure on Elementary Education from Own Sources", 
+       y = "Number of counties")
+
+pp2 <- mines_restr %>% 
+  filter(year == 2021) %>% 
+  select(fips, share_fed, share_state, share_own) %>% 
+  pivot_longer(!fips) %>% 
+  ggplot() + 
+  geom_histogram(aes(x = value, fill = name), alpha = 0.5, bins = 50, position = 'identity') +
+  
+ # geom_vline(aes(xintercept = mean(share_own), group = name),col='black', linetype = "dotted") +
+  theme_minimal() +
+  labs(x = "(Mean) Share of Expenditure on Elementary Education from Own Sources",
+       title = "Histogram: Share of Expenditure on Elementary Education from Own Sources", 
+       y = "Number of counties") + 
+  scale_y_break(c(200, 2000))
+
+pp1 / pp2
+
+```
+
+
+
+```{r, echo = FALSE, message = FALSE, warnings = FALSE}
+
+mines_restr %>% 
+  ggplot(aes(x = log_real_Elem_Educ_Total_Exp_pp, y = log_real_Property_Tax_pp, colour = share_own_discrete)) +
+  geom_jitter() +
+    #geom_smooth(method=lm, colour = "black", linetype = "dashed") +
+  labs(title = "Elem Education Expenditure pp vs Property Tax pp") +
+  geom_abline(slope = 1, intercept = 0, linetype = 'dashed') +
+  theme_bw() +
+  theme(title = element_text(size = 9)) +
+  labs(colour = "Reliance on Local Sources")
+
+
+```
+
+The following plot displays each county's time series of expenditure (total and per pupil log values). 
+
+```{r, echo = FALSE, message = FALSE, warnings = FALSE, fig.height = 6}
+
+for(k in names(lister)){
+  log_tot <- lister[[k]] %>% 
+    ggplot() +
+    geom_line(aes(x = year, y = log_real_Total_Educ_Total_Exp, group = get(k)), alpha = 0.3) +
+    #geom_line(data = mean_df, aes(x = year, y = log_real_Total_Educ_Total_Exp), linewidth = 1) + 
+    labs(x = "Year", y = "Total County-level Education Expenditure (log)", title = paste0("(", k,") ", "Total (log) Expenditure")) + 
+    theme(legend.position = "none")
+
+  log_pp <- lister[[k]]  %>% ggplot() +
+    geom_line(aes(x = year, y = log_real_Total_Educ_Total_Exp_pp, group = get(k)), alpha = 0.3) +
+    #geom_line(data = mean_df, aes(x = year, y = log_real_Total_Educ_Total_Exp_pp)) + 
+    labs(x = "Year", y = "Total County-level Education Expenditure Per Pupil (log)", title = paste0("(", k,") ", "Total (log) Expenditure Per Pupil")) +  
+    theme(legend.position = "none")
+
+  print(log_tot + log_pp)
+}
+
+```
+
+
+### Key Relationships (KR)
+
+Below are scatterplots and diagrams depicting key relationships between dependent and control variables as well as shares/components of key variables.
+
+::: panel-tabset
+
+#### KR 1: Revenue Sources
+
+Most important to tease out before modelling is how different revenue sources (federal, state, county (own), and other local sources) interplay. County-level revenue for public education is a combination of both local and intergovernmental sources. The local portion of the share is almost entirely sourced through property taxes. The intergovernmental sources come from state, federal, and local aid.
+
+Below chart plots CZ-level mean (taken over the panel time horizon) of different intergovernmental (IG) sources versus own-source revenue (generated from local sources). The solid black line represents a best-fit line and the dashed line represents a 45 degree line. The blue plot shows Total IG Revenue (Federal + State + Other Local) versus own revenue. There is a near-1:1 negative correlation between the two (ie. they are near-substitutes for one another). This effect is dominated by State IG revenue (as can be seen in the purple panel). Propoerty taxes have a near 1:1 relationship with own revenue confirming that property taxes make up own revenue sources almost completely. 
+
+```{r, echo = FALSE, message = FALSE}
+
+for(k in names(lister)){
+  tots <- lister[[k]] %>% 
+    group_by(get(k)) %>% 
+    summarise(across(c(log_real_Total_Rev_Own_Sources_pp, log_real_Total_IG_Revenue_pp), ~mean(., na.rm = TRUE)))  %>% 
+    ggplot(aes(x = log_real_Total_Rev_Own_Sources_pp, y = log_real_Total_IG_Revenue_pp)) +
+    geom_jitter(colour = "blue") +
+    geom_smooth(method=lm, colour = "black") +
+    labs(title = "Total IG Revenue pp vs Own Rev. pp") +
+    geom_abline(slope = 1, intercept = 0, linetype = "dashed") +
+    theme(title = element_text(size = 9))
+
+
+  fed <- lister[[k]] %>% 
+    group_by(get(k)) %>% 
+    summarise(across(c(log_real_Total_Rev_Own_Sources_pp, log_real_Total_Fed_IG_Revenue_pp), ~mean(., na.rm = TRUE)))  %>% 
+    ggplot(aes(x = log_real_Total_Rev_Own_Sources_pp, y = log_real_Total_Fed_IG_Revenue_pp)) +
+    geom_jitter(colour = "magenta") +
+      geom_smooth(method=lm, colour = "black") +
+    labs(title = "Federal IG Revenue pp vs Own Rev. pp") +
+    geom_abline(slope = 1, intercept = 0, linetype = 'dashed') +
+    theme(title = element_text(size = 9),
+          legend.position = "none")
+  
+  state <- lister[[k]] %>% 
+    group_by(get(k)) %>% 
+    summarise(across(c(log_real_Total_Rev_Own_Sources_pp, log_real_Total_State_IG_Revenue_pp), ~mean(., na.rm = TRUE)))  %>% 
+    ggplot(aes(x = log_real_Total_Rev_Own_Sources_pp, y = log_real_Total_State_IG_Revenue_pp)) +
+    geom_jitter(colour = "purple") +
+      geom_smooth(method=lm, colour = "black") +
+    labs(title = "State IG Revenue pp vs Own Rev. pp", size = 10) + 
+    geom_abline(slope = 1, intercept = 0, linetype = "dashed") +
+    theme(title = element_text(size = 9),
+          legend.position = "none")
+  
+  taxes <- lister[[k]] %>% 
+    group_by(get(k)) %>% 
+    summarise(across(c(log_real_Total_Rev_Own_Sources_pp, log_real_Property_Tax_pp), ~mean(., na.rm = TRUE)))  %>% 
+    ggplot(aes(x = log_real_Total_Rev_Own_Sources_pp, y = log_real_Property_Tax_pp)) +
+    geom_jitter(colour = "darkgreen") +
+      geom_smooth(method=lm, colour = "black") +
+    labs(title = "Property Taxes pp vs Own Rev. pp", size = 10) + 
+    geom_abline(slope = 1, intercept = 0, linetype = "dashed") +
+    theme(title = element_text(size = 9),
+          legend.position = "none")
+  
+  print((tots + fed) / (state + taxes) + plot_annotation(k, theme=theme(plot.title=element_text(hjust=0.5))))
 }
 
 
 ```
 
-# Data
-```{r}
+The following plots show the share of revenue for public education that comes from own sources, local intergovernmental, state intergovernmental, and federal intergovernmental by state. Almost all states have a near 50% split of revenue from state and own sources, which aligns with data from the Congressional Research Service cited in the Transfer of Status report. Massachusetts has an unusually high share of local IG support (inter-school aid), eclipsing own sources almost completely. From further research, I believe this has to do with a unique structure of Massachusetts public school funding which is reliant on several multi-county funding agencies (similar to the mentioned ESAs). This anomaly might warrant the exclusion of MA from the analysis.
 
-sch_dist_names <- readRDS(here("data/temp/names_school_level_info.RDS")) %>% 
-  filter(year >=1997) %>% 
-  mutate(Name = case_when(FIPSid =="00185067116455" ~ "KOKOMO CENTER TOWNSHIP CONSOLIDATED SCHOOL CORPORATION", 
-                          TRUE ~ Name))
+```{r, echo = FALSE, message = FALSE, fig.height = 12, include = FALSE}
 
-temp_short <- readRDS(here('data/temp/temp_short_25_01_23.RDS'))
+state_df <- mines_restr %>% 
+  group_by(state, year) %>% 
+  summarise(across(c(Enrollment, real_Total_Educ_Total_Exp, real_Elem_Educ_Total_Exp, real_Total_Revenue, real_Total_Rev_Own_Sources, real_Total_Fed_IG_Revenue, real_Total_State_IG_Revenue, real_Tot_Local_IG_Rev, real_Total_Taxes, real_Property_Tax), ~sum(., na.rm = TRUE))) %>% ungroup
 
-pop <- readRDS(here("data/temp/population_age_controls.RDS"))
+state_df$state_name = sapply(state_df$state, get_state) 
+state_df$region = sapply(state_df$state_name, get_region)
+
+state_df <- state_df %>% 
+  relocate(state_name, region, .after = state) 
+
+state_shares <- state_df %>% 
+  dplyr::select(year, state_name, real_Total_Rev_Own_Sources, real_Total_Fed_IG_Revenue, real_Total_State_IG_Revenue, real_Tot_Local_IG_Rev) %>% 
+  pivot_longer(cols = !c(year, state_name), names_to = "Source", values_to = "Revenue") %>%
+  rename("Year" = year)  %>% 
+  ggplot(aes(x = Year, y = Revenue, group = Source, fill = Source)) +
+  scale_fill_viridis(discrete = T)+
+  geom_area(colour = "white", position = "fill", alpha = 0.8) + 
+  geom_line(aes(x = Year, y = 0.5), linewidth = 0.1, linetype = "dashed") +
+  facet_wrap(~state_name, ncol = 6) +
+  theme(legend.position = "bottom",
+        panel.grid.major = element_blank(), 
+        panel.grid.minor = element_blank(),
+        plot.background = element_blank(),
+        axis.text.x = element_blank(),
+        axis.ticks.x = element_blank(),
+        axis.text.y = element_blank(),
+        axis.ticks.y = element_blank()) +
+  labs(title = "Share of Revenue from Federal, State, Local Sources by State") +
+  xlab("Year") +
+  ylab("Share of Total Revenue") +
+  guides(fill=guide_legend(nrow=2)) +
+  #scale_y_continuous(breaks=seq(0,1,by=1)) +
+  #scale_x_continuous(breaks = c(2000, 2021)) +
+  guides(fill=guide_legend(nrow=2))
+
+state_shares
+#ggsave(here("output/plots/state_shares_of_revenue_by_source.jpg"), width = 20, height = 20, units = "cm")
+
+```
+
+```{r, echo = FALSE, message = FALSE}
+
+states_plots <- state_df %>% pull(state_name) %>% unique
+
+state_shares1 <- state_df %>% 
+  filter(state_name %in% states_plots[1:15]) %>% 
+  dplyr::select(year, state_name, real_Total_Rev_Own_Sources, real_Total_Fed_IG_Revenue, real_Total_State_IG_Revenue, real_Tot_Local_IG_Rev) %>% 
+  pivot_longer(cols = !c(year, state_name), names_to = "Source", values_to = "Revenue") %>%
+  rename("Year" = year)  %>% 
+  ggplot(aes(x = Year, y = Revenue, group = Source, fill = Source)) +
+  scale_fill_viridis(discrete = T, option  = "turbo")+
+  geom_area(position = "fill", alpha = 0.8) + 
+  geom_line(aes(x = Year, y = 0.5), linewidth = 0.1, linetype = "dashed") +
+  facet_wrap(~state_name, ncol = 5) +
+  theme(legend.position = "none", 
+        panel.grid.major = element_blank(), 
+        panel.grid.minor = element_blank(),
+        plot.background = element_blank(),
+        axis.text.x = element_blank(),
+        axis.ticks.x = element_blank(),
+        axis.text.y = element_blank(),
+        axis.ticks.y = element_blank(),
+        axis.title.y = element_blank(),
+        axis.title.x = element_blank()) +
+  #labs(title = "Share of Revenue from Federal, State, Local Sources by State", xlab = "Year", ylab = "Share of Total Revenue") +
+  guides(fill=guide_legend(nrow=2)) +
+  #scale_y_continuous(breaks=seq(0,1,by=1)) +
+  #scale_x_continuous(breaks = c(2000, 2021)) +
+  guides(fill=guide_legend(nrow=2))
+
+state_shares2 <- state_df %>% 
+  filter(!(state_name %in% states_plots[1:15])) %>% 
+  dplyr::select(year, state_name, real_Total_Rev_Own_Sources, real_Total_Fed_IG_Revenue, real_Total_State_IG_Revenue, real_Tot_Local_IG_Rev) %>% 
+  pivot_longer(cols = !c(year, state_name), names_to = "Source", values_to = "Revenue") %>%
+  rename("Year" = year)  %>% 
+  ggplot(aes(x = Year, y = Revenue, group = Source, fill = Source)) +
+  scale_fill_viridis(discrete = T, , option  = "turbo", breaks=c("Tot_Local_IG_Rev", "Total_Fed_IG_Revenue", "Total_Rev_Own_Sources", "Total_State_IG_Revenue"),
+                       labels=c("Local Intergovernmental Revenue", "Federal Intergovernmental Revenue", "Revenue from Own Sources", "State Intergovernmental Revenue"))+
+  geom_area(position = "fill", alpha = 0.8) + 
+  geom_line(aes(x = Year, y = 0.5), linewidth = 0.1, linetype = "dashed") +
+  facet_wrap(~state_name, ncol = 9) +
+  theme(legend.position = "bottom", 
+        panel.grid.major = element_blank(), 
+        panel.grid.minor = element_blank(),
+        plot.background = element_blank(),
+        axis.text.x = element_blank(),
+        axis.ticks.x = element_blank(),
+        axis.text.y = element_blank(),
+        axis.ticks.y = element_blank(),
+        axis.title.y = element_blank(),
+        axis.title.x = element_blank()) +
+  #labs(title = "Share of Revenue from Federal, State, Local Sources by State", xlab = "Year", ylab = "Share of Total Revenue") +
+  guides(fill=guide_legend(nrow=2)) +
+  #scale_y_continuous(breaks=seq(0,1,by=1)) +
+  #scale_x_continuous(breaks = c(2000, 2021)) +
+  guides(fill=guide_legend(nrow=2))
+
+```
+
+The below plot provides the same information as above but on a national level.
+
+**Conclusion: Corroborates the near-even split of revenue between state and own sources which seems to be a fact of public education revenue. I mainly include this as an alternative summarising figure to the above.**
+
+```{r, echo = FALSE, fig.height = 8}
+
+natl_df <- mines_restr %>% 
+  group_by(year) %>% 
+  summarise(across(c(Enrollment, real_Total_Educ_Total_Exp, real_Elem_Educ_Total_Exp, real_Total_Revenue, real_Total_Rev_Own_Sources, real_Total_IG_Revenue, real_Total_Fed_IG_Revenue, real_Total_State_IG_Revenue, real_Tot_Local_IG_Rev, real_Total_Taxes, real_Property_Tax), ~sum(., na.rm = TRUE))) %>% ungroup %>% mutate(across(real_Total_Educ_Total_Exp:last_col(), ~./Enrollment, .names = "{.col}_pp"))
+
+natl_shares <- natl_df %>% 
+  dplyr::select(year, real_Total_Rev_Own_Sources, real_Total_Fed_IG_Revenue, real_Total_State_IG_Revenue, real_Tot_Local_IG_Rev) %>% 
+  pivot_longer(cols = !year, names_to = "Source", values_to = "Revenue") %>%
+  ggplot(aes(x = year, y = Revenue, group = Source, fill = Source)) +
+  scale_fill_viridis(discrete = T, option  = "turbo")+
+  geom_area(position = "fill") + 
+  geom_line(aes(x = year, y = 0.5), linewidth = 0.1, linetype = "dashed") +
+    xlab("Year") +
+  ylab("Share of Total Revenue") +
+  theme_minimal() +
+  theme(legend.position = "none", plot.background = element_blank(),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank()) +
+  guides(fill=guide_legend(nrow=2)) +
+  scale_y_continuous(breaks=seq(0,1,by=0.5))
+
+
+(natl_shares + state_shares1)/state_shares2
+
+#ggsave(here("output/plots/natl_shares_of_revenue_by_source.jpg"), g, width = 20, height = 25, units = "cm")
+
 ```
 
 
 
-```{r}
+#### KR 2: Revenue, Expenditure and Property Taxes
 
-sum_df <- temp_short %>% 
-  filter(Enrollment != 0) %>% 
-  select(FIPSid, year, FIPS_Code_State, Enrollment, Total_Revenue:State_IGR_Education, Total_Educ_Total_Exp) %>% 
-  mutate(across(c(Total_Revenue:Total_Educ_Total_Exp), ~./Enrollment, .names = "{col}_pp")) 
+We know the majority of "own source" revenue comes from property taxes. The below scatterplots demonstrate the relationship between education revenue and expeniture versus property taxes collected. The solid black line represents a best-fit line and the dashed line represents a 45 degree line (intercept-adjusted to match data). The vertical dotted line represents a potential preliminary cutoff point for outliers - will be subject to further more rigorous testing.
+
+```{r, echo = FALSE, message = FALSE, warnings = FALSE}
+
+for(k in names(lister)){
+  
+  tot_rev <- lister[[k]] %>% 
+    ggplot(aes(x = log_real_Property_Tax, y = log_real_Total_Rev_Own_Sources)) +
+    geom_jitter(, colour = "deeppink2", alpha = 0.5) + 
+    geom_smooth(method=lm, colour = "black") +
+    geom_abline(slope = 1, linetype = "dashed") +
+    labs(x = "log Property Taxes Collected", y = "log Revenue Own Sources") 
 
 
-# Why are there negative values?
-sum_df %>% 
-  filter(Total_Taxes_pp >= 0) %>%  
-  select(year, Enrollment, Total_Educ_Total_Exp_pp, Total_Revenue_pp, Total_Taxes_pp, Property_Tax_pp, State_IGR_Education_pp) %>% 
-  data.frame() %>% 
-  stargazer(digits = 1)
+  pp_rev <- lister[[k]] %>% 
+    ggplot(aes(x = log_real_Property_Tax_pp, y = log_real_Total_Rev_Own_Sources_pp)) +
+    geom_jitter(, colour = "deeppink2", alpha = 0.5) + 
+    geom_smooth(method=lm, colour = "black") +
+    geom_abline(slope = 1, linetype = "dashed") +
+    geom_vline(xintercept = 4, linetype = "dotted") +
+    labs(x = "log Property Taxes Collected pp", y = "log Revenue Own Sources pp") 
+  
+  
+  tot <- lister[[k]] %>% 
+    ggplot(aes(x = log_real_Property_Tax, y = log_real_Total_Educ_Total_Exp)) +
+    geom_jitter(, colour = "cyan3", alpha = 0.5) + 
+    geom_smooth(method=lm, colour = "black") +
+    geom_abline(slope = 1, linetype = "dashed") +
+    labs(x = "log Property Taxes Collected", y = "log Education Expenditure") 
+  
+  
+  pp <- lister[[k]] %>% 
+    ggplot(aes(x = log_real_Property_Tax_pp, y = log_real_Total_Educ_Total_Exp_pp)) +
+    geom_jitter(, colour = "cyan3", alpha = 0.5) + 
+    geom_smooth(method=lm, colour = "black") +
+    geom_abline(slope = 1, linetype = "dashed") +
+    geom_vline(xintercept = 4, linetype = "dotted") +
+    labs(x = "log Property Taxes Collected pp", y = "log Education Expenditure pp") 
+  
+  print((tot_rev + pp_rev) / (tot + pp) + plot_annotation(k, theme=theme(plot.title=element_text(hjust=0.5))))
 
-sum_df %>% 
-  filter(Total_Taxes_pp >= 0 & year >= 2011) %>%  
-  select(year, Enrollment, Total_Educ_Total_Exp_pp, Total_Revenue_pp, Total_Taxes_pp, Property_Tax_pp, State_IGR_Education_pp) %>% 
-  data.frame() %>% 
-  stargazer(digits = 1)
+}
 
-sum_df %>%
-  ggplot() + 
-  geom_line(aes(x = year, y = Enrollment, color = FIPSid))
 
-sum_df %>%
-  filter(year == 2018) %>% 
-  select(FIPSid, FIPS_Code_State, Total_Revenue_pp, Total_Rev_Own_Sources_pp, Total_Taxes_pp, Total_Educ_Total_Exp_pp) %>% 
-  pivot_longer(cols = !c(FIPSid, FIPS_Code_State)) %>% 
-  ggplot() + 
-  geom_histogram(aes(log(value), fill = as.factor(FIPS_Code_State)), position = "identity", bins = 50, show.legend = FALSE) +
-  facet_wrap(~name, scales = "free") +
-  theme_minimal() 
 
 ```
 
+#### KR 3: GDP and Property Taxes
+
+The solid black line represents a best-fit line and the dashed line represents a 45 degree line.
+
+GDP and Property taxes have a positive linear correlation, to be expected.
+
+```{r, echo = FALSE, message = FALSE, warnings = FALSE}
+
+for(k in names(lister)){
+  
+  tot_log <- lister[[k]] %>% 
+    ggplot(aes(x = log_real_gdp_total, y = log_real_Property_Tax)) +
+    geom_jitter(, colour = "steelblue", alpha = 0.5) + 
+    geom_smooth(method=lm, colour = "black") +
+      geom_abline(slope = 1, intercept = 0, linetype = "dashed") +
+    labs(x = "log GDP", y = "log Property Taxes Collected") +
+    theme_minimal()
+  
+  tot_log_pp <- lister[[k]] %>% 
+    ggplot(aes(x = log_real_gdp_total_pc, y = log_real_Property_Tax_pp)) +
+    geom_jitter(, colour = "darkorchid", alpha = 0.5) + 
+    geom_smooth(method=lm, colour = "black") +
+        geom_abline(slope = 1, intercept = 0, linetype = "dashed") +
+    labs(x = "log GDP pc", y = "log Property Taxes Collected pp") +
+    theme_minimal()
+  
+  priv_ind_log <- lister[[k]] %>% 
+    ggplot(aes(x = log_real_gdp_priv_ind, y = log_real_Property_Tax)) +
+    geom_jitter(, colour = "steelblue", alpha = 0.5) + 
+    geom_smooth(method=lm, colour = "black") +
+      geom_abline(slope = 1, intercept = 0, linetype = "dashed") +
+    labs(x = "log Private Industry GDP", y = "log Property Taxes Collected") +
+    theme_minimal()
+  
+  priv_ind_log_pp <- lister[[k]] %>% 
+    ggplot(aes(x = log_real_gdp_priv_ind_pc, y = log_real_Property_Tax_pp)) +
+    geom_jitter(, colour = "darkorchid", alpha = 0.5) + 
+    geom_smooth(method=lm, colour = "black") +
+        geom_abline(slope = 1, intercept = 0, linetype = "dashed") +
+    labs(x = "log Private Industry GDP pc", y = "log Property Taxes Collected pp") +
+    theme_minimal()
+  
+  print((tot_log + tot_log_pp) / (priv_ind_log + priv_ind_log_pp) + plot_annotation(k, theme=theme(plot.title=element_text(hjust=0.5))))
+      
+}
 
 
-# County-level data
+
+```
+
+#### KR 4: GDP and Education Expenditure
+
+The solid black line represents a best-fit line and the dashed line represents a 45 degree line (intercept-adjusted to match data).
+
+GDP and Education expenditure have a positive linear correlation, as expected.
+
+```{r, echo = FALSE, message= FALSE, warnings = FALSE}
+
+for(k in names(lister)){
+
+  tot <- lister[[k]] %>%
+    ggplot(aes(x = log_real_gdp_total, y = log_real_Total_Educ_Total_Exp)) +
+    geom_jitter(, colour = "brown", alpha = 0.5) +
+    geom_smooth(method=lm, colour = "black") +
+        geom_abline(slope = 1, intercept = 0, linetype = "dashed") +
+    labs(title = k, x = "log GDP", y = "log Education Expenditure")
+
+
+  pp <- lister[[k]] %>%
+    ggplot(aes(x = log_real_gdp_total_pc, y = log_real_Total_Educ_Total_Exp_pp)) +
+    geom_jitter(, colour = "darkorange2", alpha = 0.5) +
+    geom_smooth(method=lm, colour = "black")  +
+        geom_abline(slope = 1, intercept = 0, linetype = "dashed") +
+    labs(main = k, x = "log GDP pc", y = "log Education Expenditure pp")
+  
+  tot2 <- lister[[k]] %>%
+    ggplot(aes(x = log_real_gdp_priv_ind, y = log_real_Total_Educ_Total_Exp)) +
+    geom_jitter(, colour = "darkgreen", alpha = 0.5) +
+    geom_smooth(method=lm, colour = "black") +
+        geom_abline(slope = 1, intercept = 0, linetype = "dashed") +
+    labs(title = k, x = "log industry GDP", y = "log Education Expenditure")
+
+
+  pp2 <- lister[[k]] %>%
+    ggplot(aes(x = log_real_gdp_priv_ind_pc, y = log_real_Total_Educ_Total_Exp_pp)) +
+    geom_jitter(, colour = "steelblue", alpha = 0.5) +
+    geom_smooth(method=lm, colour = "black")  +
+        geom_abline(slope = 1, intercept = 0, linetype = "dashed") +
+    labs(main = k, x = "log industry GDP pc", y = "log Education Expenditure pp")
+
+  print((tot + pp)/(tot2 + pp2) + plot_annotation(k, theme=theme(plot.title=element_text(hjust=0.5))))
+  
+}
+
+
+```
+
+#### KR 5: Economic Diversity
+
+If we use a Chmura economic diversity indicator and plot GDP, private industry GDP, education expenditure, and elementary education expenditure we see that there is little difference in the mean of expenditure, however higher values of each occur only in more diverse counties. This data is only available at county level, not commuting zone level. 
+
 ```{r}
-county_df <- sch_dist_names %>% 
-  select(FIPSid, fips) %>% 
-  distinct %>% 
-  left_join(temp_short, ., by = "FIPSid") %>%
-  relocate(fips) %>% 
-  group_by(fips, year) %>% 
-  summarise(across(where(is.numeric), ~sum(., na.rm = TRUE))) %>% 
+
+t1 <-  mines_restr %>% 
+  ggplot(aes(x = econ_div, y = log_real_gdp_total_pc)) +
+  geom_jitter(colour = "magenta") + 
+  geom_smooth(method=lm, colour = "black")
+
+t2 <- mines_restr %>% 
+  ggplot(aes(x = econ_div, y = log_real_gdp_priv_ind_pc)) +
+  geom_jitter(colour = "steelblue") +
+  geom_smooth(method=lm, colour = "black")
+
+t3 <- mines_restr %>% 
+  ggplot(aes(x = econ_div, y = log_real_Total_Educ_Total_Exp_pp)) +
+  geom_jitter(colour = "coral") +
+  geom_smooth(method=lm, colour = "black")
+
+t4 <- mines_restr %>% 
+  ggplot(aes(x = econ_div, y = log_real_Elem_Educ_Total_Exp_pp)) +
+  geom_jitter(colour = "coral") +
+  geom_smooth(method=lm, colour = "black")
+  
+t1 + t2 + t3 + t4
+
+```
+
+#### KR 6: ESAs and County Expenditure
+
+Around 2007, many states instituted Educational Service Agencies (ESAs) which sought to "equalise" public education across the country. To date, ~45 states have ESAs which are responsible for multiple school districts, most often across multiple counties. Therefore, when modelling county-level expenditure it will be important to understand how this change in educational expenditure affected county-level spending (ie. did ESAs replace or supplement county-level funding).
+
+Only 593 counties of 2740 in the dataset have recorded revenue/expenditure from ESAs. After some digging, I believe that these values for ESAs are improperly recorded in the sense that the revenue is recorded only in counties in which the ESA's headquarters is located and not partitioned to the counties to which the revenue ultimately flows. All county-level total expenditure/revenue values that are used in the regressions on this page have explicitly excluded recorded ESA values for this reason (they are instead recorded in a variable called *esa_tot_exp* or *esa_tot_rev* in total and per pupil values).
+
+The below graphs show some relationships between ESA and county-level finances. I have yet to arrive at a definitive understanding of how ESAs and county-level finances interact. They do not appear to be substitutes. As is evident, the data on ESA expenditure is patchy and highly volatile by county. At the moment, I believe this is because of imperfect/inconsistent reporting in comparison to traditional school district reporting. The four states that have recorded ESA expenditure before 2007 are California, Illinois, Minnesota, Oregon.
+
+```{r, echo = FALSE, message = FALSE, warnings = FALSE}
+
+esa_county <- readRDS(here("data/temp/esa_data_county_97_21.RDS")) %>% 
+  mutate(state = substr(fips, 1,2))
+
+esa_county$state_name = sapply(esa_county$state, get_state) 
+
+st <- esa_county %>% 
+  #filter(year >= 2007) %>% 
+  group_by(year, state_name) %>% 
+  summarise(across(esa_rev:esa_tot_exp, ~sum(., na.rm = TRUE))) %>% 
+  mutate(across(esa_rev:esa_tot_exp, ~ifelse(. == 0, NA, .))) %>% 
+  rename("State" = state_name) %>% 
+  ggplot(aes(x = year, y = log(esa_tot_exp), group = State, color = State)) +
+  geom_line() +
+  geom_vline(xintercept = 2007, linetype = "dashed") +
+  labs(x = "Year", y = "Expenditure (log kUSD)", title = "Expenditure by Educational Service Agencies per State", subtitle = "by State; Vertical line: x = 2007") +
+  theme(legend.position = "none", panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
+    guides(fill=guide_legend(nrow=5))
+
+cty <- esa_county %>% 
+  ggplot(aes(x = year, y = log(esa_tot_exp), group = fips, color = fips)) +
+  geom_line() +
+  geom_vline(xintercept = 2007, linetype = "dashed") +
+  labs(x = "Year", y = "Expenditure in  (log kUSD)", title = "Expenditure by Educational Service Agencies per County", subtitle = "by County; Vertical line: x = 2007") +
+  theme(legend.position = "none", panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+
+st / cty
+  
+
+```
+
+With this we want to demonstrate how ESAs interact with our expenditure indicator. Does high ESA spending imply low/high local spending? It seems from the below that the two have a no correlation, implying little substitution? (Each point is a county in a particular year starting from 2007, colour represents state). Warm color-scale is (top-left panel) is expenditure values whereas the cool color scales are revenue values. The black line is a 45 degree line.
+
+```{r, echo = FALSE, message = FALSE, warnings = FALSE, fig.height = 8}
+
+rev <- mines_restr %>% 
+  filter(year >=2007) %>% 
+  dplyr::select(year, fips, log_real_Total_Revenue_pp, log_real_esa_rev_pp, state_name) %>% 
+  mutate(year = as.factor(year)) %>% 
+         #log_esa_rev_pp = ifelse(is.na(log_esa_rev_pp), 0, log_esa_rev_pp)) %>% 
+  # group_by(fips) %>% 
+  # mutate(across(log_Total_Expenditure:log_esa_tot_exp, ~mean(., na.rm = TRUE)))  %>% 
+  # ungroup %>%  
+  ggplot(aes(x = log_real_Total_Revenue_pp, y = log_real_esa_rev_pp, colour = state_name)) +
+  geom_jitter() +
+  geom_abline(slope = 1) +
+  scale_color_viridis(discrete = T) +
+  theme(legend.position = "none") +
+  labs(x = "(log) Total Revenue per pupil", y = "(log) ESA Total Revenue pp")
+
+exp <- mines_restr %>% 
+  filter(year >=2007) %>% 
+  dplyr::select(year, fips, log_real_Total_Educ_Total_Exp_pp, log_real_esa_tot_exp_pp, state_name) %>% 
+  mutate(year = as.factor(year)) %>% 
+         #log_esa_tot_exp_pp = ifelse(is.na(log_esa_tot_exp_pp), 0, log_esa_tot_exp_pp)) %>% 
+  # group_by(fips) %>% 
+  # mutate(across(log_Total_Expenditure:log_esa_tot_exp, ~mean(., na.rm = TRUE)))  %>% 
+  # ungroup %>%  
+  ggplot(aes(x = log_real_Total_Educ_Total_Exp_pp, y = log_real_esa_tot_exp_pp, colour = state_name)) +
+  geom_jitter() +
+  geom_abline(slope = 1) +
+  scale_color_viridis(discrete = T, option = "A") +
+  theme(legend.position = "none")  +
+  labs(x = "(log) Total Expenditure per pupil", y = "(log) ESA Total Expenditure pp")
+
+own <- mines_restr %>% 
+  filter(year >=2007) %>% 
+  dplyr::select(year, fips, log_real_Total_Rev_Own_Sources_pp, log_real_esa_rev_pp, state_name) %>% 
+  mutate(year = as.factor(year)) %>% 
+         #log_esa_rev_pp = ifelse(is.na(log_esa_rev_pp), 0, log_esa_rev_pp)) %>% 
+  # group_by(fips) %>% 
+  # mutate(across(log_Total_Expenditure:log_esa_tot_exp, ~mean(., na.rm = TRUE)))  %>% 
+  # ungroup %>%  
+  ggplot(aes(x = log_real_Total_Rev_Own_Sources_pp, y = log_real_esa_rev_pp, colour = state_name)) +
+  geom_jitter() +
+  geom_abline(slope = 1) +
+  scale_color_viridis(discrete = T) +
+  theme(legend.position = "none") +
+  labs(x = "(log) Total Revenue Own Sources per pupil", y = "(log) ESA Total Revenue pp")
+
+
+ig <- mines_restr %>% 
+  filter(year >=2007) %>% 
+  dplyr::select(year, fips, log_real_Total_IG_Revenue_pp, log_real_esa_rev_pp, state_name) %>% 
+  mutate(year = as.factor(year)) %>% 
+        # log_esa_rev_pp = ifelse(is.na(log_esa_rev_pp), 0, log_esa_rev_pp)) %>% 
+  # group_by(fips) %>% 
+  # mutate(across(log_Total_Expenditure:log_esa_tot_exp, ~mean(., na.rm = TRUE)))  %>% 
+  # ungroup %>%  
+  ggplot(aes(x = log_real_Total_IG_Revenue_pp, y = log_real_esa_rev_pp, colour = state_name)) +
+  geom_jitter() +
+  geom_abline(slope = 1) +
+  scale_color_viridis(discrete = T) +
+  theme(legend.position = "none")  +
+  labs(x = "(log) Total IG Revenue per pupil", y = "(log) ESA Total Revenue pp")
+# 
+# st <- df %>% 
+#   filter(year >=2007) %>% 
+#   dplyr::select(year, fips, log_Total_State_IG_Revenue_pp, log_esa_rev_pp, state_name) %>% 
+#   mutate(year = as.factor(year),
+#          log_esa_rev_pp = ifelse(is.na(log_esa_rev_pp), 0, log_esa_rev_pp)) %>% 
+#   # group_by(fips) %>% 
+#   # mutate(across(log_Total_Expenditure:log_esa_tot_exp, ~mean(., na.rm = TRUE)))  %>% 
+#   # ungroup %>%  
+#   ggplot(aes(x = log_Total_State_IG_Revenue_pp, y = log_esa_rev_pp, colour = state_name)) +
+#   geom_jitter() +
+#   geom_abline(slope = 1, intercept = -2) +
+#   scale_color_viridis(discrete = T) +
+#   theme(legend.position = "none")
+
+(exp + rev)/ (own + ig)
+  
+
+```
+
+#### KR7: Expenditure per pupil and enrollment numbers
+
+There might be a scaling law at play in the behavior of expenditure per pupil (expenditure per pupil declines as enrollment numbers decline). There are a few ways to control for this: simply add enrollment numbers (per CZ) as a regressor (suffers from the fact that aggregated up at a commuting zone level might lose heterogeneity in the CZ); control for enrollment/number of schools (need to create new variable for n_schools).
+```{r, echo = FALSE, message = FALSE, warnings = FALSE}
+
+enr_elem <- mines_cz %>% 
+  ggplot(aes(x = log_Enrollment, y = log_real_Elem_Educ_Total_Exp_pp, color = year)) +
+  geom_jitter() +
+  labs(x = "(log) Enrollment", y = "Elem Expenditure (log kUSD)", title = "Expenditure by Total CZ Enrollment") +
+  theme(legend.position = "none", panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
+    guides(fill=guide_legend(nrow=5))
+
+enr <- mines_cz %>% 
+  ggplot(aes(x = log_Enrollment, y = log_real_Total_Educ_Total_Exp_pp, color = year)) +
+  geom_jitter() +
+  labs(x = "(log) Enrollment", y = "Educ. Expenditure (log kUSD)", title = "Expenditure by Total CZ Enrollment") +
+  theme(legend.position = "none", panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
+    guides(fill=guide_legend(nrow=5))
+
+enr_schd <- mines_cz %>% 
+  ggplot(aes(x = log_Enrollment/n_school_districts, y = log_real_Elem_Educ_Total_Exp_pp, color = year)) +
+  geom_jitter() +
+  labs(x = "avg. log(Enrollment) per school district by county", y = "Elem Expenditure (log kUSD)", title = "Expenditure by Average CZ Enrollment per School") +
+  theme(legend.position = "none", panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+
+(enr_elem + enr) / enr_schd
+  
+
+```
+
+#### Dataset coverage
+
+In this sanity check, I look at what proportion of reported school age children per state seem to be represented in the enrollment numbers in our Survey of Local Finances dataset. We see that this share varies in magnitude by state (Maine having only 40% of school-age children covered). Considering that \~ 9% of students are enrolled in private schools across the US, the coverage in the top states is not too bad!
+
+```{r}
+
+natl_coverage <- mines_restr %>%
+  select(year, Enrollment, pop_school_age) %>%
+  group_by(year) %>%
+  summarise(across(c(Enrollment, pop_school_age), ~sum(., na.rm = TRUE))) %>%
+  mutate(pupils_covered = Enrollment/(pop_school_age*(14/15)))
+
+all_ff_states <- readRDS(here("data/temp/shift_shares_base_01_05_11.RDS")) %>% 
+  mutate(state = substr(fips, start = 1, stop = 2)) %>% group_by(state) %>% filter(any(annual_avg_emplvl_211 > 100)) %>% 
   ungroup %>% 
-  mutate(across(3:78, ~./Enrollment, .names = "{.col}_pp")) %>% 
-  mutate(across(3:154, log, .names = "log_{.col}")) %>% 
-  left_join(., pop, by = c("fips", "year")) 
+  arrange(annual_avg_emplvl_211) %>% 
+  pull(state) %>% 
+  unique %>% 
+  lapply(., get_state)
 
-# Confirmed no NA values - all school district IDs get a FIPS code
-county_df %>% filter(is.na(fips)) %>% nrow == 0
- 
-# incomplete panel objects
-test_incomplete <- county_df %>% 
-  group_by(fips) %>% 
-  summarise(n = n()) %>% 
-  filter(n != 25) %>% 
-  pull(fips)
+energy_states <- c("ND", "WV", "OK", "WY", "PA", "TX")
+all_coal_states <- c("AL", "AZ", "AR", "CO", "IL", "IN", "KS", "KY", "LA", "MS", "MO", "MT", "NM", "ND", "OH", "OK", "PA", "TX", "UT", "WV", "WY")
 
-county_df %>% filter(fips %in% test_incomplete) %>% 
-  ggplot(aes(x = year, y = Enrollment, group = fips)) +
-  geom_line()
+# State level
+mines_restr %>% 
+  select(state_name, year, Enrollment, pop_school_age) %>% 
+  group_by(year, state_name) %>% 
+  summarise(across(c(Enrollment, pop_school_age), ~sum(., na.rm = TRUE))) %>% 
+  mutate(pupils_covered = Enrollment/(pop_school_age*(14/15)),
+         label = if_else(year == 2021 & state_name %in% energy_states, state_name, NA)) %>% 
+  #rbind(natl_coverage) %>% 
+  ggplot(data = ., aes(x = year, y = pupils_covered, color= state_name)) +
+  geom_line() +
+  geom_line(data = natl_coverage, aes(y = pupils_covered), color = "black", linewidth = 1) +
+  geom_hline(aes(yintercept = 1), linetype = "dotted") +
+  geom_label_repel(aes(label = label),
+                  nudge_x = 1,
+                  na.rm = TRUE) +
+  labs(title = "Enrollment reported as Proportion of School-age Children (ages 5-18)", 
+       x = "Year",
+       y = "Enrollment Reported as Proportion of School Age Children") +
+  theme_minimal() +
+  theme(legend.position = "none")
+  
+
+```
+
+#### Maps
+
+```{r}
+
+mines_restr_2021 <- mines_restr %>% filter(year == 2021) %>% 
+  select(fips, log_real_Property_Tax_pp, log_real_Elem_Educ_Total_Exp_pp, log_real_gdp_priv_ind_pc)
+# Property Taxes
+map_prop_tax <- plot_usmap(data = mines_restr_2021, values = "log_real_Property_Tax_pp", regions = "counties", col = "gray90", linewidth = 0.01, exclude = c("AK", "HI")) +
+  scale_fill_distiller(palette = "Greens", name = "", direction = 1, na.value = "gray90") +
+  theme(panel.background = element_rect(color = "white", fill = "white"),
+        plot.title = element_text(face = "bold"), legend.background=element_blank()) +
+  labs(title = "Property Taxes Collected 2021",
+       subtitle = "log per pupil")
+
+
+# Education Expenditure
+map_elem_ed <- plot_usmap(data = mines_restr_2021, values = "log_real_Elem_Educ_Total_Exp_pp", regions = "counties", col = "gray90", linewidth = 0.01, exclude = c("AK", "HI")) +
+  scale_fill_distiller(palette = "Purples", name = "", direction = 1, na.value = "gray90") +
+  theme(panel.background = element_rect(color = "white", fill = "white"),
+        plot.title = element_text(face = "bold"), legend.background=element_blank()) +
+  labs(title = "Elementary Education Expenditure 2021",
+       subtitle = "log per pupil")
+
+# Private Industry GDP
+map_priv_ind_gdp <- plot_usmap(data = mines_restr_2021, values = "log_real_gdp_priv_ind_pc", regions = "counties", col = "gray90", linewidth = 0.01, exclude = c("AK", "HI")) +
+  scale_fill_distiller(palette = "Blues", name = "", direction = 1, na.value = "gray90") +
+  theme(panel.background = element_rect(color = "white", fill = "white"),
+        plot.title = element_text(face = "bold"), legend.background=element_blank()) +
+  labs(title = "Private Industry GDP 2021",
+       subtitle = "log per capita")
+
+map_prop_tax + map_elem_ed + map_priv_ind_gdp
 
 ```
 
@@ -223,84 +889,11 @@ county_df %>% filter(fips %in% test_incomplete) %>%
 ## Create map of expenditure per pupil
 ```{r}
 
-plot_usmap(data = filter(county_df, year == 2020), color = "white", values = "log_Total_Revenue_pp", regions = "counties", exclude = c("AK", "HI")) +
+plot_usmap(data = filter(mines_restr, year == 2020), color = "white", values = "log_Total_Revenue_pp", regions = "counties", exclude = c("AK", "HI")) +
     labs(title = "U.S. County Public School Enrollment") + 
   scale_fill_continuous(low = "white", high = "blue", name = "Log Revenue per pupil") + 
   theme(panel.background=element_blank())
 
 
-```
-
-
-## Create map of pupil per county
-```{r}
-# Check completeness of population data in relation to available school expenditure data
-county_df %>% filter(!(fips %in% unique(pop$fips))) %>% nrow(.) == 0
-
-county_df %>% 
-  filter(year >= 2000) %>% 
-  mutate(enrollment_diff = pop_school_age- Enrollment,
-         enrollment_share = Enrollment/pop_school_age) %>% 
-  ggplot() +
-  geom_histogram(aes(x= enrollment_diff))
-
-
-county_df %>% 
-  left_join(., pop, by = c("fips", "year")) %>% 
-  filter(year >= 2000) %>% 
-  # Correct missing Connecticut states
-  mutate(state = ifelse(is.na(state), substr(fips, 1, 2), state)) %>% 
-  group_by(state, year) %>% 
-  summarise(enrollment = sum(Enrollment, na.rm = TRUE), pop_school_age = 0.95*sum(pop_school_age, na.rm = TRUE)) %>% 
-  pivot_longer(cols = c(enrollment, pop_school_age)) %>% 
-  ggplot(aes(y = value, x = as.factor(year), fill = name)) +
-  geom_bar(position = "fill", stat = "identity")+
-  facet_wrap(~state, scales = "free")
-  
-
-```
-
-
-## Test with mine closure data
-```{r}
-
-mines_data <- readRDS(here('data/temp/allcomp_cap_prod.RDS')) %>% 
-  select(-c("state.x", "state.y", "fipstate.x", "county.y", "county_name"))
-
-
-county_df %>% filter(!fips %in% unique(mines_data$fips)) %>% pull(fips) %>% unique
-
-county_df <- county_df %>% 
-  left_join(., mines_data, by = c("year", "fips")) %>% 
-  group_by(fips) %>%
-  mutate(diff_Property_Tax_pp = Property_Tax_pp - lag(Property_Tax_pp),
-         diff_Property_Tax_pp_l1 = lag(diff_Property_Tax_pp, 1),
-         diff_Property_Tax_pp_l2 = lag(diff_Property_Tax_pp, 2))
-
-#feols(Total_Taxes_pp ~ mines_diff + lag_diff + lag_diff2 + realgdp_pc | fips + year, data = county_df)
-feols(Total_Taxes_pp ~ diff_total_active_prod + l1_diff_total_active_prod + l2_diff_total_active_prod + realgdp_pc | fips + year, data = county_df)
-
-#feols(Total_Educ_Current_Exp_pp ~ mines_diff + lag_diff + lag_diff2 + realgdp_pc | fips + year, data = county_df)
-feols(Total_Educ_Current_Exp_pp ~ diff_total_active_prod + l1_diff_total_active_prod + l2_diff_total_active_prod + realgdp_pc | fips + year, data = county_df)
-
-#feols(Property_Tax_pp ~ mines_diff + lag_diff + lag_diff2 + realgdp_pc | fips + year, data = county_df)
-feols(Property_Tax ~ diff_total_active_prod + l1_diff_total_active_prod + l2_diff_total_active_prod + realgdp | fips + year, data = county_df)
-feols(Total_Educ_Current_Exp_pp ~ I(diff_total_active_prod/pop_1000) + I(l1_diff_total_active_prod/pop_1000) + I(l2_diff_total_active_prod/pop_1000) + realgdp | fips + year, data = county_df)
-
-#feols(diff_Property_Tax_pp ~ mines_diff + lag_diff + lag_diff2 + realgdp_pc | fips + year, data = county_df)
-feols(diff_Property_Tax_pp ~ diff_total_active_prod + l1_diff_total_active_prod + l2_diff_total_active_prod + realgdp_pc | fips + year, data = county_df)
-
-iv_est <- feols(Total_Educ_Current_Exp_pp ~ realgdp_pc |  fips + year | diff_total_active_prod + l1_diff_total_active_prod + l2_diff_total_active_prod ~ diff_Property_Tax_pp + diff_Property_Tax_pp_l1 + diff_Property_Tax_pp_l2 , data = county_df)
-summary(iv_est, stage = 1)
-
-
-```
-
-```{r}
-library(educationdata)
-data <- get_education_data(level = "school-districts",
-    source = "edfacts",
-    topic = "assessments",
-    filters = list(year = 2014, grade_edfacts = 8))
 ```
 
