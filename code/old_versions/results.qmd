@@ -9,13 +9,15 @@ format:
     toc-expand: 3
     toc-depth: 4
     toc-location: left
+editor_options: 
+  chunk_output_type: inline
 ---
 
 # Introduction
 
-The following document summarises the progress made thus far on Chapter 1: Local Fiscal Risks of Decarbonisation of my DPhil. The work aims to pursue a better understanding of how industrial transformation impacts local well-being. From an original interest in looking at all aspects of local public finance, the project has narrowed to focus on expenditure on public education and its connection to industrial prosperity and transformation. 
+The following document summarises the progress made thus far on Chapter 1: Local Fiscal Risks of Decarbonisation of my DPhil. The work aims to pursue a better understanding of how industrial transformation impacts local well-being. From an original interest in looking at all aspects of local public finance, the project has narrowed to focus on expenditure on public education and its connection to industrial prosperity and transformation.
 
-Below, I provide some descriptive statistics and figures about the data, some preliminary regression tests of the significance of various GDP control variables, and some regression results using a standard TWFE model (with and without state-level trends) and coal mining activity as instruments for property taxes and GDP. 
+Below, I provide some descriptive statistics and figures about the data, some preliminary regression tests of the significance of various GDP control variables, and some regression results using a standard TWFE model (with and without state-level trends) and coal mining activity as instruments for property taxes and GDP.
 
 *The main research question is: How does industrial transformation/activity impact county-level expenditure on public education?*
 
@@ -26,6 +28,7 @@ rm(list = ls())
 library(tidyverse)
 library(conflicted)
 library(stargazer)
+library(sf)
 library(zoo)
 library(tidycensus)
 library(here)
@@ -36,10 +39,12 @@ library(fixest)
 library(readxl)
 library(ggrepel)
 library(plm)
+library(ggbreak)
 library(getspanel)
 library(usmap)
 library(gridExtra)
 library(kableExtra)
+library(patchwork)
 library(lattice)
 library(lubridate)
 library(stringr)
@@ -54,207 +59,34 @@ library(vars)
 library(ggridges)
 library(grid)
 library(ggplotify)
-source(here('code/useful_functions.R'))
-source(here('code/dicts.R'))
+
+source(here('code/source_code/useful_functions.R'))
+source(here('code/source_code/dicts.R'))
 
 conflict_prefer_all("dplyr", quiet = TRUE)
 
 ```
 
-```{r, echo = FALSE}
-# MOVE TO CLEANING SCRIPT
-
-# Of all variables available in the school district dataset, select below which to retain (commenting out irrelevant ones)
-# Saves compile time later
-rel_vars <- c("fips", 
-              "state",
-              "year", 
-              "esa", 
-              "voc_adult", 
-              "Enrollment", 
-              "Total_Revenue", 
-              "Total_Rev_Own_Sources", 
-              #"General_Revenue"
-              #"Gen_Rev_Own_Sources"
-              "Total_Taxes",             
-              "Property_Tax",         
-              "Total_IG_Revenue",     
-              "Total_Fed_IG_Revenue",     
-              #"Fed_IGR_Education",        
-              "Total_State_IG_Revenue",    
-              #"State_IGR_Education",       
-              "Tot_Local_IG_Rev",
-              #"Local_IGR_InterSchool_Aid" ,   
-              #"Local_IGR_Other_Education",
-              #"Tot_Chgs_and_Misc_Rev",
-              #"Total_General_Charges",
-              #"Chg_Total_Education",
-              #"Chg_Total_Elem_Education",
-              #"Chg_Elem_Ed_Sch_Lunch",
-              #"Chg_Elem_Ed_Tuition",
-              #"Chg_Elem_Ed_NEC",
-              #"Misc_General_Revenue",
-              #"Interest_Revenue",
-              #"Misc_General_Rev_NEC",
-              # "Total_Expenditure",
-              # "Total_IG_Expenditure",
-              # "Direct_Expenditure" ,
-              # "Total_Current_Expend",
-              # "Total_Current_Oper",
-              # "Total_Capital_Outlays",
-              # "Total_Construction",
-              # "Total_Other_Capital_Outlays",
-              # "Total_Interest_on_Debt",
-              # "Total_Salaries___Wages",
-              # "General_Expenditure",
-              # "Direct_General_Expend",
-              # "General_Current_Expend",
-              # "General_Current_Oper",
-              # "General_Capital_Outlay",
-              # "General_Construction",
-              # "General_Capital_Outlay_Other",
-              # "General_Debt_Interest",
-              "Total_Educ_Total_Exp",
-              #"Total_Educ_Direct_Exp",
-              #"Total_Educ_Cap_Outlay",
-              #"Total_Educ_Current_Exp",
-              #"Total_Educ_Construct",
-              "Elem_Educ_Total_Exp",
-              #"Elem_Educ_Direct_Exp",
-              #"Elem_Educ_Cap_Outlay",
-              #"Elem_Educ_Current_Exp",
-              #"Elem_Educ_Construction",
-              #"Elem_Educ_IG_Sch_to_Sch",
-              #"Interest_on_Gen_Debt",
-              #"Total_Debt_Outstanding",
-              #"Total_Long_Term_Debt_Out",
-              #"Total_Beg_LTD_Out",
-              #"Beg_LTD_Out_All_Other",
-              #"Total_LTD_Retired",
-              #"LTD_Ret_All_Other",
-              #"Total_LTD_Out",
-              #"LTD_Out_All_Other",
-              #"Total_Cash___Securities",
-              #"Nonin_Trust_Cash___Sec",
-              #"Sinking_Fd_Cash___Sec",
-              #"Bond_Fd_Cash___Sec",
-              #"Oth_Nonin_Fd_Cash___Sec",
-              "esa_rev",
-              "esa_tot_exp",
-              "voc_adult_tot_rev",
-              "voc_adult_tot_exp",
-              "pop_total",
-              "pop_school_age")  
-
-df_all <- readRDS(here("data/out/school_exp_county.RDS")) %>% 
-  select(-contains("log")) %>% 
-  select(contains(rel_vars))
-
-```
-
-
-```{r, echo = FALSE}
-
-# MOVE TO CLEANING SCRIPT
-
-#Note: GDP controls and economic diversity indicators from the original #"main_county/pub_fin/data/temp" and cleaned from Willamette_Scoping.Rmd.
-gdp <- readRDS(here("data/temp/gdp_controls.RDS")) %>% 
-  mutate(across(contains("mining"), ~ifelse(is.na(.), 0, .)))
-
-deflators <- gdp %>% 
-  filter(fips %in% unique(df_all$fips)) %>% 
-  select(year, fips, real_gdp_total, gdp_total) %>% 
-  group_by(year) %>% 
-  summarise(nom_gdp = sum(gdp_total, na.rm = TRUE),
-            real_gdp = sum(real_gdp_total, na.rm = TRUE)) %>% 
-  mutate(defl = nom_gdp/real_gdp) %>% 
-  dplyr::select(-c(nom_gdp, real_gdp))
-
-# Does not yet include population controls from 1997-1990
-df_cleaned <- df_all %>% 
-  left_join(deflators, by = "year") %>% 
-  # Convert to real dollars
-  mutate(across(!c(fips, state, year, Enrollment, esa, voc_adult, pop_total, pop_school_age), ~./defl, .names = "real_{.col}")) %>% 
-  complete(fips, year) %>% 
-  # Exclude CT for now because of the redistricting/county reorganisation in 2017 (see master_cleaning for preliminary work on this)
-  filter(!(substr(fips, 1,2) %in% c("09"))) %>% 
-  # remove any counties that have reported 0-value property taxes in more than 5 years (30 counties are removed from total sample)
-  group_by(fips) %>%
-  filter(sum(Property_Tax == 0) < 5) %>% 
-  ungroup %>% 
-  # Logs of all relevant variables
-  mutate(across(!c(fips, state, year, esa, voc_adult), ~log((.*1000) + 1), .names = "log_{.col}")) %>% 
-  group_by(fips) %>% 
-  # first-difference of all variable
-  mutate(across(!c(state, year, esa, voc_adult),  ~. - dplyr::lag(., 1), .names = "diff_{.col}"),
-        across(!c(state, year, esa, voc_adult), list(l1 = ~dplyr::lag(., 1), l2 = ~dplyr::lag(., 2)), .names = "{.fn}_{.col}"),
-        share_fed = sum(Total_Fed_IG_Revenue, na.rm = TRUE)/sum(Elem_Educ_Total_Exp),
-        share_state = sum(Total_State_IG_Revenue, na.rm = TRUE)/sum(Elem_Educ_Total_Exp),
-        share_local_ig = sum(Tot_Local_IG_Rev, na.rm = TRUE)/sum(Elem_Educ_Total_Exp),
-        share_own = sum(Total_Rev_Own_Sources, na.rm = TRUE)/sum(Elem_Educ_Total_Exp),
-        share_own_discrete = case_when(share_own > 0.5 ~ "1 = high",
-                                        share_own < 0.25 ~ "3 = low",
-                                        TRUE ~ "2 = medium")) %>% 
-  ungroup %>% 
-  filter(year >= 2001) 
-
-```
-
-# Data
+## Data
 
 All data used is reported annually at the county-level. Therefore, no time-invariant variables are included (apart from the State in which a county is in, which is made time-variant through the inclusion of a state-level trend in various models).
 
-**Expenditure and Revenue:** The dependent variables of interest come from [Willamette University's Government Finance Database](https://willamette.edu/mba/research-impact/public-datasets/index.html). The data includes county-level revenue and expenditure on public education including disaggregated values by revenue source (federal, state, or other intergovernmental revenue) and expenditure item (lunches, wages, debt). All values are reported in current US dollars. The data for property taxes collected used in regressions below also come from this dataset. Expenditure on vocational training and from Educational Service Agencies (ESAs) are also sourced from this dataset. The challenge of accounting for ESAs are shown in KR2 section below. 
+**Expenditure and Revenue:** The dependent variables of interest come from [Willamette University's Government Finance Database](https://willamette.edu/mba/research-impact/public-datasets/index.html). The data includes county-level revenue and expenditure on public education including disaggregated values by revenue source (federal, state, or other intergovernmental revenue) and expenditure item (lunches, wages, debt). All values are reported in current US dollars. The data for property taxes collected used in regressions below also come from this dataset. Expenditure on vocational training and from Educational Service Agencies (ESAs) are also sourced from this dataset. The challenge of accounting for ESAs are shown in KR2 section below.
 
 **GDP Controls:** US Bureau of Economic Analysis. Values are also reported in current US dollars (real GDP values exist). The controls used in the below are total, private industry, and oil, gas, mining & quarrying county-level GDP.
 
 **Population controls:** US Census Bureau.
 
-```{r, echo = FALSE, include = FALSE}
-
-# *Economic Diversity:* [Chmura Analytics](https://www.chmura.com/blog/chmura-economic-diversity). This is time-invariant and not yet included in any regressions below.
-
-```
-
 **Coal mine activity and production levels:** Mine Safety and Health Administration
 
-```{r, echo = FALSE, message = FALSE, include = FALSE}
-
-# MOVE TO CLEANING SCRIPT
-
-df_cleaned %>% pull(fips) %>% unique %>% setdiff(unique(gdp$fips)) %>% length(.) == 0
-gdp %>% filter(fips %in% unique(df_cleaned$fips)) %>% filter(!complete.cases(.)) %>% nrow(.) == 0
-
-ec_div <- readRDS(here("data/temp/econ_div_controls.RDS"))
-
-df_cleaned %>% pull(fips) %>% unique %>% setdiff(unique(ec_div$fips)) %>% length(.) == 0
-
-df <- df_cleaned %>% 
-  left_join(., gdp, by = c('fips', 'year')) %>% 
-  mutate(across(contains("gdp"), ~./pop_total, .names = "{.col}_pc")) %>% 
-  group_by(fips) %>% 
-  mutate(across(contains("gdp"), list(diff = ~. - dplyr::lag(., 1), log = ~log((.*1000) + 1)), .names = "{.fn}_{.col}"),
-         # Currently only GDP controls contain diff
-         across(contains('gdp'), list(l1 = ~dplyr::lag(., 1), l2 = ~dplyr::lag(., 2)), .names = "{.fn}_{.col}")) %>%
-  ungroup %>%
-  left_join(., ec_div, by = c('fips', 'year'))
-
-df$state_name = sapply(df$state, get_state) 
-df$region = sapply(df$state_name, get_region)
-
-#rm(df_cleaned)
-#rm(ec_div)
-#rm(deflators)
-##rm(gdp)
-
-```
-
 ## Descriptive Statistics
+
 The below summary table displays descriptive statistics for all indicators used in regression results below.
 
 All values for total enrollment, revenue, taxes, expenditure are in thousand USD. Values for GDP are reported in million USD. Values for population are reported in thousands.
 
-GDP controls are currently only available at the county level from 2001-2021. Expanding this 
+GDP controls are currently only available at the county level from 2001-2021. Expanding this
+
 ```{r, echo = FALSE, results = 'asis'}
 # # Variables of interest for descriptive statistics
 # vars <- c("Total_Revenue", "Property_Tax", "Total_IG_Revenue", "Total_Fed_IG_Revenue", "Total_State_IG_Revenue", "Total_Expenditure")
@@ -316,91 +148,139 @@ GDP controls are currently only available at the county level from 2001-2021. Ex
 #   "Total_Educ_Total_Exp_pp",  "diff_Total_Educ_Total_Exp_pp")
   
 ```
-
-
-```{r, echo = FALSE, message = FALSE, include = FALSE}
-
-# MOVE TO CLEANING SCRIPT
-
-mines_data <- readRDS(here('data/temp/mines_data/allcomp_cap_prod_complete.RDS')) %>% 
-  dplyr::select(-state)
-
-#df %>% filter(!fips %in% unique(mines_data$fips)) %>% pull(fips) %>% unique
-# mines_data %>% filter(!fips %in% unique(df$fips)) %>% pull(fips) %>% unique
-
-mines_dff <- df %>% 
-  #left_join(., allcomp_controls, by = c("year", "fips")) %>% 
-  left_join(., mines_data, by = c("year", "fips")) %>% 
-  group_by(fips) %>%
-  mutate(across(c(total_n, total_active_n, total_active_prod, diff_total_active_n, l1_diff_total_active_n, l2_diff_total_active_n, diff_total_active_prod, l1_diff_total_active_prod, l2_diff_total_active_prod), ~ifelse(is.na(.), 0, .)),
-        across(c(total_n, total_active_n, total_active_prod), ~log(. + 1), .names = "log_{.col}")) %>% 
-  ungroup
-
-
-# Testing for complete dataset
-#Dependent variables are complete
-mines_dff %>% 
-  dplyr::select(fips, year,"Total_Taxes_pp", "Total_Educ_Total_Exp_pp", "Property_Tax_pp", "diff_Total_Taxes_pp", "diff_Total_Educ_Total_Exp_pp", "diff_Property_Tax_pp") %>% filter(year > 2001) %>% filter(!complete.cases(.))
-
-# Missing a few cases in LA
-mines_dff %>% 
-  #filter(year != 2000) %>%  # gdp_o_g_mining_quarr_21_pc,  gdp_o_g_mining_quarr_21_pc, 
-  dplyr::select(fips, year, gdp_total_pc, gdp_priv_ind_pc,gdp_govt_pc, 
-         gdp_total_pc, gdp_priv_ind_pc, gdp_govt_pc) %>% 
-  filter(!complete.cases(.))
-       
-# No missing values in coal counties - replaced other counties NA values with 0  
-mines_dff %>% 
-  dplyr::select(fips, year, total_n, diff_total_active_n, l1_diff_total_active_n, l2_diff_total_active_n, diff_total_active_prod, l1_diff_total_active_prod, l2_diff_total_active_prod) %>% 
-  ungroup %>% filter(!complete.cases(.)) 
-
-# deflators <- mines_dff %>% 
-#   dplyr::select(year, fips, real_gdp_total, gdp_total) %>% 
-#   group_by(year) %>% 
-#   summarise(nom_gdp = sum(gdp_total),
-#             real_gdp = sum(real_gdp_total)) %>% 
-#   mutate(defl = nom_gdp/real_gdp) %>% 
-#   dplyr::select(-c(nom_gdp, real_gdp))
-
-# mines_df <- mines_dff %>% 
-#   filter(year >= 2001) %>% 
-#   #mutate(ruc_bin = as.factor(ruc_bin)) %>% 
-#   mutate(across(all_of(dep), ~.*1000),
-#          time = year - 2000) %>% 
-#   mutate(across(contains("log"), ~ifelse(is.infinite(.), 0, .)),
-#          across(c(log_esa_tot_exp_pp, log_esa_tot_exp), ~ifelse(is.na(.), 0, .))) %>% 
-#   left_join(deflators, by = "year") %>% 
-#   mutate(across(c(diff_log_Total_Educ_Total_Exp_pp, log_Total_Educ_Total_Exp, log_Total_Educ_Total_Exp_pp,Total_Educ_Total_Exp, Total_Educ_Total_Exp_pp,
-#   diff_log_Elem_Educ_Total_Exp_pp, log_Elem_Educ_Total_Exp_pp, Elem_Educ_Total_Exp, log_Elem_Educ_Total_Exp,
-#   log_Property_Tax_pp, log_Property_Tax, diff_log_Property_Tax_pp, diff_log_Property_Tax_pp, Property_Tax, log_Total_Rev_Own_Sources_pp, log_Total_Rev_Own_Sources, log_Total_IG_Revenue, log_Total_IG_Revenue_pp, log_Total_Fed_IG_Revenue, log_Total_Fed_IG_Revenue_pp, log_Total_State_IG_Revenue_pp, log_Total_State_IG_Revenue, log_Total_Revenue_pp, ), ~./defl, .names = "real_{.col}")) %>% 
-#   group_by(fips) %>% 
-#   mutate(share_fed = sum(Fed_IGR_Education, na.rm = TRUE)/sum(Elem_Educ_Total_Exp),
-#          share_state = sum(State_IGR_Education, na.rm = TRUE)/sum(Elem_Educ_Total_Exp),
-#          share_local_ig = sum(Tot_Local_IG_Rev, na.rm = TRUE)/sum(Elem_Educ_Total_Exp),
-#          share_own = sum(Total_Rev_Own_Sources, na.rm = TRUE)/sum(Elem_Educ_Total_Exp),
-#          share_own_discrete = case_when(share_own > 0.5 ~ "1 = high",
-#                                         share_own < 0.25 ~ "3 = low",
-#                                         TRUE ~ "2 = medium")) %>% 
+#
+# ```{r, echo = FALSE, message = FALSE, include = FALSE}
+# 
+# # MOVE TO CLEANING SCRIPT
+# 
+# mines_data <- readRDS(here('data/temp/mines_data/allcomp_cap_prod_complete.RDS')) %>% 
+#   dplyr::select(-state)
+# 
+# #df %>% filter(!fips %in% unique(mines_data$fips)) %>% pull(fips) %>% unique
+# # mines_data %>% filter(!fips %in% unique(df$fips)) %>% pull(fips) %>% unique
+# 
+# mines_dff <- df %>% 
+#   #left_join(., allcomp_controls, by = c("year", "fips")) %>% 
+#   left_join(., mines_data, by = c("year", "fips")) %>% 
+#   group_by(fips) %>%
+#   mutate(across(c(total_n, total_active_n, total_active_prod, diff_total_active_n, l1_diff_total_active_n, l2_diff_total_active_n, diff_total_active_prod, l1_diff_total_active_prod, l2_diff_total_active_prod), ~ifelse(is.na(.), 0, .)),
+#         across(c(total_n, total_active_n, total_active_prod), ~log(. + 1), .names = "log_{.col}")) %>% 
 #   ungroup
+# 
+# 
+# # Testing for complete dataset
+# #Dependent variables are complete
+# mines_dff %>% 
+#   dplyr::select(fips, year,"Total_Taxes_pp", "Total_Educ_Total_Exp_pp", "Property_Tax_pp", "diff_Total_Taxes_pp", "diff_Total_Educ_Total_Exp_pp", "diff_Property_Tax_pp") %>% filter(year > 2001) %>% filter(!complete.cases(.))
+# 
+# # Missing a few cases in LA
+# mines_dff %>% 
+#   #filter(year != 2000) %>%  # gdp_o_g_mining_quarr_21_pc,  gdp_o_g_mining_quarr_21_pc, 
+#   dplyr::select(fips, year, gdp_total_pc, gdp_priv_ind_pc,gdp_govt_pc, 
+#          gdp_total_pc, gdp_priv_ind_pc, gdp_govt_pc) %>% 
+#   filter(!complete.cases(.))
+#        
+# # No missing values in coal counties - replaced other counties NA values with 0  
+# mines_dff %>% 
+#   dplyr::select(fips, year, total_n, diff_total_active_n, l1_diff_total_active_n, l2_diff_total_active_n, diff_total_active_prod, l1_diff_total_active_prod, l2_diff_total_active_prod) %>% 
+#   ungroup %>% filter(!complete.cases(.)) 
+# 
+# # deflators <- mines_dff %>% 
+# #   dplyr::select(year, fips, real_gdp_total, gdp_total) %>% 
+# #   group_by(year) %>% 
+# #   summarise(nom_gdp = sum(gdp_total),
+# #             real_gdp = sum(real_gdp_total)) %>% 
+# #   mutate(defl = nom_gdp/real_gdp) %>% 
+# #   dplyr::select(-c(nom_gdp, real_gdp))
+# 
+# # mines_df <- mines_dff %>% 
+# #   filter(year >= 2001) %>% 
+# #   #mutate(ruc_bin = as.factor(ruc_bin)) %>% 
+# #   mutate(across(all_of(dep), ~.*1000),
+# #          time = year - 2000) %>% 
+# #   mutate(across(contains("log"), ~ifelse(is.infinite(.), 0, .)),
+# #          across(c(log_esa_tot_exp_pp, log_esa_tot_exp), ~ifelse(is.na(.), 0, .))) %>% 
+# #   left_join(deflators, by = "year") %>% 
+# #   mutate(across(c(diff_log_Total_Educ_Total_Exp_pp, log_Total_Educ_Total_Exp, log_Total_Educ_Total_Exp_pp,Total_Educ_Total_Exp, Total_Educ_Total_Exp_pp,
+# #   diff_log_Elem_Educ_Total_Exp_pp, log_Elem_Educ_Total_Exp_pp, Elem_Educ_Total_Exp, log_Elem_Educ_Total_Exp,
+# #   log_Property_Tax_pp, log_Property_Tax, diff_log_Property_Tax_pp, diff_log_Property_Tax_pp, Property_Tax, log_Total_Rev_Own_Sources_pp, log_Total_Rev_Own_Sources, log_Total_IG_Revenue, log_Total_IG_Revenue_pp, log_Total_Fed_IG_Revenue, log_Total_Fed_IG_Revenue_pp, log_Total_State_IG_Revenue_pp, log_Total_State_IG_Revenue, log_Total_Revenue_pp, ), ~./defl, .names = "real_{.col}")) %>% 
+# #   group_by(fips) %>% 
+# #   mutate(share_fed = sum(Fed_IGR_Education, na.rm = TRUE)/sum(Elem_Educ_Total_Exp),
+# #          share_state = sum(State_IGR_Education, na.rm = TRUE)/sum(Elem_Educ_Total_Exp),
+# #          share_local_ig = sum(Tot_Local_IG_Rev, na.rm = TRUE)/sum(Elem_Educ_Total_Exp),
+# #          share_own = sum(Total_Rev_Own_Sources, na.rm = TRUE)/sum(Elem_Educ_Total_Exp),
+# #          share_own_discrete = case_when(share_own > 0.5 ~ "1 = high",
+# #                                         share_own < 0.25 ~ "3 = low",
+# #                                         TRUE ~ "2 = medium")) %>% 
+# #   ungroup
+# 
+# mines_restr <- mines_dff %>% 
+#   group_by(fips) %>% 
+#   filter(!(any(log_Property_Tax_pp < 4))) %>% 
+#   ungroup
+#   
+# rm(mines_dff)
+# rm(mines_data)
+# 
+# #saveRDS(mines_restr, here('data/temp/mines_restr.RDS'))
+# ```
 
-mines_restr <- mines_dff %>% 
-  group_by(fips) %>% 
-  filter(!(any(log_Property_Tax_pp < 4))) %>% 
-  ungroup
-  
-rm(mines_dff)
-rm(mines_data)
+## Descriptive Figures: County-level education expenditure
 
-#saveRDS(mines_restr, here('data/temp/mines_restr.RDS'))
-```
+The following plot displays each county's time series of expenditure (total and per pupil log values) as well as the overall mean. Colors correspond to the US state the county is in.
 
-
-## Descriptive Figures: County-level education expenditure 
-The following plot displays each county's time series of expenditure (total and per pupil log values) as well as the overall mean. Colors correspond to the US state the county is in. 
-```{r, echo = FALSE, message = FALSE, warnings = FALSE, fig.height = 10}
+```{r, echo = FALSE, message = FALSE, warnings = FALSE, fig.height = 10, include = FALSE}
 
 mines_restr <- readRDS(here('data/temp/mines_restr.RDS')) %>% 
-  mutate(time = year - 2000)
+  mutate(time = year - 2000) %>% 
+  mutate(panel = case_when(year %in% 2000:2003 ~ "2000-2003",
+                           year %in% 2004:2007 ~ "2004-2007", 
+                           year %in% 2008:2011 ~ "2008-2011", 
+                           year %in% 2012:2015 ~ "2012-2015", 
+                           year %in% 2016:2021 ~ "2016-2021")) %>% 
+  select(year, fips, state, state_name, time, panel, 
+         share_fed,
+         share_state,
+         share_own,
+         share_own_discrete,
+         econ_div,
+         Enrollment,
+         pop_school_age,
+         Total_Educ_Total_Exp,
+         Elem_Educ_Total_Exp,
+         Total_Revenue,
+         Total_Rev_Own_Sources,
+         Total_Fed_IG_Revenue, 
+         Total_State_IG_Revenue,
+         Tot_Local_IG_Rev, 
+         Total_Taxes, 
+         Property_Tax,
+         Total_IG_Revenue,
+         real_Total_Educ_Total_Exp, 
+         real_Total_Educ_Total_Exp_pp,
+         log_real_Total_Educ_Total_Exp,
+         log_real_Total_Educ_Total_Exp_pp,
+         log_real_Total_Educ_Total_Exp_pp,
+         log_real_gdp_total_pc,
+         log_real_gdp_total,
+         log_real_gdp_priv_ind,
+         log_real_gdp_priv_ind_pc,
+         log_real_gdp_govt,
+         log_real_gdp_govt_pc,
+         log_real_Total_Educ_Total_Exp,
+         log_real_Property_Tax_pp,
+         log_real_Elem_Educ_Total_Exp_pp,
+         log_real_Total_Rev_Own_Sources_pp,
+         log_real_Total_IG_Revenue_pp,
+         log_real_Total_Fed_IG_Revenue_pp,
+         log_real_Total_State_IG_Revenue_pp,
+         log_real_Total_Rev_Own_Sources,
+         log_real_Total_Revenue_pp,
+         log_real_Property_Tax,
+         log_real_Property_Tax_pp,
+         log_real_esa_rev_pp,
+         log_real_esa_tot_exp_pp)
+
 
 mean_df <- mines_restr %>% 
   group_by(year) %>%
@@ -409,6 +289,10 @@ mean_df <- mines_restr %>%
                        log_real_Total_Educ_Total_Exp = mean(log_real_Total_Educ_Total_Exp, na.rm = TRUE),
                        log_real_Total_Educ_Total_Exp_pp = mean(log_real_Total_Educ_Total_Exp_pp, na.rm = TRUE))
 
+
+```
+
+```{r, echo = FALSE, message = FALSE, warnings = FALSE, fig.height = 10,}
 log_tot <- mines_restr %>% 
   ggplot() +
   geom_line(aes(x = year, y = log_real_Total_Educ_Total_Exp, group = fips, colour = state), alpha = 0.3) +
@@ -422,29 +306,12 @@ log_pp <- mines_restr %>% ggplot() +
   labs(x = "Year", y = "Total County-level Education Expenditure Per Pupil (log)", title = "Total (log) Expenditure Per Pupil") +  
   theme(legend.position = "none")
 
-grid.arrange(log_tot, log_pp)
-  
+log_tot / log_pp  
 ```
-
+Overall, expenditure on education per pupil has increased slightly in real USD.
 ```{r, echo = FALSE, message = FALSE, warnings = FALSE}
 
-# df %>% 
-#   mutate(panel = case_when(year %in% 2000:2003 ~ "2000-2003",
-#                            year %in% 2004:2007 ~ "2004-2007", 
-#                            year %in% 2008:2011 ~ "2008-2011", 
-#                            year %in% 2012:2015 ~ "2012-2015", 
-#                            year %in% 2016:2021 ~ "2016-2021")) %>% 
-#   group_by(panel) %>% 
-#   mutate(color_year = year - min(year)) %>% 
-#   ggplot(aes(log_Total_Educ_Total_Exp_pp, fill = as.factor(color_year), color = as.factor(color_year))) +
-#   geom_histogram(position = "identity", alpha = 0.1, bins = 200) +
-#   facet_wrap(~panel, ncol = 1) +
-#   theme_minimal() + 
-#   theme(legend.position = "none") +
-#   scale_fill_viridis(discrete = T) +
-#   labs(title = "Histogram of (log) Total Education Expenditure per pupil", x = "(log) Expenditure per Pupil", y = "N Counties")
-  
-mines_restr %>% 
+pp1 <- mines_restr %>% 
   mutate(panel = case_when(year %in% 2000:2003 ~ "2000-2003",
                            year %in% 2004:2007 ~ "2004-2007", 
                            year %in% 2008:2011 ~ "2008-2011", 
@@ -458,7 +325,7 @@ mines_restr %>%
   scale_y_discrete(limits = rev(levels(as.factor(mines_restr$year)))) +
   labs(title = "Histogram of Education Expenditure per Pupil per Year", y = "Year", x = "(log) Total Education Expenditure per Pupil (Real USD)")
 
-mines_restr %>% 
+pp2 <- mines_restr %>% 
   filter(year > 2000) %>% 
   ggplot(aes(x = log_real_gdp_total_pc, y = as.factor(year), fill = year)) +
   geom_density_ridges(alpha = 0.7) +
@@ -467,33 +334,41 @@ mines_restr %>%
   theme(legend.position = "none") +
   scale_y_discrete(limits = rev(levels(as.factor(mines_restr$year)))) +
   labs(title = "Histogram of log GDP per capita per year", y = "Year", x = "(log) GDP per Capita")
-  
+
+pp1 + pp2
 ```
 
+When looking at the share of expenditure on elementary education coming from own sources (as opposed to state or national sources) we see a mean of 38.6%.
+```{r, echo = FALSE, message = FALSE, warnings = FALSE}
 
-```{r}
-
-mines_restr %>% 
-  group_by(fips) %>% 
-  filter(share_own <= 1) %>% 
-  summarise(mean_share_own = mean(share_own)) %>% 
-  ungroup %>% 
+pp1 <- mines_restr %>% 
   ggplot() + 
-  geom_histogram(aes(x = mean_share_own), fill = "blue", alpha = 0.5, bins = 50) +
-  geom_vline(aes(xintercept = mean(mean_share_own)),col='black', linetype = "dotted") +
+  geom_histogram(aes(x = share_own), fill = "darkgreen", alpha = 0.5, bins = 50) +
+  geom_vline(aes(xintercept = mean(share_own)),col='black', linetype = "dotted") +
   theme_minimal() +
   labs(x = "(Mean) Share of Expenditure on Elementary Education from Own Sources",
        title = "Histogram: Share of Expenditure on Elementary Education from Own Sources", 
        y = "Number of counties")
 
+pp2 <- mines_restr %>% 
+  filter(year == 2021) %>% 
+  select(fips, share_fed, share_state, share_own) %>% 
+  pivot_longer(!fips) %>% 
+  ggplot() + 
+  geom_histogram(aes(x = value, fill = name), alpha = 0.5, bins = 50, position = 'identity') +
+  
+ # geom_vline(aes(xintercept = mean(share_own), group = name),col='black', linetype = "dotted") +
+  theme_minimal() +
+  labs(x = "(Mean) Share of Expenditure on Elementary Education from Own Sources",
+       title = "Histogram: Share of Expenditure on Elementary Education from Own Sources", 
+       y = "Number of counties") + 
+  scale_y_break(c(200, 2000))
 
-mines_restr %>% 
-  group_by(fips) %>% 
-  filter(share_own <= 1) %>% 
-  summarise(mean_share_own = mean(share_own)) %>% 
-  ungroup %>% 
-  summarise(mean(mean_share_own))
+pp1 / pp2
 
+```
+
+```{r, echo = FALSE, message = FALSE, warnings = FALSE}
 
 mines_restr %>% 
   ggplot(aes(x = log_real_Elem_Educ_Total_Exp_pp, y = log_real_Property_Tax_pp, colour = share_own_discrete)) +
@@ -508,16 +383,17 @@ mines_restr %>%
 
 ```
 
-# Link between property taxes and industrial activity
+## Link between property taxes and industrial activity
 
+### Key Relationships (KR)
 
-# Key Relationships (KR)
-Below are scatterplots and diagrams depicting key relationships between dependent and control variables as well as shares/components of key variables. 
+Below are scatterplots and diagrams depicting key relationships between dependent and control variables as well as shares/components of key variables.
 
-## KR 1: Revenue Sources
-Most important to tease out before modelling is how different revenue sources (federal, state, county (own), and other local sources) interplay. County-level revenue for public education is a combination of both local and intergovernmental sources. The local portion of the share is almost entirely sourced through property taxes. The intergovernmental sources come from state, federal, and local aid. 
+#### KR 1: Revenue Sources
 
-Below chart plots county-level mean (taken over the panel time horizon) of different intergovernmental (IG) sources versus own-source revenue (generated from local sources). The solid black line represents a best-fit line and the dashed line represents a 45 degree line. The blue plot shows Total IG Revenue (Federal + State + Other Local) versus own revenue. There is a near negative correlation between the two (ie. they are near-substitutes for one another). This effect is dominated by State IG revenue (as can be seen in the purple panel). 
+Most important to tease out before modelling is how different revenue sources (federal, state, county (own), and other local sources) interplay. County-level revenue for public education is a combination of both local and intergovernmental sources. The local portion of the share is almost entirely sourced through property taxes. The intergovernmental sources come from state, federal, and local aid.
+
+Below chart plots county-level mean (taken over the panel time horizon) of different intergovernmental (IG) sources versus own-source revenue (generated from local sources). The solid black line represents a best-fit line and the dashed line represents a 45 degree line. The blue plot shows Total IG Revenue (Federal + State + Other Local) versus own revenue. There is a near negative correlation between the two (ie. they are near-substitutes for one another). This effect is dominated by State IG revenue (as can be seen in the purple panel).
 
 ```{r, echo = FALSE, message = FALSE}
 
@@ -565,15 +441,15 @@ taxes <- mines_restr %>%
   theme(title = element_text(size = 9),
         legend.position = "none")
 
-grid.arrange(tots, fed, state, taxes, ncol = 2) %>% suppressWarnings()
+(tots + fed) / (state + taxes)
 
 ```
 
 The following plots show the share of revenue for public education that comes from own sources, local intergovernmental, state intergovernmental, and federal intergovernmental by state. Almost all states have a near 50% split of revenue from state and own sources, which aligns with data from the Congressional Research Service cited in the Transfer of Status report. Massachusetts has an unusually high share of local IG support (inter-school aid), eclipsing own sources almost completely. From further research, I believe this has to do with a unique structure of Massachusetts public school funding which is reliant on several multi-county funding agencies (similar to the mentioned ESAs). This anomaly might warrant the exclusion of MA from the analysis.
 
-**Conclusion: I am still unsure how best to control for the effects of these shares on our results.** 
+**Conclusion: I am still unsure how best to control for the effects of these shares on our results.**
 
-```{r, echo = FALSE, message = FALSE, fig.height = 12}
+```{r, echo = FALSE, message = FALSE, fig.height = 12, include = FALSE}
 state_df <- mines_restr %>% 
   group_by(state, year) %>% 
   summarise(across(c(Enrollment, Total_Educ_Total_Exp, Elem_Educ_Total_Exp, Total_Revenue, Total_Rev_Own_Sources, Total_Fed_IG_Revenue, Total_State_IG_Revenue, Tot_Local_IG_Rev, Total_Taxes, Property_Tax), ~sum(., na.rm = TRUE))) %>% ungroup
@@ -615,7 +491,6 @@ state_shares
 
 
 ```
-
 
 ```{r, echo = FALSE, message = FALSE}
 
@@ -676,9 +551,7 @@ state_shares2 <- state_df %>%
 
 ```
 
-
-
-The below plot provides the same information as above but on a national level. 
+The below plot provides the same information as above but on a national level.
 
 **Conclusion: Corroborates the near-even split of revenue between state and own sources which seems to be a fact of public education revenue. I mainly include this as an alternative summarising figure to the above.**
 
@@ -705,20 +578,19 @@ natl_shares <- natl_df %>%
   scale_y_continuous(breaks=seq(0,1,by=0.5))
 
 
-g <- arrangeGrob(grid.arrange(natl_shares, state_shares1, state_shares2, layout_matrix = rbind(c(1, 2),
-                        c(3,3))))
+(natl_shares + state_shares1)/state_shares2
 
 #ggsave(here("output/plots/natl_shares_of_revenue_by_source.jpg"), g, width = 20, height = 25, units = "cm")
 
 ```
 
-## KR 2: ESAs and County Expenditure
+#### KR 2: ESAs and County Expenditure
 
-Around 2007, many states instituted Educational Service Agencies (ESAs) which sought to "equalise" public education across the country. To date, ~45 states have ESAs which are responsible for multiple school districts, most often across multiple counties. Therefore, when modelling county-level expenditure it will be important to understand how this change in educational expenditure affected county-level spending (ie. did ESAs replace or supplement county-level funding). 
+Around 2007, many states instituted Educational Service Agencies (ESAs) which sought to "equalise" public education across the country. To date, ~45 states have ESAs which are responsible for multiple school districts, most often across multiple counties. Therefore, when modelling county-level expenditure it will be important to understand how this change in educational expenditure affected county-level spending (ie. did ESAs replace or supplement county-level funding).
 
 Only 593 counties of 2740 in the dataset have recorded revenue/expenditure from ESAs. After some digging, I believe that these values for ESAs are improperly recorded in the sense that the revenue is recorded only in counties in which the ESA's headquarters is located and not partitioned to the counties to which the revenue ultimately flows. All county-level total expenditure/revenue values that are used in the regressions on this page have explicitly excluded recorded ESA values for this reason (they are instead recorded in a variable called *esa_tot_exp* or *esa_tot_rev* in total and per pupil values).
 
-The below graphs show some relationships between ESA and county-level finances. I have yet to arrive at a definitive understanding of how ESAs and county-level finances interact. They do not appear to be substitutes. As is evident, the data on ESA expenditure is patchy and highly volatile by county. At the moment, I believe this is because of imperfect/inconsistent reporting in comparison to traditional school district reporting. The four states that have recorded ESA expenditure before 2007 are California, Illinois, Minnesota, Oregon. 
+The below graphs show some relationships between ESA and county-level finances. I have yet to arrive at a definitive understanding of how ESAs and county-level finances interact. They do not appear to be substitutes. As is evident, the data on ESA expenditure is patchy and highly volatile by county. At the moment, I believe this is because of imperfect/inconsistent reporting in comparison to traditional school district reporting. The four states that have recorded ESA expenditure before 2007 are California, Illinois, Minnesota, Oregon.
 
 ```{r, echo = FALSE, message = FALSE, warnings = FALSE}
 
@@ -747,12 +619,12 @@ cty <- esa_county %>%
   labs(x = "Year", y = "Expenditure in  (log kUSD)", title = "Expenditure by Educational Service Agencies per County", subtitle = "by County; Vertical line: x = 2007") +
   theme(legend.position = "none", panel.grid.major = element_blank(), panel.grid.minor = element_blank())
 
-grid.arrange(st, cty, nrow = 2) %>% suppressWarnings()
+st / cty
   
 
 ```
 
-With this we want to demonstrate how ESAs interact with our expenditure indicator. Does high ESA spending imply low/high local spending? It seems from the below that the two have a no correlation, implying little substitution? (Each point is a county in a particular year starting from 2007, colour represents state). Warm color-scale is (top-left panel) is expenditure values whereas the cool color scales are revenue values. The black line is a 45 degree line. 
+With this we want to demonstrate how ESAs interact with our expenditure indicator. Does high ESA spending imply low/high local spending? It seems from the below that the two have a no correlation, implying little substitution? (Each point is a county in a particular year starting from 2007, colour represents state). Warm color-scale is (top-left panel) is expenditure values whereas the cool color scales are revenue values. The black line is a 45 degree line.
 
 ```{r, echo = FALSE, message = FALSE, warnings = FALSE, fig.height = 8}
 
@@ -831,12 +703,13 @@ ig <- mines_restr %>%
 #   scale_color_viridis(discrete = T) +
 #   theme(legend.position = "none")
 
-grid.arrange(exp, rev, own, ig, nrow = 2) %>% suppressWarnings()
+(exp + rev)/ (own + ig)
   
 
 ```
 
-## KR 3: Revenue, Expenditure and Property Taxes
+#### KR 3: Revenue, Expenditure and Property Taxes
+
 We know the majority of "own source" revenue comes from property taxes. The below scatterplots demonstrate the relationship between education revenue and expeniture versus property taxes collected. The solid black line represents a best-fit line and the dashed line represents a 45 degree line (intercept-adjusted to match data). The vertical dotted line represents a potential preliminary cutoff point for outliers - will be subject to further more rigorous testing.
 
 ```{r, echo = FALSE, message = FALSE, warnings = FALSE}
@@ -874,12 +747,11 @@ pp <- mines_restr %>%
   geom_vline(xintercept = 4, linetype = "dotted") +
   labs(x = "log Property Taxes Collected pp", y = "log Education Expenditure pp") 
 
-grid.arrange(tot_rev, pp_rev, tot, pp, ncol = 2) %>% suppressWarnings()
+(tot_rev + pp_rev) / (tot + pp)
 
 ```
 
-
-## KR 4: GDP and Property Taxes
+#### KR 4: GDP and Property Taxes
 
 The solid black line represents a best-fit line and the dashed line represents a 45 degree line (intercept-adjusted to match data).
 
@@ -919,15 +791,15 @@ priv_ind_log_pp <- mines_restr %>%
   labs(x = "log Private Industry GDP pc", y = "log Property Taxes Collected pp") +
   theme_minimal()
 
-grid.arrange(tot_log, tot_log_pp, priv_ind_log, priv_ind_log_pp, ncol = 2) %>% suppressWarnings()
+(tot_log + tot_log_pp) / (priv_ind_log + priv_ind_log_pp)
 
 ```
 
-## KR 5: GDP and Education Expenditure
+#### KR 5: GDP and Education Expenditure
 
 The solid black line represents a best-fit line and the dashed line represents a 45 degree line (intercept-adjusted to match data).
 
-GDP and Education expenditure have a positive linear correlation, as expected. 
+GDP and Education expenditure have a positive linear correlation, as expected.
 
 ```{r, echo = FALSE, message= FALSE, warnings = FALSE}
 
@@ -946,29 +818,45 @@ pp <- mines_restr %>%
       geom_abline(slope = 1, intercept = -2, linetype = "dashed") +
   labs(x = "log GDP pc", y = "log Education Expenditure pp") 
 
-grid.arrange(tot, pp, ncol = 2) %>% suppressWarnings()
+tot + pp 
 
 ```
 
-## Economic Diversity
+### Economic Diversity
+If we use a Chmura economic diversity indicator and plot GDP, private industry GDP, education expenditure, and elementary education expenditure we see that there is little difference in the mean of expenditure, however higher values of each occur only in more diverse counties. 
+
 ```{r}
 
 t1 <-  mines_restr %>% 
   ggplot(aes(x = econ_div, y = log_real_gdp_total_pc)) +
-  geom_jitter()
+  geom_jitter(colour = "magenta") + 
+  geom_smooth(method=lm, colour = "black")
 
 t2 <- mines_restr %>% 
   ggplot(aes(x = econ_div, y = log_real_gdp_priv_ind_pc)) +
-  geom_jitter()
+  geom_jitter(colour = "steelblue") +
+  geom_smooth(method=lm, colour = "black")
+
+t3 <- mines_restr %>% 
+  ggplot(aes(x = econ_div, y = log_real_Total_Educ_Total_Exp_pp)) +
+  geom_jitter(colour = "coral") +
+  geom_smooth(method=lm, colour = "black")
+
+t4 <- mines_restr %>% 
+  ggplot(aes(x = econ_div, y = log_real_Elem_Educ_Total_Exp_pp)) +
+  geom_jitter(colour = "coral") +
+  geom_smooth(method=lm, colour = "black")
   
-grid.arrange(t1, t2, ncol = 2) %>% suppressWarnings()
+t1 + t2 + t3 + t4
 
 ```
 
+### Dataset coverage
 
-# Dataset coverage    
-~ 9% of students are enrolled in private schools
+In this sanity check, I look at what proportion of reported school age children per state seem to be represented in the enrollment numbers in our Survey of Local Finances dataset. We see that this share varies in magnitude by state (Maine having only 40% of school-age children covered). Considering that \~ 9% of students are enrolled in private schools across the US, the coverage in the top states is not too bad!
+
 ```{r}
+
 natl_coverage <- mines_restr %>%
   select(year, Enrollment, pop_school_age) %>%
   group_by(year) %>%
@@ -1010,8 +898,8 @@ mines_restr %>%
 
 ```
 
+### Maps
 
-# Maps
 ```{r}
 
 mines_restr_2021 <- mines_restr %>% filter(year == 2021) %>% 
@@ -1041,675 +929,1110 @@ map_priv_ind_gdp <- plot_usmap(data = mines_restr_2021, values = "log_real_gdp_p
   labs(title = "Private Industry GDP 2021",
        subtitle = "log per capita")
 
-grid.arrange(map_prop_tax, map_elem_ed, map_priv_ind_gdp, ncol = 3) %>% suppressWarnings()
+map_prop_tax + map_elem_ed + map_priv_ind_gdp
 
 ```
 
+# Trends
 
+```{r, echo = FALSE, message = FALSE}
+rm(list = ls())
+source(here('code/source_code/useful_functions.R'))
+source(here('code/source_code/dicts.R'))
+source(here('code/source_code/cz_cleaning.R'))
 
-# Preliminary Results
-In the following set of results I report results for the sample used in the descriptive statistics above. With respect to the outlier threshold represented in KR3 I exclude any counties that report 
+```
 
-## Panel testing
+## Data
+
+Data on Property Taxes, Elementary Education Expenditure, Private Industry and Total GDP at the county, commuting zone, state, and national levels.
+
+```{r, echo = FALSE, message = FALSE, cache = TRUE}
+
+mines_df <- readRDS(here('data/temp/mines_restr.RDS')) %>% 
+  left_join(., czs, by = "fips") %>% 
+  mutate(cz_id = as.character(cz_id),
+         cz_id_1990 = as.character(cz_id_1990))
+
+```
 
 ```{r}
-
-is.pbalanced(mines_restr, index = c("fips", "year"))
-
-```
-
-## Descriptive regression models
-
-The below models were run to test the relevance of various GDP control variables (total, private industry, oil, gas & mining) as well as corroborate some relationships in the above scatter plots of KRs. Ideally, once variables have been surveyed, they will be put through model selection via getspanel.
-
-All regression models that follow include TWFE (county- and year- fixed effects) and standard errors clustered by county.
-
-All functional forms in the feols() functions below are of the form "Y ~ X"
-In the cases in which multiple estimations are included via sw(Xa, Xb, Xc + Xd), the function will return results for "Y~Xa", "Y~Xb", "Y ~ Xc + Xd".
-
-
-<!-- ### Property Tax ~ GDP -->
-<!-- GDP has a highly relevant relationship to property taxes. A 1% increase in GDP and GDP per capita leads to a 0.3% increase in property taxes collected. -->
-
-<!-- ```{r} -->
-<!-- list(feols(log_Property_Tax ~ log_gdp_total + sw0(l(log_Property_Tax, 1)) | fips + year, data = mines_restr, se = "cluster", cluster = "fips", panel.id = ~fips+year), -->
-<!--      feols(log_Property_Tax_pp ~ log_gdp_total_pc + sw0(l(log_Property_Tax_pp, 1))| fips + year, data = mines_restr, se = "cluster", cluster = "fips", panel.id = ~fips+year)) %>% etable(se.below = TRUE) %>% kable -->
-
-<!-- ``` -->
-
-<!-- ### Education Expenditure ~ Revenue Sources -->
-<!-- The below regressions are included to establish the relationship between education expenditure and its component parts. These regressions simply corroborate what is displayed in the section on Key Relationships above (ie. that the largest form of IG revenue is state funding and "Own Source" revenue is largely sourced from Property Taxes). -->
-<!-- ```{r} -->
-<!-- feols(c(log_Total_Educ_Total_Exp_pp, log_Elem_Educ_Total_Exp_pp) ~ sw(log_Property_Tax,  -->
-<!--                                        log_Property_Tax + log_Total_IG_Revenue, -->
-<!--                                        log_Property_Tax + log_Total_Fed_IG_Revenue + log_State_IGR_Education, -->
-<!--                                       log_Total_Rev_Own_Sources + log_Total_IG_Revenue) | fips + year, data = mines_restr, se = "cluster", cluster = "fips") %>% etable(se.below = TRUE) %>% kable -->
-
-<!-- feols(c(log_Total_Educ_Total_Exp_pp, log_Elem_Educ_Total_Exp_pp) ~ sw(log_Total_Rev_Own_Sources_pp + log_Total_IG_Revenue_pp, -->
-<!--                                          log_Property_Tax_pp,  -->
-<!--                                          log_Property_Tax_pp + log_Total_IG_Revenue_pp,  -->
-<!--                                          log_Property_Tax_pp + log_Total_Fed_IG_Revenue_pp + log_State_IGR_Education_pp) | fips + year, data = mines_restr, se = "cluster", cluster = "fips") %>% etable(se.below = TRUE) %>% kable -->
-
-<!-- ``` -->
-
-
-### Education Expenditure ~ GDP
-A 1% increase in GDP is associated with a 0.14% increase in education expenditure, dominated by the effect of GDP from private industry (0.12%). I include here also the GDP generated from the oil, gas, mining, and quarrying sector. The effect is statistically significant but small. 
-#### Nominal values
-```{r}
-tot_vars = c("diff_log_Total_Educ_Total_Exp_pp", "log_Total_Educ_Total_Exp_pp")
-elem_vars = c("diff_log_Elem_Educ_Total_Exp_pp", "log_Elem_Educ_Total_Exp_pp")
-
-list(feols(log_Total_Educ_Total_Exp_pp ~ l(log_Total_Educ_Total_Exp_pp, 1) + sw0(log_gdp_total_pc,
-                                         log_gdp_priv_ind_pc,
-                                         log_gdp_o_g_mining_quarr_21_pc) | fips + year, data = mines_restr, se = "cluster", cluster = "fips", panel.id = ~fips+year),
-     feols(.[tot_vars] ~ sw(log_gdp_total_pc,
-                                         log_gdp_priv_ind_pc,
-                                         log_gdp_o_g_mining_quarr_21_pc) | fips + year, data = mines_restr, se = "cluster", cluster = "fips", panel.id = ~fips+year)) %>% etable(se.below = TRUE) #%>% kable
-
-list(feols(log_Elem_Educ_Total_Exp_pp ~ l(log_Elem_Educ_Total_Exp_pp, 1) + sw0(log_gdp_total_pc,
-                                         log_gdp_priv_ind_pc,
-                                         log_gdp_o_g_mining_quarr_21_pc) | fips + year, data = mines_restr, se = "cluster", cluster = "fips", panel.id = ~fips+year),
-     feols(.[elem_vars] ~ sw(log_gdp_total_pc,
-                                         log_gdp_priv_ind_pc,
-                                         log_gdp_o_g_mining_quarr_21_pc) | fips + year, data = mines_restr, se = "cluster", cluster = "fips", panel.id = ~fips+year)) %>% etable(se.below = TRUE) %>% kable
-
-```
-
-#### Real values
-```{r}
-tot_vars = c("diff_log_real_Total_Educ_Total_Exp_pp", "log_real_Total_Educ_Total_Exp_pp")
-elem_vars = c("diff_log_real_Elem_Educ_Total_Exp_pp", "log_real_Elem_Educ_Total_Exp_pp")
-
-list(feols(log_real_Total_Educ_Total_Exp_pp ~ l(log_real_Total_Educ_Total_Exp_pp, 1) + sw0(log_real_gdp_total_pc,
-                                         log_real_gdp_priv_ind_pc,
-                                         log_real_gdp_o_g_mining_quarr_21_pc) | fips + year, data = mines_restr, se = "cluster", cluster = "fips", panel.id = ~fips+year),
-     feols(.[tot_vars] ~ sw(log_real_gdp_total_pc,
-                                         log_real_gdp_priv_ind_pc,
-                                         log_real_gdp_o_g_mining_quarr_21_pc) | fips + year, data = mines_restr, se = "cluster", cluster = "fips", panel.id = ~fips+year)) %>% etable(se.below = TRUE) #%>% kable
-
-list(feols(log_real_Elem_Educ_Total_Exp_pp ~ l(log_real_Elem_Educ_Total_Exp_pp, 1) + sw0(log_real_gdp_total_pc,
-                                         log_real_gdp_priv_ind_pc,
-                                         log_real_gdp_o_g_mining_quarr_21_pc) | fips + year, data = mines_restr, se = "cluster", cluster = "fips", panel.id = ~fips+year),
-     feols(.[elem_vars] ~ sw(log_real_gdp_total_pc,
-                                         log_real_gdp_priv_ind_pc,
-                                         log_real_gdp_o_g_mining_quarr_21_pc) | fips + year, data = mines_restr, se = "cluster", cluster = "fips", panel.id = ~fips+year)) %>% etable(se.below = TRUE)# %>% kable
-
-```
-
-
-#### Incorporating state-level trends
-The below take the Education Expenditure ~ GDP models and incorporate state-level time trends.
-```{r, message = FALSE, warnings = FALSE}
-list(feols(log_Total_Educ_Total_Exp_pp ~ l(log_Total_Educ_Total_Exp_pp, 1) + sw0(log_gdp_total_pc,
-                                         log_gdp_priv_ind_pc,
-                                         log_gdp_o_g_mining_quarr_21_pc) + time:as.factor(state) | fips + year, data = mines_restr, se = "cluster", cluster = "fips", panel.id = ~fips+year),
-     feols(log_Total_Educ_Total_Exp_pp ~ l(log_Total_Educ_Total_Exp_pp, 1) +sw(log_gdp_total_pc,
-                                         log_gdp_priv_ind_pc,
-                                         log_gdp_o_g_mining_quarr_21_pc) + time:as.factor(state) | fips + year, data = mines_restr, se = "cluster", cluster = "fips", panel.id = ~fips+year)) %>% etable(., drop = "time*", se.below = TRUE) %>% kable
-
-list(feols(log_Elem_Educ_Total_Exp_pp ~ l(log_Elem_Educ_Total_Exp_pp, 1) + sw0(log_gdp_total_pc,
-                                         log_gdp_priv_ind_pc,
-                                         log_gdp_o_g_mining_quarr_21_pc) + time:as.factor(state) | fips + year, data = mines_restr, se = "cluster", cluster = "fips", panel.id = ~fips+year),
-     feols(log_Elem_Educ_Total_Exp_pp ~ l(log_Elem_Educ_Total_Exp_pp, 1) + sw(log_gdp_total_pc,
-                                         log_gdp_priv_ind_pc,
-                                         log_gdp_o_g_mining_quarr_21_pc) + time:as.factor(state) | fips + year, data = mines_restr, se = "cluster", cluster = "fips", panel.id = ~fips+year)) %>% etable(., drop = "time*", se.below = TRUE) %>% kable
-
-```
-
-
-#### Incorporating time lags
-*Have not yet incorporated an AR term*
-Education expenditure has a highly relevant time dependence. The effect of increases in GDP two years prior has the greatest effect on current education expenditure, implying a delayed effect of county-level economic prosperity/decline on public education expenditure. 
-
-**Question: Is the above interpretation of the time dependence accurate?**
-```{r}
-levs_gdp_real_trend <- feols(c(log_real_Total_Educ_Total_Exp_pp, log_real_Elem_Educ_Total_Exp_pp) ~ sw(log_real_gdp_total + l1_log_real_gdp_total + l2_log_real_gdp_total, log_real_gdp_priv_ind + l1_log_real_gdp_priv_ind + l2_log_real_gdp_priv_ind) + time:as.factor(state) | fips + year, data = mines_restr, se = "cluster", cluster = "fips")
-levs_gdp_real_trend %>% etable(., drop = "time*", se.below = TRUE) %>% kable
-
-feols(c(log_Total_Educ_Total_Exp_pp, log_Elem_Educ_Total_Exp_pp) ~ sw(log_gdp_total_pc + l1_log_gdp_total_pc + l2_log_gdp_total_pc, 
-                                      log_gdp_priv_ind_pc + l1_log_gdp_priv_ind_pc + l2_log_gdp_priv_ind_pc,
-                                      log_gdp_o_g_mining_quarr_21 + l1_log_gdp_o_g_mining_quarr_21 + l2_log_gdp_o_g_mining_quarr_21) + time:as.factor(state) | fips + year, data = mines_restr, se = "cluster", cluster = "fips") %>%  etable(., drop = "time*", se.below = TRUE) %>% kable
-
-feols(c(log_Total_Educ_Total_Exp_pp, log_Elem_Educ_Total_Exp_pp) ~ sw(log_gdp_total_pc + l1_log_gdp_total_pc + l2_log_gdp_total_pc, 
-                                      log_gdp_priv_ind_pc + l1_log_gdp_priv_ind_pc + l2_log_gdp_priv_ind_pc,
-                                      log_gdp_o_g_mining_quarr_21_pc + l1_log_gdp_o_g_mining_quarr_21_pc + l2_log_gdp_o_g_mining_quarr_21_pc) + time:as.factor(state) | fips + year, data = mines_restr, se = "cluster", cluster = "fips") %>%  etable(., drop = "time*", se.below = TRUE) %>% kable
-
-```
-
-
-## Coal Mine & Production Data
-Coal mine data exists from 1996-2021. The below is a preliminary treatment attempt using data on active coal production (total_active_prod) and active coal mines (total_active_n).
-
-**Question: might it be more interesting to look at the first difference of mining and production activity to understand the effect of a change in activity?**
-
-### Standard TWFE panel regression
-
-```{r, message = FALSE}
-list(feols(c(log_Total_Educ_Total_Exp_pp, log_Elem_Educ_Total_Exp_pp) ~ log_gdp_priv_ind_pc + l1_log_gdp_priv_ind_pc + l2_log_gdp_priv_ind_pc + diff_total_active_n + l1_diff_total_active_n + l2_diff_total_active_n | fips + year, data = mines_restr, se = "cluster", cluster = "fips"),
-feols(c(log_Total_Educ_Total_Exp_pp, log_Elem_Educ_Total_Exp_pp) ~ sw(log_gdp_priv_ind_pc + l1_log_gdp_priv_ind_pc + l2_log_gdp_priv_ind_pc + diff_total_active_prod + l1_diff_total_active_prod + l2_diff_total_active_prod,
-                                         log_gdp_total_pc + l1_log_gdp_total_pc + l2_log_gdp_total_pc + diff_total_active_n + l1_diff_total_active_n + l2_diff_total_active_n,
-                                         log_gdp_total_pc + l1_log_gdp_total_pc + l2_log_gdp_total_pc + diff_total_active_prod + l1_diff_total_active_prod + l2_diff_total_active_prod) | fips + year, data = mines_restr, se = "cluster", cluster = "fips")) %>% etable(se.below = TRUE) %>% kable
-
-
-list(feols(c(log_Total_Educ_Total_Exp_pp, log_Elem_Educ_Total_Exp_pp) ~ log_gdp_priv_ind_pc + l1_log_gdp_priv_ind_pc + l2_log_gdp_priv_ind_pc + l(total_active_n, 0:2)  | fips + year, data = mines_restr, se = "cluster", cluster = "fips", panel.id = ~fips+year),
-     feols(c(log_Total_Educ_Total_Exp_pp, log_Elem_Educ_Total_Exp_pp) ~ sw(log_gdp_priv_ind_pc + l1_log_gdp_priv_ind_pc + l2_log_gdp_priv_ind_pc + l(total_active_prod, 0:2),
-                                         log_gdp_total_pc + l1_log_gdp_total_pc + l2_log_gdp_total_pc + l(total_active_n, 0:2),
-                                         log_gdp_total_pc + l1_log_gdp_total_pc + l2_log_gdp_total_pc + l(total_active_prod, 0:2)) | fips + year, data = mines_restr, se = "cluster", cluster = "fips", panel.id = ~fips+year)) %>% etable(se.below = TRUE) %>% kable
-```
-
-
-### TWFE panel with state-level trends
-
-```{r, message = FALSE}
-
-list(feols(c(log_Total_Educ_Total_Exp_pp, log_Elem_Educ_Total_Exp_pp) ~ log_gdp_priv_ind_pc + l1_log_gdp_priv_ind_pc + l2_log_gdp_priv_ind_pc + diff_total_active_n + l1_diff_total_active_n + l2_diff_total_active_n + time:as.factor(state) | fips + year, data = mines_restr, se = "cluster", cluster = "fips"),
-feols(c(log_Total_Educ_Total_Exp_pp, log_Elem_Educ_Total_Exp_pp) ~ sw(log_gdp_priv_ind_pc + l1_log_gdp_priv_ind_pc + l2_log_gdp_priv_ind_pc + diff_total_active_prod + l1_diff_total_active_prod + l2_diff_total_active_prod,
-                                         log_gdp_total_pc + l1_log_gdp_total_pc + l2_log_gdp_total_pc + diff_total_active_n + l1_diff_total_active_n + l2_diff_total_active_n,
-                                         log_gdp_total_pc + l1_log_gdp_total_pc + l2_log_gdp_total_pc + diff_total_active_prod + l1_diff_total_active_prod + l2_diff_total_active_prod) + time:as.factor(state) | fips + year, data = mines_restr, se = "cluster", cluster = "fips")) %>% etable(se.below = TRUE, drop = "time*") %>% kable
-
-
-list(feols(c(log_Total_Educ_Total_Exp_pp, log_Elem_Educ_Total_Exp_pp) ~ log_gdp_priv_ind_pc + l1_log_gdp_priv_ind_pc + l2_log_gdp_priv_ind_pc + l(total_active_n, 0:2)  + time:as.factor(state) | fips + year, data = mines_restr, se = "cluster", cluster = "fips", panel.id = ~fips+year),
-     feols(c(log_Total_Educ_Total_Exp_pp, log_Elem_Educ_Total_Exp_pp) ~ sw(log_gdp_priv_ind_pc + l1_log_gdp_priv_ind_pc + l2_log_gdp_priv_ind_pc + l(total_active_prod, 0:2),
-                                         log_gdp_total_pc + l1_log_gdp_total_pc + l2_log_gdp_total_pc + l(total_active_n, 0:2),
-                                         log_gdp_total_pc + l1_log_gdp_total_pc + l2_log_gdp_total_pc + l(total_active_prod, 0:2)) + time:as.factor(state) | fips + year, data = mines_restr, se = "cluster", cluster = "fips", panel.id = ~fips+year)) %>% etable(se.below = TRUE, drop = "time*") %>% kable
-
-```
-
-
-### Dealing with endogeneity
-There is a significant endogeneity concern in using total active production and active mines as the treatment variable. Therefore, I have tried two instrumental variable approaches below and aim to add results using production- and employment-based Bartik instruments.
-
-#### Instrumental Variable
-We consider using total active production or total active mines as an instrument affecting education expenditure through property taxes or GDP. We know that property taxes have an endogenous relationship with education expenditure (it is a component of the public education budget), however, in theory mine closures/activity is unlikely to affect education expenditure, except via property taxes. We test this hypothesis below. 
-
-**Conclusion: The results themselves are not promising (I think??)**
-
-##### Using coal production and mine activity as instruments for per capita property tax
-To my eye, I don't see any of these being useful - either they fail a first-stage F-test or the resulting coefficient on the treatment is statistically insignificant. 
-
-```{r, message = FALSE, warnings = FALSE}
-# Using total active production as an instrument for per capita property tax
-feols(log_Total_Educ_Total_Exp_pp ~ l(log_Total_Educ_Total_Exp_pp, 1) | fips + year | log_Property_Tax_pp ~ total_active_prod, data = mines_restr, se = "cluster", cluster = "fips", panel.id = ~fips+year)
-feols(log_Elem_Educ_Total_Exp_pp ~ l(log_Elem_Educ_Total_Exp_pp, 1) | fips + year | log_Property_Tax_pp ~ total_active_prod, data = mines_restr, se = "cluster", cluster = "fips", panel.id = ~fips+year)
-
-# Using the lag of total active production as an instrument for per capita property tax
-feols(log_Total_Educ_Total_Exp_pp ~ l(log_Total_Educ_Total_Exp_pp, 1) | fips + year | log_Property_Tax_pp ~ l(total_active_prod,1), data = mines_restr, se = "cluster", cluster = "fips", panel.id = ~fips+year)
-
-feols(log_Elem_Educ_Total_Exp_pp ~ l(log_Elem_Educ_Total_Exp_pp, 1) | fips + year | log_Property_Tax_pp ~ l(total_active_prod,1), data = mines_restr, se = "cluster", cluster = "fips", panel.id = ~fips+year)
-
-# Using total active mines as an instrument for per capita property tax
-feols(log_Total_Educ_Total_Exp_pp ~ l(log_Total_Educ_Total_Exp_pp, 1) | fips + year | log_Property_Tax_pp ~ total_active_n, data = mines_restr, se = "cluster", cluster = "fips", panel.id = ~fips+year)
-
-feols(log_Elem_Educ_Total_Exp_pp ~ l(log_Elem_Educ_Total_Exp_pp, 1) | fips + year | log_Property_Tax_pp ~ total_active_n, data = mines_restr, se = "cluster", cluster = "fips", panel.id = ~fips+year)
-
-# Using lag of total active mines as an instrument for per capita property tax
-feols(log_Total_Educ_Total_Exp_pp ~ l(log_Total_Educ_Total_Exp_pp, 1) | fips + year | log_Property_Tax_pp ~ l(total_active_n,1:2), data = mines_restr, se = "cluster", cluster = "fips", panel.id = ~fips+year)
-
-feols(log_Elem_Educ_Total_Exp_pp ~ l(log_Elem_Educ_Total_Exp_pp, 1) | fips + year | log_Property_Tax_pp ~ l(total_active_n,1:2), data = mines_restr, se = "cluster", cluster = "fips", panel.id = ~fips+year)
-```
-
-####### Incorporating additional control variables
-
-```{r, message = FALSE, warnings = FALSE}
-# Using total active production as an instrument for per capita property tax
-feols(log_Total_Educ_Total_Exp_pp ~ l(log_Total_Educ_Total_Exp_pp, 1) | fips + year | log_Property_Tax_pp ~ total_active_prod, data = mines_restr, se = "cluster", cluster = "fips", panel.id = ~fips+year)
-feols(log_Elem_Educ_Total_Exp_pp ~ l(log_Elem_Educ_Total_Exp_pp, 1) | fips + year | log_Property_Tax_pp ~ total_active_prod, data = mines_restr, se = "cluster", cluster = "fips", panel.id = ~fips+year)
-
-# Using the lag of total active production as an instrument for per capita property tax
-feols(log_Total_Educ_Total_Exp_pp ~ l(log_Total_Educ_Total_Exp_pp, 1) | fips + year | log_Property_Tax_pp ~ l(total_active_prod,1), data = mines_restr, se = "cluster", cluster = "fips", panel.id = ~fips+year)
-
-feols(log_Elem_Educ_Total_Exp_pp ~ l(log_Elem_Educ_Total_Exp_pp, 1) | fips + year | log_Property_Tax_pp ~ l(total_active_prod,1), data = mines_restr, se = "cluster", cluster = "fips", panel.id = ~fips+year)
-
-```
-
-
-
-
-##### Using coal production and mine activity as instruments for per capita gdp
-All pass a first-stage F-test with high statistic and low p-value; however, less than satisfactory on the Wu-Hausman endogeneity test.
-
-It seems that if we replace the "total education expenditure per pupil" with a measure of total expenditure on elementary education only, the effect is more pronounced.
-
-**Conclusion: These are the results I am most inclined to "report" in some way, even though it is weak. So I am curious for your thoughts on the validity (and blind spots I've missed when constructing the model).**
-
-```{r, message = FALSE, warnings = FALSE}
-# Using total active production as an instrument for per capita gdp
-feols(log_Total_Educ_Total_Exp_pp ~ 1 | fips + year | log_gdp_total_pc ~ total_active_prod, data = mines_restr, se = "cluster", cluster = "fips")
-
-feols(log_Elem_Educ_Total_Exp_pp ~ 1 | fips + year | log_gdp_total_pc ~ total_active_prod, data = mines_restr, se = "cluster", cluster = "fips")
-
-# Using the lag of total active production as an instrument for per capita gdp
-feols(log_Total_Educ_Total_Exp_pp ~ 1 | fips + year | log_gdp_total_pc ~ l(total_active_prod,1), data = mines_restr, se = "cluster", cluster = "fips", panel.id = ~fips+year)
-
-feols(log_Elem_Educ_Total_Exp_pp ~ 1 | fips + year | log_gdp_total_pc ~ l(total_active_prod,1), data = mines_restr, se = "cluster", cluster = "fips", panel.id = ~fips+year)
-
-# Using total active mines as an instrument for per capita gdp
-feols(log_Total_Educ_Total_Exp_pp ~ 1 | fips + year | log_gdp_total_pc ~ total_active_n, data = mines_restr, se = "cluster", cluster = "fips")
-
-feols(log_Elem_Educ_Total_Exp_pp ~ 1 | fips + year | log_gdp_total_pc ~ total_active_n, data = mines_restr, se = "cluster", cluster = "fips")
-
-# Using lag og total active mines as an instrument for per capita gdp
-feols(log_Total_Educ_Total_Exp_pp ~ 1 | fips + year | log_gdp_total_pc ~ l(total_active_n,1), data = mines_restr, se = "cluster", cluster = "fips", panel.id = ~fips+year)
-
-feols(log_Elem_Educ_Total_Exp_pp ~ 1 | fips + year | log_gdp_total_pc ~ l(total_active_n,1), data = mines_restr, se = "cluster", cluster = "fips", panel.id = ~fips+year)
-
-```
-
-
-```{r, include = FALSE}
-# getspanel
-# isatpanel(data = mines_restr, 
-#           formula = "Total_Educ_Total_Exp_pp ~ gdp_total_pc + gdp_priv_ind_pc + gdp_o_g_mining_quarr_21_pc + gdp_govt_pc",
-#           index = c("fips","year"),
-#          iis = TRUE,
-#          t.pval =0.01
-#          # SIS = TRUE 
-#           )
-
-```
-
-# Regression tables for ToS
-## Standard controls and coal production data
-```{r}
-
-# Total educ w/0 county-level trends
-feols(c(log_Total_Educ_Total_Exp_pp, log_Elem_Educ_Total_Exp_pp)  ~ log_gdp_priv_ind_pc +
-             sw0(l1_log_gdp_priv_ind_pc + l2_log_gdp_priv_ind_pc,
-                l1_log_gdp_priv_ind_pc + l2_log_gdp_priv_ind_pc + diff_total_active_n,
-                l1_log_gdp_priv_ind_pc + l2_log_gdp_priv_ind_pc + l(diff_total_active_n, 0:2),
-                 l1_log_gdp_priv_ind_pc + l2_log_gdp_priv_ind_pc + diff_total_active_prod,
-                l1_log_gdp_priv_ind_pc + l2_log_gdp_priv_ind_pc + l(diff_total_active_prod, 0:2)) | fips + year, data = mines_restr, se = "cluster", cluster = "fips", panel.id = ~fips+year) %>% etable(se.below = TRUE)
-     
-feols(c(log_Total_Educ_Total_Exp_pp, log_Elem_Educ_Total_Exp_pp)  ~ log_gdp_priv_ind_pc +
-             sw0(l1_log_gdp_priv_ind_pc + l2_log_gdp_priv_ind_pc,
-                l1_log_gdp_priv_ind_pc + l2_log_gdp_priv_ind_pc + diff_total_active_n,
-                l1_log_gdp_priv_ind_pc + l2_log_gdp_priv_ind_pc + l(diff_total_active_n, 0:2),
-                 l1_log_gdp_priv_ind_pc + l2_log_gdp_priv_ind_pc + diff_total_active_prod,
-                l1_log_gdp_priv_ind_pc + l2_log_gdp_priv_ind_pc + l(diff_total_active_prod, 0:2)) + time:as.factor(state) | fips + year, data = mines_restr, se = "cluster", cluster = "fips", panel.id = ~fips+year) %>% etable(se.below = TRUE, drop = "time*")
-
-
-```
-
-## Instrumental Variable
-```{r}
-setFixest_etable(fitstat = ~ . + ivf1 + ivf1.p + wh + wh.p + ivwald1 + ivwald1.p + ivf2 + ivf2.p + ivwald2 + ivwald2.p, se.below = TRUE)
-
-# Using total active production as an instrument for per capita property tax
-lapply(list(feols(log_Total_Educ_Total_Exp_pp ~ 1 | fips + year | log_Property_Tax_pp ~ total_active_prod, data = mines_restr, se = "cluster", cluster = "fips"), 
-  feols(log_Elem_Educ_Total_Exp_pp ~ 1 | fips + year | log_Property_Tax_pp ~ total_active_prod, data = mines_restr, se = "cluster", cluster = "fips"),
-  # Using the lag of total active production as an instrument for per capita property tax
-  feols(log_Total_Educ_Total_Exp_pp ~ 1 | fips + year | log_Property_Tax_pp ~ l(total_active_prod,1), data = mines_restr, se = "cluster", cluster = "fips", panel.id = ~fips+year),
-  feols(log_Elem_Educ_Total_Exp_pp ~ 1 | fips + year | log_Property_Tax_pp ~ l(total_active_prod,1), data = mines_restr, se = "cluster", cluster = "fips", panel.id = ~fips+year)), summary) %>% etable()
-
-# Using total active production as an instrument for per capita property tax controlling for state and federal support
-lapply(list(feols(log_Total_Educ_Total_Exp_pp ~ log_Total_State_IG_Revenue_pp + log_Total_Fed_IG_Revenue_pp | fips + year | log_Property_Tax_pp ~ total_active_prod, data = mines_restr, se = "cluster", cluster = "fips"), 
-  feols(log_Elem_Educ_Total_Exp_pp ~ log_Total_State_IG_Revenue_pp + log_Total_Fed_IG_Revenue_pp | fips + year | log_Property_Tax_pp ~ total_active_prod, data = mines_restr, se = "cluster", cluster = "fips"),
-  # Using the lag of total active production as an instrument for per capita property tax
-  feols(log_Total_Educ_Total_Exp_pp ~ log_Total_State_IG_Revenue_pp + log_Total_Fed_IG_Revenue_pp | fips + year | log_Property_Tax_pp ~ l(total_active_prod,1), data = mines_restr, se = "cluster", cluster = "fips", panel.id = ~fips+year),
-  feols(log_Elem_Educ_Total_Exp_pp ~ log_Total_State_IG_Revenue_pp + log_Total_Fed_IG_Revenue_pp | fips + year | log_Property_Tax_pp ~ l(total_active_prod,1), data = mines_restr, se = "cluster", cluster = "fips", panel.id = ~fips+year)), summary) %>% etable()
-
-# Using total active mines as an instrument for per capita property tax
-lapply(list(feols(log_Total_Educ_Total_Exp_pp ~ 1 | fips + year | log_Property_Tax_pp ~ total_active_n, data = mines_restr, se = "cluster", cluster = "fips"),
-  feols(log_Elem_Educ_Total_Exp_pp ~ 1 | fips + year | log_Property_Tax_pp ~ total_active_n, data = mines_restr, se = "cluster", cluster = "fips"),
-  
-  # Using lag of total active mines as an instrument for per capita property tax
- feols(log_Total_Educ_Total_Exp_pp ~ 1 | fips + year | log_Property_Tax_pp ~ l(total_active_n,1:2), data = mines_restr, se = "cluster", cluster = "fips", panel.id = ~fips+year),
-  feols(log_Elem_Educ_Total_Exp_pp ~ 1 | fips + year | log_Property_Tax_pp ~ l(total_active_n,1:2), data = mines_restr, se = "cluster", cluster = "fips", panel.id = ~fips+year)), summary)  %>% etable()
-```
-
-
-# Removing outliers - really high-income counties!!!
-```{r}
-
-mines_no_outliers <- mines_restr %>% 
-  group_by(fips) %>% 
-  filter(!any(log_real_Property_Tax_pp > 10.5)) %>% 
+# Dataframe to easily match state names and CZ ids if necessary}
+# To be resolved: when a CZ is present in multiple states
+code_match <- mines_df %>% 
+  select(fips, state_name, cz_id, cz_id_1990) %>% 
+  distinct
+
+# Relevant vars for trend analysis below
+# Should be central place to add more vars if necessary
+vars_grab <- c("real_gdp_priv_ind",
+               "real_gdp_total",
+               "real_Elem_Educ_Total_Exp", 
+               "real_Total_Educ_Total_Exp",
+               "real_Property_Tax", 
+               "Enrollment", 
+               "pop_total")
+
+vars_grab_restr <- c("real_gdp_priv_ind",
+                     "real_gdp_priv_ind_pc",
+               "real_gdp_total",
+               "real_gdp_total_pc",
+               "real_Elem_Educ_Total_Exp",
+               "real_Elem_Educ_Total_Exp_pp",
+               "real_Total_Educ_Total_Exp",
+               "real_Total_Educ_Total_Exp_pp",
+               "real_Property_Tax", 
+               "real_Property_Tax_pp", 
+               "Enrollment", 
+               "pop_total")
+
+mines_restr <- mines_df %>% 
+  mutate(across(c(vars_grab_restr, paste0("log_", vars_grab_restr)), ~. - dplyr::lag(., 1), .names = "diff_{.col}")) %>% 
+  group_by(year) %>% 
+  mutate(natl_pop = sum(pop_total, na.rm = TRUE)) %>% 
   ungroup
-
-mines_no_outliers %>% 
-  ggplot(aes(x = log_real_Elem_Educ_Total_Exp_pp, y = log_real_Property_Tax_pp, colour = share_own_discrete)) +
-  geom_jitter() +
-    #geom_smooth(method=lm, colour = "black", linetype = "dashed") +
-  labs(title = "Elem Education Expenditure pp vs Property Tax pp") +
-  geom_abline(slope = 1, intercept = 0, linetype = 'dashed') +
-  theme_bw() +
-  theme(title = element_text(size = 9)) +
-  labs(colour = "Reliance on Local Sources")
-
-
-setFixest_etable(fitstat = ~ . + ivf1 + ivf1.p + wh + wh.p + ivwald1 + ivwald1.p + ivf2 + ivf2.p + ivwald2 + ivwald2.p, se.below = TRUE)
-
-# Using total active production as an instrument for per capita property tax
-lapply(list(feols(log_Total_Educ_Total_Exp_pp ~ 1 | fips + year | log_Property_Tax_pp ~ total_active_prod, data = mines_no_outliers, se = "cluster", cluster = "fips"), 
-  feols(log_Elem_Educ_Total_Exp_pp ~ 1 | fips + year | log_Property_Tax_pp ~ total_active_prod, data = mines_no_outliers, se = "cluster", cluster = "fips"),
-  # Using the lag of total active production as an instrument for per capita property tax
-  feols(log_Total_Educ_Total_Exp_pp ~ 1 | fips + year | log_Property_Tax_pp ~ l(total_active_prod,1), data = mines_no_outliers, se = "cluster", cluster = "fips", panel.id = ~fips+year),
-  feols(log_Elem_Educ_Total_Exp_pp ~ 1 | fips + year | log_Property_Tax_pp ~ l(total_active_prod,1), data = mines_no_outliers, se = "cluster", cluster = "fips", panel.id = ~fips+year)), summary) %>% etable()
-
-# Using total active production as an instrument for per capita property tax controlling for state and federal support
-lapply(list(feols(log_Total_Educ_Total_Exp_pp ~ log_Total_State_IG_Revenue_pp + log_Total_Fed_IG_Revenue_pp | fips + year | log_Property_Tax_pp ~ total_active_prod, data = mines_no_outliers, se = "cluster", cluster = "fips"), 
-  feols(log_Elem_Educ_Total_Exp_pp ~ log_Total_State_IG_Revenue_pp + log_Total_Fed_IG_Revenue_pp | fips + year | log_Property_Tax_pp ~ total_active_prod, data = mines_no_outliers, se = "cluster", cluster = "fips"),
-  # Using the lag of total active production as an instrument for per capita property tax
-  feols(log_Total_Educ_Total_Exp_pp ~ log_Total_State_IG_Revenue_pp + log_Total_Fed_IG_Revenue_pp | fips + year | log_Property_Tax_pp ~ l(total_active_prod,1), data = mines_no_outliers, se = "cluster", cluster = "fips", panel.id = ~fips+year),
-  feols(log_Elem_Educ_Total_Exp_pp ~ log_Total_State_IG_Revenue_pp + log_Total_Fed_IG_Revenue_pp | fips + year | log_Property_Tax_pp ~ l(total_active_prod,1), data = mines_no_outliers, se = "cluster", cluster = "fips", panel.id = ~fips+year)), summary) %>% etable()
-
-# Using total active mines as an instrument for per capita property tax
-lapply(list(feols(log_Total_Educ_Total_Exp_pp ~ 1 | fips + year | log_Property_Tax_pp ~ total_active_n, data = mines_no_outliers, se = "cluster", cluster = "fips"),
-  feols(log_Elem_Educ_Total_Exp_pp ~ 1 | fips + year | log_Property_Tax_pp ~ total_active_n, data = mines_no_outliers, se = "cluster", cluster = "fips"),
   
-  # Using lag of total active mines as an instrument for per capita property tax
- feols(log_Total_Educ_Total_Exp_pp ~ 1 | fips + year | log_Property_Tax_pp ~ l(total_active_n,1:2), data = mines_no_outliers, se = "cluster", cluster = "fips", panel.id = ~fips+year),
-  feols(log_Elem_Educ_Total_Exp_pp ~ 1 | fips + year | log_Property_Tax_pp ~ l(total_active_n,1:2), data = mines_no_outliers, se = "cluster", cluster = "fips", panel.id = ~fips+year)), summary)  %>% etable()
-
-```
-
-
-```
-
-# On Coal Counties Only
-First stage F-test is significant in the case of l0, l1, l2, l3 with significant treatment effect in l0 (.1%), l1 (1%), l2 & l3 (5%)
-
-Significance disappears when we control for level and per capita GDP.
-```{r}
-
-cc_only <- mines_restr %>% 
-  group_by(fips) %>% 
-  filter(any(total_n > 0)) %>% 
-  ungroup
-
-# Using total active production as an instrument for per capita property tax
-feols(log_Elem_Educ_Total_Exp_pp ~ sw(1, log_real_gdp_total, log_gdp_total, log_real_gdp_total_pc, log_gdp_total_pc) | fips + year | log_Property_Tax_pp ~ total_active_prod, data = cc_only, se = "cluster", cluster = "fips") %>% summary
-
-feols(log_Elem_Educ_Total_Exp_pp ~ 1 | fips + year | log_Property_Tax_pp ~ total_active_prod, data = cc_only, se = "cluster", cluster = "fips", panel.id = ~fips+year) 
-
-feols(log_Elem_Educ_Total_Exp_pp ~ 1 | fips + year | log_Property_Tax_pp ~ l(total_active_prod,2), data = cc_only, se = "cluster", cluster = "fips", panel.id = ~fips+year)
-
-feols(log_Elem_Educ_Total_Exp_pp ~ 1 | fips + year | log_Property_Tax_pp ~ l(total_active_prod,3), data = cc_only, se = "cluster", cluster = "fips", panel.id = ~fips+year)
-
-feols(log_Elem_Educ_Total_Exp_pp ~ 1 | fips + year | log_Property_Tax_pp ~ total_active_prod + l(total_active_prod,1) + l(total_active_prod,2), data = cc_only, se = "cluster", cluster = "fips", panel.id = ~fips+year) 
-
-
-```
-
-
-# Changes in activity
-```{r, include = FALSE}
-
-# Using total active production as an instrument for per capita property tax
-lapply(list(feols(log_Total_Educ_Total_Exp_pp ~ 1 | fips + year | log_Property_Tax_pp ~ diff_total_active_prod, data = mines_restr, se = "cluster", cluster = "fips"), 
-  feols(log_Elem_Educ_Total_Exp_pp ~ 1 | fips + year | log_Property_Tax_pp ~ diff_total_active_prod, data = mines_restr, se = "cluster", cluster = "fips"),
-  # Using the lag of total active production as an instrument for per capita property tax
-  feols(log_Total_Educ_Total_Exp_pp ~ 1 | fips + year | log_Property_Tax_pp ~ l(diff_total_active_prod,1), data = mines_restr, se = "cluster", cluster = "fips", panel.id = ~fips+year),
-  feols(log_Elem_Educ_Total_Exp_pp ~ 1 | fips + year | log_Property_Tax_pp ~ l(diff_total_active_prod,1), data = mines_restr, se = "cluster", cluster = "fips", panel.id = ~fips+year)), summary) %>% etable()
-
-# Using total active mines as an instrument for per capita property tax
-  lapply(list(feols(log_Total_Educ_Total_Exp_pp ~ 1 | fips + year | log_Property_Tax_pp ~ diff_total_active_n, data = mines_restr, se = "cluster", cluster = "fips"),
-  feols(log_Elem_Educ_Total_Exp_pp ~ 1 | fips + year | log_Property_Tax_pp ~ diff_total_active_n, data = mines_restr, se = "cluster", cluster = "fips"),
-  
-  # Using lag of total active mines as an instrument for per capita property tax
- feols(log_Total_Educ_Total_Exp_pp ~ 1 | fips + year | log_Property_Tax_pp ~ l(diff_total_active_n,1:2), data = mines_restr, se = "cluster", cluster = "fips", panel.id = ~fips+year),
-  feols(log_Elem_Educ_Total_Exp_pp ~ 1 | fips + year | log_Property_Tax_pp ~ l(diff_total_active_n,1:2), data = mines_restr, se = "cluster", cluster = "fips", panel.id = ~fips+year)), summary)  %>% etable()
-
-```
-
-## Bartik
-
-#### Bartik Instrument
-
-```{r}
-
-ss <- readRDS(here("data/temp/shift_shares_base_01_05_11.RDS"))
-
-ss %>% 
-  #filter(!(substr(fips, 1,2) %in% c("02", "15", "51", "09", "24"))) %>% 
-  pull(fips) %>% 
-  unique %>% 
-  setdiff(unique(mines_restr$fips), .)
-
-ss_df <- mines_restr %>% 
-  left_join(., ss, by = c("year", "fips"))
-
-
-# library(ShiftShareSE)
-# # Estimate the shift-share instrumental variable regression
-# ivreg_ss(d_sh_empl ~ 1 | shock, 
-#           X=IV, 
-#           data=ADH$reg,
-#           W=ADH$W,
-#           method=c("ehw", "akm", "akm0")
-#           )
-# 
-# ivreg_ss(log_Elem_Educ_Total_Exp_pp ~ 1 | fd_annual_avg_emplvl_21,
-#          X = fd_annual_avg_emplvl_21,
-#         data=ss_df,
-#         W=ss_df$share_emp_extraction,
-#         method=c("ehw", "akm", "akm0")
-#          )
-
-ss_labs <- as_labeller(c("ss_emp_coal_2001" = "Coal",
-    "ss_emp_oil_gas_2001" = "Oil & Gas",
-    "ss_emp_extraction_2001" = "Extractive Industries",
-    "ss_wage_coal_2001" = "Coal",
-    "ss_wage_oil_gas_2001" = "Oil & Gas",
-    "ss_wage_extraction_2001" = "Extractive Industries"))
-
-
-
-sswage <- ss_df %>% 
-  dplyr::select(fips, year,ss_emp_coal_2001, ss_emp_oil_gas_2001, ss_emp_extraction_2001) %>% 
-  pivot_longer(contains("ss")) %>% 
-  group_by(fips) %>% 
-  filter(any(!is.na(value))) %>% 
+## Summarise to Commuting Zone Level
+mines_cz <- mines_restr %>%
+  select(cz_id, year, fips, vars_grab) %>% 
+  group_by(cz_id, year) %>%
+  summarise(across(vars_grab, ~sum(., na.rm = TRUE)),
+            n_fips = n_distinct(fips)) %>% 
   ungroup %>% 
-  ggplot(aes(x = year, y = value, group = fips)) +
-  geom_line(alpha = 0.2, color = "darkblue") + 
-  facet_wrap(~name, scales = "free", labeller = ss_labs) +
-  xlab("Year") +
-  ylab("Change in Total Employment") +
-  labs(title = "Employment-based Shift-Share Instrument") +
-  theme_bw() + 
-  theme(legend.position = "none",
-        panel.grid.major = element_blank(), 
-        panel.grid.minor = element_blank(),
-        strip.text = element_text(face = "bold"),
-                strip.background = element_rect(
-     color="grey", fill="lightsteelblue2", linetype="solid"),
-        panel.border = element_rect(color = "grey"),
-        plot.background = element_blank(),
-        plot.title = element_text(hjust=0.5))
-  
-ss_coal <- ss_df %>% 
-  dplyr::select(fips, year,ss_wage_coal_2001, ss_wage_oil_gas_2001, ss_wage_extraction_2001) %>% 
-  pivot_longer(contains("ss")) %>% 
-  group_by(fips) %>% 
-  filter(any(!is.na(value))) %>% 
+  mutate(real_Elem_Educ_Total_Exp_pp = real_Elem_Educ_Total_Exp/Enrollment,
+         real_Total_Educ_Total_Exp_pp = real_Total_Educ_Total_Exp/Enrollment,
+         real_gdp_priv_ind_pc = real_gdp_priv_ind/pop_total,
+         real_gdp_total_pc = real_gdp_total/pop_total,
+         real_Property_Tax_pp = real_Property_Tax/Enrollment,
+         across(!c(cz_id, year, n_fips), ~log(.), .names = "log_{.col}"),
+         across(!c(cz_id, year, n_fips), ~. - dplyr::lag(., 1), .names = "diff_{.col}"),
+         time = year - 2000)
+
+## Summarise to Commuting Zone Level
+mines_cz_1990 <- mines_restr %>%
+  select(cz_id_1990, year, fips, vars_grab) %>% 
+  group_by(cz_id_1990, year) %>%
+  summarise(across(vars_grab, ~sum(., na.rm = TRUE)),
+            n_fips = n_distinct(fips)) %>% 
   ungroup %>% 
-  mutate(value = value/1000000) %>%  
-  ggplot(aes(x = year, y = value, group = fips)) +
-  geom_line(alpha = 0.2, color = "violetred3") + 
-  facet_wrap(~name, scales = "free", labeller = ss_labs) +
-  xlab("Year") +
-  ylab("Change in Total Wages (millions)") +  
-  labs(title = "Wage-based Shift-Share Instrument") +
-  theme_bw() +
-  theme(legend.position = "none",
-        strip.background = element_rect(
-     color="grey", fill="pink1", linetype="solid"),
-        panel.grid.major = element_blank(), 
-        panel.border = element_rect(color = "grey"),
-             strip.text = element_text(face = "bold"),
-        panel.grid.minor = element_blank(),
-        plot.background = element_blank(),
-        plot.title = element_text(hjust=0.5))
+  mutate(real_Elem_Educ_Total_Exp_pp = real_Elem_Educ_Total_Exp/Enrollment,
+         real_Total_Educ_Total_Exp_pp = real_Total_Educ_Total_Exp/Enrollment,
+         real_gdp_priv_ind_pc = real_gdp_priv_ind/pop_total,
+         real_gdp_total_pc = real_gdp_total/pop_total,
+         real_Property_Tax_pp = real_Property_Tax/Enrollment,
+         across(!c(cz_id_1990, year, n_fips), ~log(.), .names = "log_{.col}"),
+         across(!c(cz_id_1990, year, n_fips), ~. - dplyr::lag(., 1), .names = "diff_{.col}"),
+         time = year - 2000)
 
-bartik <- arrangeGrob(grid.arrange(sswage, ss_coal, ncol = 1))
-
-#ggsave(here("output/plots/bartik_graphs.jpg"), bartik, width = 25, height = 25, units = "cm")
-
-```
-
-##### Wage Instrument
-```{r}
-
-scaled_ss <- ss_df %>% 
-  mutate(across(contains("ss"), ~./1000000000))
-
-
-feols(log_Elem_Educ_Total_Exp_pp ~ log_gdp_total_pc + 
-        sw(ss_wage_coal_2001, ss_wage_coal_2005, ss_wage_coal_2011,  
-           ss_wage_oil_gas_2001, ss_wage_oil_gas_2005, ss_wage_oil_gas_2011,  
-           ss_wage_ff_2001, ss_wage_ff_2005, ss_wage_ff_2011, 
-            ss_wage_extraction_2001, ss_wage_extraction_2005, ss_wage_extraction_2011) | fips + year, data = scaled_ss, se = "cluster", cluster = "fips")
-
-
-```
-
-##### Employment Instrument
-```{r}
-feols(log_Elem_Educ_Total_Exp_pp ~ log_gdp_total_pc + 
-        sw(ss_emp_coal_2001, ss_emp_coal_2005, ss_emp_coal_2011,  
-           ss_emp_oil_gas_2001, ss_emp_oil_gas_2005, ss_emp_oil_gas_2011,  
-           ss_emp_ff_2001, ss_emp_ff_2005, ss_emp_ff_2011, 
-            ss_emp_extraction_2001, ss_emp_extraction_2005, ss_emp_extraction_2011) | fips + year, data = scaled_ss, se = "cluster", cluster = "fips")
-```
-
-
-# Summary statistics with coal production
-```{r}
-
-# Variables of interest for descriptive statistics
-vars <- c("Total_Revenue", "Property_Tax", "Total_IG_Revenue", "Total_Fed_IG_Revenue", "Total_State_IG_Revenue", "Total_Educ_Total_Exp", "Elem_Educ_Total_Exp")
-
-mines_restr %>%
-  mutate(across(c(esa_tot_exp, vars, paste0(vars, "_pp"), gdp_total, gdp_priv_ind, gdp_govt, gdp_o_g_mining_quarr_21), ~./1000)) %>% 
-  dplyr::select(year, esa_tot_exp, esa_tot_exp_pp, Enrollment, all_of(vars), paste0(vars, "_pp"), pop_total, pop_school_age, gdp_total, gdp_priv_ind, gdp_govt, gdp_o_g_mining_quarr_21, total_active_n, total_active_prod) %>% 
-  # rename("ESA Expenditure" = esa_tot_exp, 
-  #        "ESA Expenditure per pupil" = esa_tot_exp_pp, 
-  #        "Revenue" = "Total_Revenue", 
-  #        "Property Tax" = "Property_Tax",
-  #        "IG Revenue" = "Total_IG_Revenue", 
-  #        "Federal IG Revenue" = "Total_Fed_IG_Revenue", 
-  #        "State IG Revenue" = "Total_State_IG_Revenue",
-  #        "Expenditure" = "Total_Expenditure",
-  #        "Revenue per pupil" = "Total_Revenue_pp", 
-  #        "Property Tax per pupil" = "Property_Tax_pp",
-  #        "IG Revenue per pupil" = "Total_IG_Revenue_pp", 
-  #        "Federal IG Revenue per pupil" = "Total_Fed_IG_Revenue_pp", 
-  #        "State IG Revenue per pupil" = "Total_State_IG_Revenue_pp",
-  #        "Expenditure per pupil" = "Total_Expenditure_pp",
-  #        "Population" = pop_total,
-  #        "School Age Population" = pop_school_age, 
-  #        "GDP" = gdp_total,
-  #        "Private Industry GDP" = gdp_priv_ind, 
-  #        "Government GDP" = gdp_govt, 
-  #        "Oil, gas, mining GDP" = gdp_o_g_mining_quarr_21) %>% 
-  #dplyr::group_split(year < 2007) %>% 
-  #    purrr::iwalk(.,~{
-  #      .x %>% 
-          dplyr::select(-year) %>% 
-          data.frame() %>%
-          stargazer(digits = 0, digits.extra = 3, covariate.labels = c("ESA Expenditure", 
-         "ESA Expenditure per pupil",
-         "Enrollment",
-         "Revenue", 
-         "Property Tax",
-         "IG Revenue", 
-         "Federal IG Revenue",
-         "State IG Revenue",
-         "Expenditure",
-         "Revenue per pupil", 
-         "Property Tax per pupil",
-         "IG Revenue per pupil", 
-         "Federal IG Revenue per pupil", 
-         "State IG Revenue per pupil",
-         "Expenditure per pupil",
-         "Population",
-         "School Age Population", 
-         "GDP",
-         "GDP - Private Industry", 
-         "GDP - Government", 
-         "GDP - Oil, gas, mining",
-         "Active Coal Mines",
-         "Coal Produced (k short tons)"), type = "latex")
+## Summarise to State Level
+mines_state <- mines_restr %>%
+  select(state_name, fips, cz_id, year, fips, vars_grab) %>% 
+  group_by(state_name, year) %>%
+  summarise(across(vars_grab, ~sum(., na.rm = TRUE)),
+            n_fips = n_distinct(fips),
+            n_cz = n_distinct(cz_id)) %>% 
+  ungroup %>% 
+  mutate(real_Elem_Educ_Total_Exp_pp = real_Elem_Educ_Total_Exp/Enrollment,
+         real_Total_Educ_Total_Exp_pp = real_Total_Educ_Total_Exp/Enrollment,
+         real_gdp_priv_ind_pc = real_gdp_priv_ind/pop_total,
+         real_gdp_total_pc = real_gdp_total/pop_total,
+         real_Property_Tax_pp = real_Property_Tax/Enrollment,
+         across(!c(state_name, year, n_fips, n_cz), ~log(.), .names = "log_{.col}"),
+         across(!c(state_name, year, n_fips, n_cz), ~. - dplyr::lag(., 1), .names = "diff_{.col}"),
+         time = year - 2000)
+      
+## Summarise to natl level
+mines_natl <- mines_restr %>%
+  select(state_name, fips, cz_id, year, fips, vars_grab) %>% 
+  group_by(year) %>%
+  summarise(across(vars_grab, ~sum(., na.rm = TRUE)),
+            n_fips = n_distinct(fips),
+            n_cz = n_distinct(cz_id),
+            n_state = n_distinct(state_name)) %>% 
+  ungroup %>% 
+  mutate(real_Elem_Educ_Total_Exp_pp = real_Elem_Educ_Total_Exp/Enrollment,
+         real_Total_Educ_Total_Exp_pp = real_Total_Educ_Total_Exp/Enrollment,
+         real_gdp_priv_ind_pc = real_gdp_priv_ind/pop_total,
+         real_gdp_total_pc = real_gdp_total/pop_total,
+         real_Property_Tax_pp = real_Property_Tax/Enrollment,
+         across(!c(year, n_fips, n_cz, n_state), ~log(.), .names = "log_{.col}"),
+         across(!c(year, n_fips, n_cz, n_state,), ~. - dplyr::lag(., 1), .names = "diff_{.col}"),
+         time = year - 2000,
+         id = "USA")
 
 
 ```
 
+```{r, echo = FALSE, cache = TRUE}
+# Data Transformation Function
 
+# Pass a dataframe with distinct ids (ie. state_name, CZ, or fips)
+# Dataframe should only have variables that should be transformed in line with all calls in the following function
 
-### PANELVAR
-```{r}
-library(panelvar)
+data_transform <- function(df, vars, unit_id, time_id){
+  df %>% 
+    select(c(unit_id, time_id, vars)) %>%
+    mutate(across(!c(unit_id, time_id),
+                  list(t0 = ~(ifelse(!!sym(time_id) == 2001, 1, NA))*.,
+                       t2 = ~(ifelse(!!sym(time_id) == 2003, 1, NA))*.),
+                  .names = "{.fn}_{.col}")) %>% 
+    group_by(!!sym(unit_id)) %>% 
+    fill(matches("^t[[:digit:]]"),
+      .direction = "down") %>% 
+    mutate(across(!c(!!sym(time_id), matches("^t[[:digit:]]")), list(
+                                                           ma3 = ~rollmean(., 3, align = 'right', fill = NA)),
+                  .names = "{.fn}_{.col}")) %>% 
+    ungroup %>% 
+    mutate(across(vars,
+                  list(delta = ~ . - get(paste0("t0_", cur_column())),
+                       delta_ma3 = ~ get(paste0("ma3_", cur_column())) - get(paste0("t2_", cur_column()))),
+                       .names = "{.fn}_{.col}")) %>% return(.)
+}
 
-test_pvar <- pvargmm(
-  dependent_vars = c("real_Elem_Educ_Total_Exp", "log_real_Property_Tax", "log_real_gdp_priv_ind"),
-  lags = 1, 
-  panel_identifier = c("fips", "year"),
-  steps = c("twostep"),
-  data = data.frame(mines_restr)
-)
+rel_vars <- c("real_Elem_Educ_Total_Exp", "real_Elem_Educ_Total_Exp_pp",
+              "real_Property_Tax","real_Property_Tax_pp", 
+              "real_gdp_total", "real_gdp_total_pc", 
+              "real_Total_Educ_Total_Exp", "real_Total_Educ_Total_Exp_pp", 
+              "log_real_Elem_Educ_Total_Exp", "log_real_Elem_Educ_Total_Exp_pp",
+              "log_real_Property_Tax","log_real_Property_Tax_pp",
+              "log_real_Total_Educ_Total_Exp", "log_real_Total_Educ_Total_Exp_pp", 
+              "log_real_gdp_total", "log_real_gdp_total_pc")
 
+fips_trends_dat <- data_transform(mines_restr, rel_vars, "fips", "year") %>% 
+  left_join(., code_match, by = "fips")
+
+cz_trends_dat <- data_transform(mines_cz, rel_vars, "cz_id", "year") %>% 
+  left_join(., distinct(select(code_match, -fips)), multiple = "first", by = "cz_id")
+
+cz_1990_trends_dat <- data_transform(mines_cz_1990, rel_vars, "cz_id_1990", "year") %>% 
+  left_join(., distinct(select(code_match, -fips)), multiple = "first", by = "cz_id_1990")
+
+#cz_1990_trends_dat %>% saveRDS(here('data/temp/cz_1990_trends_dat.rds'))
+
+state_trends_dat <- data_transform(mines_state, rel_vars, "state_name", "year")
+
+natl_trends_dat <- data_transform(mines_natl, rel_vars, "id", "year")
 
 ```
+
+```{r, echo = FALSE, cache = TRUE}
+
+# National macro data
+
+# # Read in macro data
+uer <- read.csv(here('data/raw/macro_vars/UNRATE.csv')) %>%
+    mutate(DATE = ymd(DATE),
+           FD_UNRATE = UNRATE - lag(UNRATE))
+
+gdp <- read.csv(here('data/raw/macro_vars/GDP.csv')) %>%
+  mutate(DATE = ymd(DATE),
+         FD_GDP = GDP - lag(GDP))
+
+gdpc1 <- read.csv(here('data/raw/macro_vars/GDPC1.csv')) %>%
+  mutate(DATE = ymd(DATE),
+         FD_GDPC1 = GDPC1 - lag(GDPC1))
+
+# NOTE: Consider replacing with total population values from official source - this is just a sum over the dataset we have - missing ~100M people!
+pop_natl <- mines_natl %>% select(year, pop_total)
+gdp_annual <- read.csv(here('data/raw/macro_vars/GDPC1_annual.csv')) %>% 
+  mutate(year = as.numeric(substr(DATE, 1, 4)),
+         gdp_natl = GDPC1) %>% 
+  left_join(., pop_natl, by = "year") %>% 
+  mutate(gdp_natl_pc = gdp_natl/pop_total,
+         diff_gdp_natl = gdp_natl - lag(gdp_natl, 1),
+         diff_gdp_natl_pc = gdp_natl_pc - lag(gdp_natl_pc, 1),
+         log_gdp_natl = log(gdp_natl),
+         log_gdp_natl_pc = log(gdp_natl_pc),
+         diff_log_gdp_natl = log_gdp_natl - lag(log_gdp_natl, 1),
+         diff_log_gdp_natl_pc = log_gdp_natl_pc - lag(log_gdp_natl_pc, 1)) 
+
+# gdp_annual %>% 
+#   select(!c(DATE, GDPC1)) %>% 
+#   pivot_longer(!year) %>% 
+#   ggplot(aes(x = year, y = value)) + 
+#   geom_line() + 
+#   facet_wrap(~name, scales = "free", ncol = 1)
+
+#row.names(gdp_annual) = gdp_annual[1]
+
+macro_natl <- left_join(uer, gdp, by = "DATE") %>%
+  left_join(., gdpc1, by = "DATE") %>%
+  tibble
+
+#plot(decompose(gdp_annu type = 'additive'))
+
+```
+
 
 # Defining Decline
-What would be great is to be able to econometrically test when a county is "declining." In the first step, it would be good to identify when a county is declining overall (GDP, poverty, etc) but ideally eventually apply this to the education outcome. My hope is that being able to identify counties that are "declining" we can either use this variable as a covariate or as a central point of analysis. The below analysis looks at state-level variables as a first step (mainly to aid in visual comparison and plotting). Ideally, once a method is decided on this would be applied to county-level data which would need to be summarise/collated in some way for plotting.
 
-Below I suggest a few options (some of which I have tried). They require functions and tests from time series literature and it would be great to get Jennie's input/direction on this. 
+What would be great is to be able to econometrically test when a county is "declining." In the first step, it would be good to identify when a county is declining overall (GDP, poverty, etc) but ideally eventually apply this to the education outcome. My hope is that being able to identify counties that are "declining" we can either use this variable as a covariate or as a central point of analysis. The below analysis looks at state-level variables as a first step (mainly to aid in visual comparison and plotting). This has now been expanded to county and commuting zones levels.
 
-## First step (GDP only):
-- Negative trend (X)
-- Autocorrelation (X)
--- If autocorrelation is consistently positive indicates trend? 
--- Should this focus on autocorrelation in levels or differences?
-- Trend indicator saturation - negative trend breaks? (_)
-- Exhibit national or state-level GDP growth as global common factor; counties with negative factor loadings might arguably exhibit decline (_)
+Some current options:
 
+-   Simple time trends
 
-```{r, include = FALSE}
+<!-- -   Autocorrelation (X) -->
 
-state_lev <- mines_restr %>% 
-  group_by(state, year) %>% 
-  summarise(across(c(real_gdp_priv_ind, real_Elem_Educ_Total_Exp, log_real_gdp_priv_ind, log_real_Elem_Educ_Total_Exp, log_real_Property_Tax, real_Property_Tax), ~sum(., na.rm = TRUE))) %>% 
-  group_by(state) %>% 
-  mutate(across(c(real_gdp_priv_ind, real_Elem_Educ_Total_Exp, log_real_gdp_priv_ind, log_real_Elem_Educ_Total_Exp, log_real_Property_Tax), ~.- dplyr::lag(., 1), .names = "diff_{.col}"))  %>% 
-  ungroup %>% 
-  mutate(time = year - 2000)
+<!-- -   Trend indicator saturation - negative trend breaks? (\_) -->
+
+-   Exhibit national or state-level GDP growth as global common factor; counties with negative factor loadings might arguably exhibit decline (\_)
+
+-   Jennie's suggestion:
+
+    -   plot county- , CZ, or state-level deviations from a national trend
+
+::: panel-tabset
+## Education
+
+<!-- ### State Time Trends -->
+
+<!-- ```{r, echo = FALSE, cache = TRUE} -->
+
+<!-- trends <- feols(log_real_gdp_priv_ind ~ time:as.factor(state_name) | state_name + year, data = mines_state, se = "cluster", cluster = "state_name", panel.id = ~state_name+year) -->
+
+<!-- #trends %>% etable(., se.below = TRUE) -->
+
+<!-- trends$coefficients %>% -->
+
+<!--   tibble %>% -->
+
+<!--   rename(coef = '.') %>% -->
+
+<!--   ggplot() + -->
+
+<!--   geom_histogram(aes(x = coef), bins = 15) + -->
+
+<!--   theme_bw() + -->
+
+<!--   labs(title = "Histogram of State-level Trend Coefficient: (log) Real Private Industry GDP")+ -->
+
+<!--   geom_vline(aes(xintercept = 0), colour = "red", linetype = "dotted") -->
+
+<!-- ``` -->
+
+::: panel-tabset
+### Deviation from T0
+
+One way to look at this descriptively is to look at the national, state and county-level trends. Here the "trend" is simply the difference between expenditure per pupil at the relevant level and expenditure per pupil in the first available observation as represented here: https://www.princeton.edu/\~erossi/DTNLC.pdf. (Note: this measure is imperfect for many reasons).
+
+::: panel-tabset
+#### States
+
+```{r, fig.height = 10, echo = FALSE}
+natl_pivoted <- natl_trends_dat %>% 
+  select(year, contains('delta') & contains('log_real_Elem_Educ_Total_Exp_pp')) %>% 
+  pivot_longer(!year) %>% 
+  mutate(value = ifelse(grepl("ma3", name) & year == 2002, 0, value))
+
+## State level trends with national trend reference line
+state_trends_dat %>% 
+  filter(state_name != "ME") %>% 
+  select(state_name, year, contains('delta') & contains('log_real_Elem_Educ_Total_Exp_pp')) %>% 
+  pivot_longer(!c(state_name, year)) %>% 
+  ggplot(aes(x = year, y = value, colour = state_name)) +
+      geom_line() +
+  geom_line(data = natl_pivoted, aes(x = year, y = value), colour = "black") +
+          facet_wrap(~name, scales = "free") +
+  theme(legend.position = 'none') + 
+  labs(title = "Difference from t0 in levels", 
+       subtitle = "States")
 
 ```
 
-### Negative trend
+```{r, fig.height = 10, echo = FALSE}
+
+filter(state_trends_dat, year == 2018) %>%
+  rename(state = state_name) %>% 
+  plot_usmap(data = ., values = "real_Elem_Educ_Total_Exp_pp", regions = "states", exclude = c("AK", "HI")) +
+  scale_fill_gradient(low = "thistle1", high = "purple4", na.value = "grey98") +
+    theme(panel.background = element_rect(color = "white", fill = "white"),
+        plot.title = element_text(face = "bold"), legend.background=element_blank(), legend.title = element_text("hello")) +
+    labs(title = "State Level Elem. Ed. Exp. pp (2018)")
+
+```
+
+```{r, fig.height = 10, echo = FALSE}
+
+filter(state_trends_dat, year == 2018) %>%
+  rename(state = state_name) %>% 
+  plot_usmap(data = ., values = "real_Total_Educ_Total_Exp_pp", regions = "states", exclude = c("AK", "HI")) +
+  scale_fill_gradient(low = "thistle1", high = "purple4", na.value = "grey98") +
+  #scale_fill_distiller(colours=c(bl,"white", re), name = "", direction = 1, na.value = "gray90", limits = c(-1, 1)) +
+    theme(panel.background = element_rect(color = "white", fill = "white"),
+        plot.title = element_text(face = "bold"), legend.background=element_blank(), legend.title = element_text("hello")) +
+    labs(title = "State Level Elem. Ed. Exp. pp (2018)")
+
+```
+
+#### CZs
+
+::: panel-tabset
+```{r, echo = FALSE, results = 'asis', fig.height = 12}
+
+temp_cz <- cz_trends_dat %>% 
+  filter(year > 2001 & state_name != "ME") %>% 
+  mutate(delta_ma3_log_real_Elem_Educ_Total_Exp_pp = ifelse(year == 2002, 0, delta_ma3_log_real_Elem_Educ_Total_Exp_pp))
+
+temp_natl <- natl_trends_dat %>% 
+  filter(year > 2001) %>% 
+  mutate(delta_ma3_log_real_Elem_Educ_Total_Exp_pp = ifelse(year == 2002, 0, delta_ma3_log_real_Elem_Educ_Total_Exp_pp))
+
+temp_state <- state_trends_dat %>% 
+  filter(year > 2001 & state_name != "ME") %>% 
+  mutate(delta_ma3_log_real_Elem_Educ_Total_Exp_pp = ifelse(year == 2002, 0, delta_ma3_log_real_Elem_Educ_Total_Exp_pp))
+
+## CZ level trends by state with national trend reference line
+for(k in names(select(temp_cz, contains('delta') & contains('log_real_Elem_Educ_Total_Exp_pp')))){
+  cat('##### ', k, ' \n')
+    p <- temp_cz %>% 
+      filter(state_name != "ME") %>% 
+      select(state_name, cz_id, year, k) %>% 
+      pivot_longer(!c(state_name, year, cz_id)) %>% 
+      ggplot(aes(x = year, y = value, colour = cz_id)) +
+      geom_line() +
+      geom_line(data = temp_natl, aes(x = year, y = get(k)), colour = "black", linetype = "dashed") +
+      geom_line(data = temp_state, aes(x = year, y = get(k)), colour = "red", linetype = "dashed") +
+      theme_minimal() +
+      theme(legend.position = 'none', strip.text = element_text(size = 12)) +
+      scale_colour_viridis(discrete = TRUE) + 
+      facet_wrap(~state_name, ncol = 7, scales = "free") +
+      labs(title = paste0("Trends: ", k), 
+           subtitle = "Commuting Zones",
+           x = "Year",
+           y = k) 
+    
+    print(p)
+              cat('\n')
+              cat('\n')
+              }
+
+```
+:::
+
+#### Counties
+
+::: panel-tabset
+```{r, echo = FALSE, results = 'asis', fig.height = 12}
+
+temp_fips <- fips_trends_dat %>% 
+  filter(year > 2001 & state_name != "ME") %>% 
+  mutate(delta_ma3_log_real_Elem_Educ_Total_Exp_pp = ifelse(year == 2002, 0, delta_ma3_log_real_Elem_Educ_Total_Exp_pp))
+
+
+for(k in names(select(fips_trends_dat, contains('delta') & contains('log_real_Elem_Educ_Total_Exp_pp')))){
+  cat('##### ', k, ' \n')
+  p <- temp_fips %>% 
+    filter(state_name != "ME") %>% 
+    select(state_name, fips, year, k) %>% 
+    pivot_longer(!c(state_name, year, fips)) %>% 
+    ggplot(aes(x = year, y = value, colour = fips)) +
+    geom_line() +
+    geom_line(data = temp_natl, aes(x = year, y = get(k)), colour = "black", linetype = "dashed") +
+    geom_line(data = filter(temp_state, state_name != "ME"), aes(x = year, y = get(k)), colour = "red", linetype = "dashed") +
+    theme_minimal() +
+    theme(legend.position = 'none', strip.text = element_text(size = 12)) +
+    scale_colour_viridis(discrete = TRUE) + 
+    facet_wrap(~state_name, ncol = 7, scales = "free") +
+    theme(legend.position = 'none') + 
+    labs(title = paste0("Trends: ", k), 
+         subtitle = "Counties",
+         x = "Year",
+           y = k) 
+  
+  print(p)
+              cat('\n')
+              cat('\n')
+              }
+
+```
+:::
+:::
+
+### Trends
+
+Trend in log Elementary Education Expenditure (growth rate). The below plots show the coefficient estimate on the time-step variable in the trend equation. In the first panel I include no additional controls but in the latter two panels I include the state and national level growth rates as controls.
+
+```{r, echo = FALSE, cache = TRUE, fig.height = 11}
+
+# Create state-outlines
+df <- usmap::us_map(regions = "states") %>% filter(!(abbr %in% c("HI", "AK")))
+
+dat <- do.call('rbind', split(df, paste(df$abbr, df$piece)) |>
+  lapply(function(x) st_sf(state = x$abbr[1],
+                           st_sfc(st_polygon(list(cbind(x$x, x$y)))), 
+                           crs = usmap::usmap_crs())))
+
+natl_trend_pc <- mines_natl %>% 
+  select(year, diff_log_real_Elem_Educ_Total_Exp_pp) %>% 
+  distinct %>% 
+  lm(diff_log_real_Elem_Educ_Total_Exp_pp ~ 1, data = .) %>% 
+  .$coefficients %>% pluck(1)
+  
+county_ed_trends = mines_restr %>% 
+  group_by(fips, state_name) %>% 
+  do(model = lm(diff_log_real_Elem_Educ_Total_Exp_pp ~ 1, data = .)) %>% 
+  ungroup 
+
+county_ed_trends_controlled_natl = mines_restr %>% 
+  left_join(., mines_natl, by = "year") %>% 
+  group_by(fips, state_name) %>% 
+  do(model = lm(diff_log_real_Elem_Educ_Total_Exp_pp.x ~ 1 +  diff_log_real_Elem_Educ_Total_Exp_pp.y, data = .)) %>% 
+  ungroup 
+
+county_ed_trends_controlled_state = mines_restr %>% 
+   left_join(., mines_state, by = c("year", "state_name")) %>% 
+  group_by(fips, state_name) %>% 
+  do(model = lm(diff_log_real_Elem_Educ_Total_Exp_pp.x ~ 1 + diff_log_real_Elem_Educ_Total_Exp_pp.y, data = .)) %>% 
+  ungroup 
+
+county_ed_trends <- county_ed_trends %>% 
+  rename("trend" = model) %>% 
+  left_join(., county_ed_trends_controlled_natl, by = c('fips', 'state_name')) %>% 
+  rename("trend_cont_natl" = model) %>% 
+  left_join(., county_ed_trends_controlled_state, by = c('fips', 'state_name')) %>% 
+  rename("trend_cont_state" = model)
+
+county_ed_coefs <- tibble()
+county_ed_sensitivities <- tibble()
+for(k in 1:nrow(county_ed_trends)){
+  s <- county_ed_trends %>% slice(k) %>% pull(fips)
+  st <- county_ed_trends %>% slice(k) %>% pull(state_name)
+  t <- county_ed_trends %>% slice(k) %>% 
+    pull(trend) %>% first %>% .$coefficients %>% pluck(1) 
+  t_n <- county_ed_trends %>% slice(k) %>% 
+    pull(trend_cont_natl) %>% first %>% .$coefficients %>% pluck(1) 
+  t_s <- county_ed_trends %>% slice(k) %>% 
+    pull(trend_cont_state) %>% first %>% .$coefficients %>% pluck(1)
+  
+
+  s_n <- county_ed_trends %>% slice(k) %>% 
+    pull(trend_cont_natl) %>% first %>% .$coefficients %>% pluck(2) 
+  s_s <- county_ed_trends %>% slice(k) %>% 
+    pull(trend_cont_state) %>% first %>% .$coefficients %>% pluck(2)
+  
+  county_ed_coefs <- rbind(county_ed_coefs, c(s,st, t, t_n, t_s))
+  county_ed_sensitivities <- rbind(county_ed_sensitivities, c(s, st, s_n, s_s))
+}
+
+colnames(county_ed_coefs) <- names(county_ed_trends)
+colnames(county_ed_sensitivities) <- c("fips", "state_name", "sensitivity_state", "sensitivity_natl")
+county_ed_coefs <- county_ed_coefs %>% mutate(across(c(3:5), ~as.numeric(.)))
+county_ed_sensitivities <- county_ed_sensitivities %>% mutate(across(c(3:4), ~as.numeric(.)))
+
+county_ed_coefs %>% 
+  pivot_longer(cols = contains("trend")) %>% 
+  mutate(name = factor(name, levels=c("trend", "trend_cont_state", "trend_cont_natl"), labels = c("Trend in Elem. Ed. Exp. pp", "Trend in Elem. Ed. Exp. pp Controlled for State Trends", "Trend in Elem. Ed. Exp. pp Controlled for National Trends"))) %>% 
+  ggplot() +
+  geom_histogram(aes(x = value, fill = name), bins = 100, alpha = 0.9) +
+  geom_vline(aes(xintercept = 0), colour = "darkgreen", linetype = "dotted") +
+  geom_vline(aes(xintercept = natl_trend_pc), colour = "red", linetype = "dashed") +
+  theme_bw() +
+  facet_wrap(name ~ ., ncol = 1) +
+  theme(legend.position = "none", strip.text = element_text(size = 14)) +
+  scale_fill_brewer(palette = "Set2") +
+  labs(x = NULL, y = "No. of Counties")
+
+
+county_ed_coefs %>% 
+  pivot_longer(cols = contains("trend")) %>% 
+  mutate(name = factor(name, levels=c("trend", "trend_cont_state", "trend_cont_natl"), labels = c("Trend in Elem. Ed. Exp. pp", "Trend in Elem. Ed. Exp. pp Controlled for State Trends", "Trend in Elem. Ed. Exp. pp Controlled for National Trends"))) %>% 
+  ggplot(aes(x = value, fill = name)) +
+  geom_density(bins = 100, alpha = 0.5, position = "identity") +
+  geom_vline(aes(xintercept = 0), colour = "darkgreen", linetype = "dotted") +
+  geom_vline(aes(xintercept = natl_trend_pc), colour = "magenta", linetype = "dashed") +
+  theme_bw() +
+  theme(legend.position = "bottom", legend.title = element_blank()) +
+  scale_fill_brewer(palette = "Set2") +
+  labs(x = NULL, y = "No. of Counties")
+
+# Education Expenditure
+trend_ed_plot_pc <- plot_usmap(data = mute_outliers(county_ed_coefs, "trend"), values = "var_muted", regions = "counties", col = "gray90", linewidth = 0.01, exclude = c("AK", "HI")) +
+  scale_fill_gradient2(midpoint = 0, na.value = "grey98") +
+  #scale_fill_distiller(colours=c(bl,"white", re), name = "", direction = 1, na.value = "gray90", limits = c(-1, 1)) +
+    theme(panel.background = element_rect(color = "white", fill = "white"),
+        plot.title = element_text(face = "bold"), legend.background=element_blank(), legend.title = element_blank()) +
+    labs(title = "County-level Trend in Elem. Ed. Exp. pp") +
+  ggplot2::geom_sf(data = dat, colour = "blue", fill = NA, linewidth = 0.1)
+
+# Education Expenditure
+trend_ed_natl_plot_pc <- plot_usmap(data = mute_outliers(county_ed_coefs, "trend_cont_natl"), values = "var_muted", regions = "counties", col = "gray90", linewidth = 0.01, exclude = c("AK", "HI")) +
+scale_fill_gradient2(na.value = "grey98", midpoint = 0) +
+  #scale_fill_distiller(colours=c(bl,"white", re), name = "", direction = 1, na.value = "gray90", limits = c(-1, 1)) +
+    theme(panel.background = element_rect(color = "white", fill = "white"),
+        plot.title = element_text(face = "bold"), legend.background=element_blank(), legend.position = "none") +
+    labs(title = "County-level Trend in Elem. Ed. Exp. pp",
+       subtitle = "Controlling for National Level Elem. Ed. Exp. pp") +
+  ggplot2::geom_sf(data = dat, colour = "blue", fill = NA, linewidth = 0.1)
+
+# Education Expenditure
+trend_ed_state_plot_pc <- plot_usmap(data = mute_outliers(county_ed_coefs, "trend_cont_state"), values = "var_muted", regions = "counties", col = "gray90", linewidth = 0.01, exclude = c("AK", "HI")) +
+ scale_fill_gradient2(na.value = "grey98", midpoint = 0) +
+  #scale_fill_distiller(colours=c(bl,"white", re), name = "", direction = 1, na.value = "gray90", limits = c(-1, 1)) +
+    theme(panel.background = element_rect(color = "white", fill = "white"),
+        plot.title = element_text(face = "bold"), legend.background=element_blank(), legend.position = "none") +
+    labs(title = "County-level Trend in Elem. Ed. Exp. pp",
+       subtitle = "Controlling for State Level Elem. Ed. Exp. pp") +
+  ggplot2::geom_sf(data = dat, colour = "blue", fill = NA, linewidth = 0.1)
+
+trend_ed_plot_pc + trend_ed_state_plot_pc + trend_ed_natl_plot_pc
+
+rm(natl_trend_pc)
+rm(county_ed_trends)
+rm(county_ed_trends_controlled_natl)
+rm(county_ed_trends_controlled_state)
+
+```
+
 ```{r}
 
-trends <- feols(log_real_gdp_priv_ind ~ time:as.factor(state) | state + year, data = state_lev, se = "cluster", cluster = "state", panel.id = ~state+year)
+# Coefficient on state and national level trends
+county_ed_sensitivities %>% 
+  pivot_longer(cols = contains("sensitivity")) %>% 
+  ggplot() +
+  geom_histogram(aes(x = value, fill = name), bins = 100, position = "identity") +
+  scale_fill_brewer(palette = "Set2")
 
-trends %>% etable(., se.below = TRUE)
+plot_usmap(data = mute_outliers(county_ed_sensitivities, "sensitivity_natl"), values = "var_muted", regions = "counties", col = "gray90", linewidth = 0.01, exclude = c("AK", "HI")) +
+  scale_fill_gradient2(na.value = "grey98", midpoint = 0) +
+  #scale_fill_distiller(colours=c(bl,"white", re), name = "", direction = 1, na.value = "gray90", limits = c(-1, 1)) +
+   theme(panel.background = element_rect(color = "white", fill = "white"),
+       plot.title = element_text(face = "bold"), legend.background=element_blank()) +
+    labs(title = "County-level Sensitivity to National Trend in Elem. Ed. Exp. pp") +
+  ggplot2::geom_sf(data = dat, colour = "blue", fill = NA, linewidth = 0.1)
 
-trends$coefficients %>% 
-  tibble %>% 
-  rename(coef = '.') %>% 
-  ggplot() + 
-  geom_histogram(aes(x = coef), bins = 15) + 
-  theme_bw() +
-  labs(title = "Histogram of State-level Trend Coefficient: (log) Real Private Industry GDP")
+
+plot_usmap(data = mute_outliers(county_ed_sensitivities, "sensitivity_state"), values = "var_muted", regions = "counties", col = "gray90", linewidth = 0.01, exclude = c("AK", "HI")) +
+ scale_fill_gradient2(na.value = "grey98", midpoint = 0) +
+  #scale_fill_distiller(colours=c(bl,"white", re), name = "", direction = 1, na.value = "gray90", limits = c(-1, 1)) +
+    theme(panel.background = element_rect(color = "white", fill = "white"),
+        plot.title = element_text(face = "bold"), legend.background=element_blank()) +
+    labs(title = "County-level Sensitivity to State Trend in Elem. Ed. Exp. pp") +
+   ggplot2::geom_sf(data = dat, colour = "blue", fill = NA, linewidth = 0.1)
 
 
 ```
+
+### Growth Rates
+
+::: panel-tabset
+#### States
+
+```{r, echo = FALSE}
+
+mines_state %>% 
+  filter(year != 2001) %>% 
+  ggplot() +
+  geom_line(aes(x = year, y = diff_log_real_Elem_Educ_Total_Exp_pp, color = state_name))
+  
+
+```
+
+#### Commuting Zones
+
+```{r, echo = FALSE}
+
+# Outliers
+
+mines_cz %>% 
+  filter(year != 2001) %>% 
+  ggplot() +
+  geom_line(aes(x = year, y = diff_log_real_Elem_Educ_Total_Exp_pp, color =  cz_id)) +
+  theme(legend.position = "none")
+
+mines_cz %>% 
+  group_by(cz_id) %>%
+  mutate(across(diff_log_real_Elem_Educ_Total_Exp_pp, list(ma3 = ~rollmean(., 3, align = 'right', fill = NA),
+                                                           ma2 = ~rollmean(., 2, align = 'right', fill = NA)), .names = "{.fn}_{.col}")) %>% 
+  ungroup %>% 
+  left_join(., distinct(select(code_match, -fips)), multiple = "first", by = "cz_id") %>% 
+  filter(year > 2003) %>% 
+  ggplot() +
+  geom_line(aes(x = year, y = ma3_diff_log_real_Elem_Educ_Total_Exp_pp, color =  cz_id)) +
+  theme(legend.position = "none") +
+  facet_wrap(~state_name)
+  
+
+```
+
+#### Counties
+
+```{r, echo = FALSE}
+
+# Outliers
+
+pos_coefs <- mute_outliers(county_ed_coefs, "trend_cont_natl") %>% 
+  filter(var_muted != trend_cont_natl & var_muted > 0) %>% 
+  pull(fips) %>% unique
+
+mines_df %>%
+  filter(fips %in% pos_coefs) %>%
+  select(fips, year, log_real_Property_Tax_pp, log_real_Elem_Educ_Total_Exp_pp) %>% 
+  pivot_longer(!c(fips, year)) %>% 
+  ggplot(aes(x = year, y = value, color = name)) +
+  geom_line() +
+  facet_wrap(~fips, scales = "free")
+
+```
+:::
+
+### Outliers
+
+::: panel-tabset
+#### Negative
+
+```{r, echo = FALSE}
+
+# Outliers
+neg_coefs <- mute_outliers(county_ed_coefs, "trend_cont_natl") %>% 
+  filter(var_muted != trend_cont_natl & var_muted < 0) %>% 
+  pull(fips) %>% unique
+
+mines_df %>%
+  filter(fips %in% neg_coefs) %>%
+  select(fips, year, log_real_Property_Tax_pp, log_real_Elem_Educ_Total_Exp_pp) %>% 
+  pivot_longer(!c(fips, year)) %>% 
+  ggplot(aes(x = year, y = value, color = name)) +
+  geom_line() +
+  facet_wrap(~fips, scales = "free")
+
+```
+
+#### Positive
+
+```{r, echo = FALSE}
+
+# Outliers
+
+pos_coefs <- mute_outliers(county_ed_coefs, "trend_cont_natl") %>% 
+  filter(var_muted != trend_cont_natl & var_muted > 0) %>% 
+  pull(fips) %>% unique
+
+mines_df %>%
+  filter(fips %in% pos_coefs) %>%
+  select(fips, year, log_real_Property_Tax_pp, log_real_Elem_Educ_Total_Exp_pp) %>% 
+  pivot_longer(!c(fips, year)) %>% 
+  ggplot(aes(x = year, y = value, color = name)) +
+  geom_line() +
+  facet_wrap(~fips, scales = "free")
+
+```
+:::
+:::
+
+## GDPPC
+
+::: panel-tabset
+### Trends
+
+Trend in log Real GDP (growth rate). The below plots show the coefficient estimate on the time-step variable in the trend equation. In the first panel I include no additional controls but in the latter two panels I include the state and national level growth rates as controls.
+
+```{r, echo = FALSE, cache = TRUE}
+
+natl_trend <- gdp_annual %>% 
+  select(year, diff_log_gdp_natl) %>% 
+  distinct %>% 
+  lm(diff_log_gdp_natl ~ 1, data = .) %>% 
+  .$coefficients %>% pluck(1)
+  
+county_trends = mines_restr %>% group_by(fips, state_name) %>% do(model = lm(diff_log_real_gdp_total ~ 1, data = .)) %>% ungroup 
+
+county_trends_controlled_natl = mines_restr %>% 
+  left_join(., gdp_annual, by = "year") %>% 
+  group_by(fips, state_name) %>% 
+  do(model = lm(diff_log_real_gdp_total ~ 1 + diff_log_gdp_natl, data = .)) %>% 
+  ungroup 
+
+
+county_trends_controlled_state = mines_restr %>% 
+  left_join(., mines_state, by = c("year", "state_name")) %>% 
+  group_by(fips, state_name) %>% 
+  do(model = lm(diff_log_real_gdp_total.x ~ 1 + diff_log_real_gdp_total.y, data = .)) %>% 
+  ungroup 
+
+state_trends = mines_state %>% group_by(state_name) %>% do(model = lm(diff_log_real_gdp_total ~ 1, data = .)) %>% ungroup
+
+state_trends_controlled_natl = mines_state %>% 
+  left_join(., gdp_annual, by = "year") %>% 
+  group_by(state_name) %>% 
+  do(model = lm(diff_log_real_gdp_total ~ 1 + diff_log_gdp_natl, data = .)) %>% 
+  ungroup
+
+natl_trend = gdp_annual %>% do(model = lm(diff_log_gdp_natl ~ 1, data = .)) %>% pull(model) %>% first %>% .$coefficients %>% pluck(1)
+
+county_trends <- county_trends %>% 
+  rename("trend" = model) %>% 
+  left_join(., county_trends_controlled_natl, by = c('fips', 'state_name')) %>% 
+  rename("trend_cont_natl" = model) %>% 
+  left_join(., county_trends_controlled_state, by = c('fips', 'state_name')) %>% 
+  rename("trend_cont_state" = model)
+
+
+state_trends <- state_trends %>%
+  rename("trend" = model) %>%
+  left_join(., state_trends_controlled_natl, by = c('state_name')) %>%
+  rename("trend_cont_natl" = model)
+
+
+county_coefs <- tibble()
+for(k in 1:nrow(county_trends)){
+  s <- county_trends %>% slice(k) %>% pull(fips)
+  st <- county_trends %>% slice(k) %>% pull(state_name)
+  t <- county_trends %>% slice(k) %>% 
+    pull(trend) %>% first %>% .$coefficients %>% pluck(1) 
+  t_n <- county_trends %>% slice(k) %>% 
+    pull(trend_cont_natl) %>% first %>% .$coefficients %>% pluck(1) 
+  t_s <- county_trends %>% slice(k) %>% 
+    pull(trend_cont_state) %>% first %>% .$coefficients %>% pluck(1)
+  
+  county_coefs <- rbind(county_coefs, c(s,st, t, t_n, t_s))
+}
+
+colnames(county_coefs) <- names(county_trends)
+county_coefs <- county_coefs %>% mutate(across(c(3:5), ~as.numeric(.)))
+
+rm(county_trends)
+rm(county_trends_controlled_natl)
+rm(county_trends_controlled_state)
+
+
+```
+
+```{r, echo = FALSE, cache = TRUE}
+
+county_trends_pc = mines_restr %>% 
+  group_by(fips, state_name) %>% 
+  do(model = lm(diff_log_real_gdp_total_pc ~ 1, data = .)) %>% ungroup
+
+county_trends_controlled_natl_pc = mines_restr %>% 
+  left_join(., gdp_annual, by = "year") %>% 
+  group_by(fips, state_name) %>% 
+  do(model = lm(diff_log_real_gdp_total_pc ~ 1 + diff_log_gdp_natl_pc, data = .)) %>% 
+  ungroup 
+
+county_trends_controlled_state_pc = mines_restr %>% 
+  left_join(., mines_state, by = c("year", "state_name")) %>% 
+  group_by(fips, state_name) %>% 
+  do(model = lm(diff_log_real_gdp_total_pc.x ~ 1 + diff_log_real_gdp_total_pc.y, data = .)) %>% 
+  ungroup 
+
+state_trends_pc = mines_state %>% 
+  group_by(state_name) %>% 
+  do(model = lm(diff_log_real_gdp_total_pc ~ 1, data = .)) %>% 
+  ungroup
+
+state_trends_controlled_natl_pc = mines_state %>%
+  left_join(., gdp_annual, by = "year") %>% 
+  group_by(state_name) %>% 
+  do(model = lm(diff_log_real_gdp_total_pc ~ 1 + diff_log_gdp_natl_pc, data = .)) %>% 
+  ungroup
+
+natl_trend_pc = gdp_annual %>% 
+  select(year, diff_log_gdp_natl_pc) %>% 
+  distinct %>% do(model = lm(diff_log_gdp_natl_pc ~ 1, data = .)) %>% 
+  pull(model) %>% first %>% .$coefficients %>% pluck(1)
+
+county_trends_pc <- county_trends_pc %>% 
+  rename("trend_pc" = model) %>% 
+  left_join(., county_trends_controlled_natl_pc, by = c('fips', 'state_name')) %>% 
+  rename("trend_cont_natl_pc" = model) %>% 
+  left_join(., county_trends_controlled_state_pc, by = c('fips', 'state_name')) %>% 
+  rename("trend_cont_state_pc" = model)
+
+county_coefs_pc <- tibble()
+for(k in 1:nrow(county_trends_pc)){
+  s <- county_trends_pc %>% slice(k) %>% pull(fips)
+  st <- county_trends_pc %>% slice(k) %>% pull(state_name)
+  t <- county_trends_pc %>% slice(k) %>% 
+    pull(trend_pc) %>% first %>% .$coefficients %>% pluck(1) 
+  t_n <- county_trends_pc %>% slice(k) %>% 
+    pull(trend_cont_natl_pc) %>% first %>% .$coefficients %>% pluck(1) 
+  t_s <- county_trends_pc %>% slice(k) %>% 
+    pull(trend_cont_state_pc) %>% first %>% .$coefficients %>% pluck(1)
+  
+  county_coefs_pc <- rbind(county_coefs_pc, c(s,st, t, t_n, t_s))
+}
+
+colnames(county_coefs_pc) <- names(county_trends_pc)
+county_coefs_pc <- county_coefs_pc %>% mutate(across(c(3:5), ~as.numeric(.)))
+
+county_coefs_all <- county_coefs %>% 
+  left_join(county_coefs_pc, by = c("fips", "state_name"))
+
+
+state_trends_pc <- state_trends_pc %>%
+  rename("trend_pc" = model) %>%
+  left_join(., state_trends_controlled_natl_pc, by = c('state_name')) %>%
+  rename("trend_cont_natl_pc" = model)
+
+
+rm(county_trends_pc)
+rm(county_trends_controlled_natl_pc)
+rm(county_trends_controlled_state_pc)
+rm(state_trends_controlled_natl_pc)
+
+
+```
+
+```{r, echo = FALSE, cache = TRUE, fig.height = 10}
+
+# tplot <- county_coefs_all %>% 
+#   select(-contains("pc")) %>% 
+#   pivot_longer(cols = contains("trend")) %>% 
+#   ggplot() +
+#   geom_histogram(aes(x = value), bins = 100, fill = "darkgreen", alpha = 0.7) +
+#   geom_vline(aes(xintercept = 0), colour = "grey", linetype = "dotted") +
+#   geom_vline(aes(xintercept = natl_trend), colour = "red", linetype = "dashed") +
+#   theme_bw() +
+#   facet_wrap(factor(name,levels=c("trend", "trend_cont_state", "trend_cont_natl"), labels = c("Trend in GDP", "Trend in GDP Controlled for State Trends", "Trend in GDP Controlled for National Trends")) ~ ., ncol = 1) +
+#     theme(legend.position = "none") +
+#   labs(x = "Linear trend in Real GDP", y = "No. of Counties")
+
+county_coefs_all %>% 
+  pivot_longer(cols = contains("pc")) %>% 
+  ggplot() +
+  geom_histogram(aes(x = value), bins = 100, fill = "purple") +
+  geom_vline(aes(xintercept = 0), colour = "grey", linetype = "dotted") +
+  geom_vline(aes(xintercept = natl_trend_pc), colour = "red", linetype = "dashed") +
+  theme_bw() +
+  facet_wrap(factor(name,levels=c("trend_pc", "trend_cont_state_pc", "trend_cont_natl_pc"), labels = c("Trend in PC GDP", "Trend in PC GDP Controlled for State Trends", "Trend in PC GDP Controlled for National Trends")) ~ ., ncol = 1) +
+  theme(legend.position = "none") +
+  labs(x = "Linear trend in Real GDP PC", y = "No. of Counties")
+
+
+```
+
+```{r, echo = FALSE, cache = TRUE, fig.height = 14}
+library(ggbrain)
+
+# Education Expenditure
+trend_plot_pc <- plot_usmap(data = county_coefs_all, values = "trend_pc", regions = "counties", col = "gray90", linewidth = 0.01, exclude = c("AK", "HI")) +
+scale_fill_gradient2(na.value = "grey98", midpoint = 0) +
+  #scale_fill_distiller(colours=c(bl,"white", re), name = "", direction = 1, na.value = "gray90", limits = c(-1, 1)) +
+    theme(panel.background = element_rect(color = "white", fill = "white"),
+        plot.title = element_text(face = "bold"), legend.background=element_blank()) +
+    labs(title = "County-level Trend in Real GDP PC")
+
+# Education Expenditure
+trend_natl_plot_pc <- plot_usmap(data = county_coefs_all, values = "trend_cont_natl_pc", regions = "counties", col = "gray90", linewidth = 0.01, exclude = c("AK", "HI")) +
+scale_fill_gradient2(na.value = "grey98", midpoint = 0) +
+  #scale_fill_distiller(colours=c(bl,"white", re), name = "", direction = 1, na.value = "gray90", limits = c(-1, 1)) +
+    theme(panel.background = element_rect(color = "white", fill = "white"),
+        plot.title = element_text(face = "bold"), legend.background=element_blank()) +
+    labs(title = "County-level Trend in Real GDP PC",
+       subtitle = "Controlling for National Level GDP PC")
+
+# Education Expenditure
+trend_state_plot_pc <- plot_usmap(data = county_coefs_all, values = "trend_cont_state_pc", regions = "counties", col = "gray90", linewidth = 0.01, exclude = c("AK", "HI")) +
+scale_fill_gradient2(na.value = "grey98", midpoint = 0) + 
+  #scale_fill_distiller(colours=c(bl,"white", re), name = "", direction = 1, na.value = "gray90", limits = c(-1, 1)) +
+    theme(panel.background = element_rect(color = "white", fill = "white"),
+        plot.title = element_text(face = "bold"), legend.background=element_blank()) +
+    labs(title = "County-level Trend in Real GDP PC",
+       subtitle = "Controlling for State Level GDP PC")
+
+trend_plot_pc / trend_state_plot_pc / trend_natl_plot_pc
+
+```
+
+```{r, echo = FALSE, cache = TRUE}
+
+state_coefs <- tibble()
+
+for(k in 1:nrow(state_trends)){
+  s <- state_trends %>% slice(k) %>% pull(state_name)
+
+  t <- state_trends %>% slice(k) %>%
+    pull(trend) %>% first %>% .$coefficients %>% pluck(1)
+
+  t_n <- state_trends %>% slice(k) %>%
+    pull(trend_cont_natl) %>% first %>% .$coefficients %>% pluck(1)
+
+  state_coefs <- rbind(state_coefs, c(s,t, t_n))
+}
+
+colnames(state_coefs) <- names(state_trends)
+state_coefs %>%
+  mutate(across(contains("trend"), as.numeric)) %>% 
+  tibble %>% 
+  pivot_longer(!state_name) %>% 
+  ggplot()+
+  geom_histogram(aes(x = value, fill = name), bins = 15, position = "identity", alpha  = 0.7) +
+  geom_vline(aes(xintercept = 0), color = "magenta", linetype = "dotted") +
+  scale_fill_brewer(palette = "Set2") +
+  labs(title = "Histogram of State-level Trend Coefficient: (log) Real GDP")
+
+```
+
+### Outliers
+
+::: panel-tabset
+#### Negative
+
+```{r, echo = FALSE}
+
+# Outliers
+neg_coefs <- mute_outliers(county_ed_coefs, "trend_cont_natl") %>% 
+  filter(var_muted != trend_cont_natl & var_muted < 0) %>% 
+  pull(fips) %>% unique
+
+mines_restr %>%
+  filter(fips %in% neg_coefs) %>%
+  select(fips, year, log_real_gdp_priv_ind_pc, log_real_Property_Tax_pp) %>% 
+  pivot_longer(!c(fips, year)) %>% 
+  ggplot(aes(x = year, y = value, color = name)) +
+  geom_line() +
+  facet_wrap(~fips, scales = "free")
+
+```
+
+#### Positive
+
+```{r, echo = FALSE}
+
+# Outliers
+
+pos_coefs <- mute_outliers(county_coefs_all, "trend_cont_natl") %>% 
+  filter(var_muted != trend_cont_natl & var_muted > 0) %>% 
+  pull(fips) %>% unique
+
+mines_restr %>%
+  filter(fips %in% pos_coefs) %>%
+  select(fips, year, log_real_gdp_priv_ind_pc, log_real_Property_Tax_pp) %>% 
+  pivot_longer(!c(fips, year)) %>% 
+  ggplot(aes(x = year, y = value, color = name)) +
+  geom_line() +
+  facet_wrap(~fips, scales = "free")
+
+
+```
+:::
+:::
+:::
+
+# Progress on Jennie's Suggestion
+
+1.  National data on GDP, UER, (and poverty)
+
+```{r, echo = FALSE, cache = TRUE}
+
+macro_natl %>% 
+  select(-FD_UNRATE, -contains("GDPC1")) %>%
+  mutate(GDP = GDP/10,
+         UNRATE = UNRATE*100) %>%
+  pivot_longer(cols = c(UNRATE, GDP, FD_GDP)) %>%
+  filter(!is.na(value)) %>% 
+  ggplot() +
+  geom_line(aes(x = DATE, y = value)) +
+  facet_wrap(~name, ncol = 1, scales = "free") +
+  theme_minimal() +
+  scale_x_date(limits = as.Date(c('2000-01-01','2022-01-01')))
+  
+```
+
+```{r, echo = FALSE}
+
+# library(covFactorModel)
+# iX <- mines_restr %>% 
+#   select(fips, year, real_gdp_total) %>% 
+#   pivot_wider(names_from = "fips", values_from = "real_gdp_total") %>% 
+#   mutate(year=as_date(year))
+# 
+# z <- read.zoo(iX, format = "%Y/%m/%d")
+# x <- as.xts(z)
+# 
+# X <- xts(iX, order.by = as_date(iX$year))
+# natl_gdp <- xts(gdp_annual[,-1], order.by=as_date(gdp_annual[,1]))
+# 
+# factor_model <- factorModel(xts(iX, order.by = as_date(iX$year)), type = "M", econ_fact = natl_gdp)
+# cbind(alpha = factor_model$alpha, beta = factor_model$beta)
+
+```
+
+2.  State data on GDP, UER, and poverty
+
+3.  Extract trends of state and national data
+
+```{r, echo = FALSE, cache = TRUE}
+
+county_gdp <- readRDS(here("data/temp/gdp_controls.RDS")) %>%
+  mutate(across(contains("mining"), ~ifelse(is.na(.), 0, .))) %>%
+  select(year, fips, real_gdp_total, real_gdp_priv_ind)
+
+# county_gdp %>%
+#   group_by(fips) %>%
+#   mutate(across(c(real_gdp_total, real_gdp_priv_ind), list(ma5 = ~rollmean(., 5, align = 'right', fill = NA),
+#                                                            ma3 = ~rollmean(., 3, align = 'right', fill = NA),
+#                                                            ma2 = ~rollmean(., 2, align = 'right', fill = NA)),
+#          .names = "{.fn}_{.col}"))
+
+
+```
+
+4.  Deviations at county level from national and state-level trends
+
+5.  Plot deviations
+
+6.  Saturation to find structural breaks in these deviations
+
+Result: UE, GDP, and Poverty gaps
+
+7.  PCA on those three gaps
+
+8.  Retain index from PCA
+
+9.  Step break in index
+
+10. Line up with any notable events?
+
+11. Place "gaps" in a panel structure for break detection
+
+12. Autocorrelation plot to test no residual autocorrelation in model above with PCA indices.
+
+```{r, echo = FALSE, cache = TRUE}
+
+county_gdp %>% 
+  ggplot() 
+
+county_gdp %>% 
+  ggplot() 
+
+county_gdp %>% 
+  ggplot() 
+
+county_gdp %>% 
+  ggplot() 
+
+```
+
+## Supplementary Materials
+
+### Cointegration testing
+
+Suggestions from Jennie:
+
+Engle-Granger Test - bivariate scenario
+
+Johanson Test - multivariate setting \[GDP, Property Taxes, Ed. Spending\]
 
 ### Autocorrelation
-```{r}
 
-state_list <- unique(state_lev$state)
+First-differences
+
+```{r, echo = FALSE, cache = TRUE}
+
+state_list <- unique(mines_state$state_name)
 
 acf_list <- list()
-for(s in 1:length(state_list)){
-  ps <- state_lev %>% 
-    filter(state == state_list[s]) %>% 
-    pull(diff_real_Elem_Educ_Total_Exp) %>% 
-    acf(., na.action = na.pass, plot = FALSE)
 
+for(s in 1:length(state_list)){
+
+  ps <- mines_state %>%
+    filter(state_name == state_list[s]) %>%
+    pull(diff_real_gdp_priv_ind) %>%
+    acf(., na.action = na.pass, plot = FALSE)
   acf_list[[s]] <- ps
+
 }
 
 acf_list[[1]] %>% plot
@@ -1719,127 +2042,258 @@ acf_list[[30]] %>% plot
 
 ```
 
-## Second step (Education):
-- Autocorrelation (Education only) (_)
-- Correlation plots (X)
-- Correlation plot of Education and GDP (_)
-- Are GDP and Education Expenditure cointegrating (or do they exhibit a decoupling?) (_)
+-   Autocorrelation (Education only) (X)
 
+-   Correlation plots (X)
+
+-   Cross-correlation plot of Education and GDP (X)
+
+-   Are GDP and Education Expenditure cointegrating (or do they exhibit a decoupling?) (\_)
+
+### Autocorrelation
+
+First-differences
+
+```{r, echo = FALSE, cache = TRUE}
+
+state_list <- unique(mines_state$state_name)
+
+acf_list <- list()
+
+for(s in 1:length(state_list)){
+  ps <- mines_state %>%
+    filter(state_name == state_list[s]) %>%
+    pull(diff_real_Elem_Educ_Total_Exp) %>%
+    acf(., na.action = na.pass, plot = FALSE)
+  acf_list[[s]] <- ps
+
+}
+
+acf_list[[1]] %>% plot
+acf_list[[10]] %>% plot
+acf_list[[15]] %>% plot
+acf_list[[30]] %>% plot
+
+```
 
 ### Correlation Plots (Education and GDP)
-```{r}
 
-ggplot(state_lev, 
-       aes(x= year))+
-  geom_line(aes(y = real_Elem_Educ_Total_Exp, colour = 'red'))+
-  geom_line(aes(y= real_gdp_priv_ind/20, colour = 'blue')) +
-  facet_wrap(~state, scales = "free") +
-  scale_color_discrete(name="",
-                         breaks=c("red", "blue"),
-                        labels = c("Elem. Educ. Exp.", "Priv. Ind. GDP")) +
-  theme(axis.text.y = element_blank(),
-        axis.ticks.y = element_blank(), 
-        legend.position = "bottom") +
-  labs(title = "Plot of Elementary Education Expenditure and Private Industry GDP",
-       subtitle = "in real USD by state",
-       y = NULL)
+```{r, fig.height = 10, echo = FALSE, cache = TRUE}
 
-ggplot(state_lev, 
-       aes(x= real_gdp_priv_ind, 
+ggplot(mines_state,
+       aes(x= real_gdp_priv_ind,
            y= real_Elem_Educ_Total_Exp))+
   geom_point()+
-  facet_wrap(~state, scales = "free") +
+  facet_wrap(~state_name, scales = "free") +
   geom_smooth(fill="blue", alpha=0.1)+
   geom_smooth(method='lm', formula= y~x, se=FALSE, col="red",lty=2)+
-  theme(axis.text.y = element_blank(), 
+  theme(axis.text.y = element_blank(),
         axis.ticks.y = element_blank(),
-        axis.text.x = element_blank(), 
+        axis.text.x = element_blank(),
         axis.ticks.x = element_blank())+
     labs(title = "Correlation Plot of Elementary Ed. Expenditure and Private Industry GDP",
        subtitle = "in real USD by state",
        y = "Elem. Ed. Exp",
        x = "Priv. Ind. GDP")
 
+```
 
-ggplot(state_lev, 
+### Cross-correlation of Educ Exp and Priv. Industry GDP
+
+```{r, echo = FALSE, cache = TRUE}
+
+for(s in 1:length(state_list[1:6])){
+  gdp_var <- mines_state %>%
+    filter(year != 2001) %>% 
+    filter(state_name == state_list[s]) %>%
+    pull(diff_real_gdp_priv_ind)
+  
+  elem_ed_var <- mines_state %>%
+    filter(year != 2001) %>% 
+    filter(state_name == state_list[s]) %>%
+    pull(diff_real_Elem_Educ_Total_Exp)
+  
+  cor(gdp_var, elem_ed_var)
+
+  ccf(as.numeric(gdp_var), as.numeric(elem_ed_var)) %>% print
+  cor(as.numeric(gdp_var), as.numeric(elem_ed_var), method = c("pearson", "kendall", "spearman"))
+  cor.test(as.numeric(gdp_var), as.numeric(elem_ed_var), method=c("pearson", "kendall", "spearman"))
+  
+}
+
+#aTSA::coint.test(Deathts, VAXts, d = 1, nlag = 2, output = TRUE)
+
+# cor(x, y, method = c("pearson", "kendall", "spearman"))
+# cor.test(x, y, method=c("pearson", "kendall", "spearman"))
+
+```
+### Relationships Between the Variables
+
+::: panel-tabset
+#### Elem. Ed. Exp. and Priv. Ind. GDP
+
+::: panel-tabset
+##### Levels
+
+At a state level, we see that elementary ed expenditure does somewhat follow the shape of private industry GDP, with significant exceptions (ex. Michigan).
+
+```{r, fig.height = 10, echo = FALSE, cache = TRUE}
+
+ggplot(mines_state,
        aes(x= year))+
-  geom_line(aes(y = real_Property_Tax, colour = 'red'))+
-  geom_line(aes(y= real_gdp_priv_ind/100, colour = 'blue')) +
-  facet_wrap(~state, scales = "free") +
+
+  geom_line(aes(y = real_Elem_Educ_Total_Exp, colour = 'red'))+
+  geom_line(aes(y= real_gdp_priv_ind/20, colour = 'blue')) +
+  facet_wrap(~state_name, scales = "free") +
+  
   scale_color_discrete(name="",
                          breaks=c("red", "blue"),
-                        labels = c("Property Tax", "Priv. Ind. GDP")) +
+                        labels = c("Elem. Educ. Exp.", "Priv. Ind. GDP")) +
+
   theme(axis.text.y = element_blank(),
-        axis.ticks.y = element_blank(), 
+        axis.ticks.y = element_blank(),
         legend.position = "bottom") +
+
+  labs(title = "Plot of Elementary Education Expenditure and Private Industry GDP",
+       subtitle = "in real USD by state",
+       y = NULL)
+
+```
+
+##### Growth Rates
+
+```{r, fig.height = 10, echo = FALSE, cache = TRUE}
+
+ggplot(filter(mines_state, year > 2001),
+       aes(x= year))+
+
+  geom_line(aes(y = diff_log_real_Elem_Educ_Total_Exp, colour = 'red'))+
+  geom_line(aes(y= diff_log_real_gdp_priv_ind, colour = 'blue')) +
+  facet_wrap(~state_name, scales = "free") +
+  
+  scale_color_discrete(name="",
+                         breaks=c("red", "blue"),
+                        labels = c("Elem. Educ. Exp.", "Priv. Ind. GDP")) +
+
+  theme(axis.text.y = element_blank(),
+        axis.ticks.y = element_blank(),
+        legend.position = "bottom") +
+
+  labs(title = "Plot of Elementary Education Expenditure and Private Industry GDP",
+       subtitle = "in growth rates real USD by state",
+       y = NULL)
+
+```
+:::
+
+#### Elem. Ed. Exp. and Property Tax
+
+::: panel-tabset
+##### Levels
+
+Elementary ed expenditure follows the behaviour of property taxes in most states, with very few exceptions...
+
+```{r, fig.height = 10, echo = FALSE, cache = TRUE}
+
+ggplot(mines_state,
+       aes(x= year))+
+  geom_line(aes(y = real_Property_Tax, colour = 'red'))+
+  geom_line(aes(y= real_Elem_Educ_Total_Exp/2, colour = 'blue')) +
+  facet_wrap(~state_name, scales = "free") +
+  
+  scale_color_discrete(name="",
+                         breaks=c("red", "blue"),
+                        labels = c("Property Taxes", "Elem. Educ. Exp.")) +
+
+  theme(axis.text.y = element_blank(),
+        axis.ticks.y = element_blank(),
+        legend.position = "bottom") +
+
+  labs(title = "Plot of Elementary Education and Property Taxes",
+       subtitle = "in real USD by state",
+       y = NULL)
+
+```
+
+##### FDs
+
+```{r, fig.height = 10, echo = FALSE, cache = TRUE}
+
+ggplot(filter(mines_state, year > 2001),
+       aes(x= year))+
+
+  geom_line(aes(y = diff_log_real_Property_Tax, colour = 'red'))+
+  geom_line(aes(y = diff_log_real_Elem_Educ_Total_Exp, colour = 'blue')) +
+  facet_wrap(~state_name, scales = "free") +
+  
+  scale_color_discrete(name="",
+                         breaks=c("red", "blue"),
+                        labels = c("(fd) Property Taxes", "(fd) Elem. Educ. Exp.")) +
+
+  theme(axis.text.y = element_blank(),
+        axis.ticks.y = element_blank(),
+        legend.position = "bottom") +
+
+  labs(title = "Plot of Elementary Education and Property Taxes",
+       subtitle = "in growth rates real USD by state",
+       y = NULL)
+
+```
+:::
+
+#### Property Tax and Priv. Ind. GDP
+
+::: panel-tabset
+##### Levels
+
+Property taxes collected do also seem to grow in line with private industry GDP (all in real values) with a few notable exceptions: Delaware, Idaho, Indiana, Kansas, Minnesota, North Dakota.
+
+```{r, fig.height = 10, echo = FALSE, cache = TRUE}
+
+ggplot(mines_state,
+       aes(x= year))+
+
+  geom_line(aes(y = real_Property_Tax, colour = 'red'))+
+  geom_line(aes(y= real_gdp_priv_ind/100, colour = 'blue')) +
+  facet_wrap(~state_name, scales = "free") +
+  
+  scale_color_discrete(name="",
+                         breaks=c("red", "blue"),
+                        labels = c("Property Taxes", "Priv. Ind. GDP")) +
+
+  theme(axis.text.y = element_blank(),
+        axis.ticks.y = element_blank(),
+        legend.position = "bottom") +
+
   labs(title = "Plot of Property Tax and Private Industry GDP",
        subtitle = "in real USD by state",
        y = NULL)
 
-ggplot(state_lev, 
-       aes(x= real_Property_Tax, 
-           y= real_gdp_priv_ind))+
-  geom_point()+
-  facet_wrap(~state, scales = "free") +
-  geom_smooth(fill="blue", alpha=0.1)+
-  geom_smooth(method='lm', formula= y~x, se=FALSE, col="red",lty=2)+
-  theme(axis.text.y = element_blank(), 
-        axis.ticks.y = element_blank(),
-        axis.text.x = element_blank(), 
-        axis.ticks.x = element_blank())+
-    labs(title = "Correlation Plot of Property Taxes and Private Industry GDP",
-       subtitle = "in real USD by state",
-       y = "Priv. Ind. GDP",
-       x = "Property Taxes")
+```
 
-ggplot(state_lev, 
-       aes(x = year))+
-  geom_line(aes(y = real_Property_Tax, colour = 'red'))+
-  geom_line(aes(y= real_Elem_Educ_Total_Exp/5, colour = 'blue')) +
-  facet_wrap(~state, scales = "free") +
+##### FDs
+
+```{r, fig.height = 10, echo = FALSE, cache = TRUE}
+
+ggplot(filter(mines_state, year > 2001),
+       aes(x= year))+
+
+  geom_line(aes(y = diff_log_real_Property_Tax, colour = 'red'))+
+  geom_line(aes(y= diff_log_real_gdp_priv_ind, colour = 'blue')) +
+  facet_wrap(~state_name, scales = "free") +
+  
   scale_color_discrete(name="",
                          breaks=c("red", "blue"),
-                        labels = c("Property Tax", "Elem. Ed. Exp")) +
+                        labels = c("Property Taxes", "Priv. Ind. GDP")) +
+
   theme(axis.text.y = element_blank(),
-        axis.ticks.y = element_blank(), 
+        axis.ticks.y = element_blank(),
         legend.position = "bottom") +
-  labs(title = "Plot of Property Tax and Elem. Ed. Exp.",
-       subtitle = "in real USD by state",
+
+  labs(title = "Plot of Property Tax and Private Industry GDP",
+       subtitle = "in growth rates real USD by state",
        y = NULL)
 
-ggplot(state_lev, 
-       aes(x= real_Property_Tax, 
-           y= real_Elem_Educ_Total_Exp))+
-  geom_point()+
-  facet_wrap(~state, scales = "free") +
-  geom_smooth(fill="blue", alpha=0.1)+
-  geom_smooth(method='lm', formula= y~x, se=FALSE, col="red",lty=2)+
-  theme(axis.text.y = element_blank(), 
-        axis.ticks.y = element_blank(),
-        axis.text.x = element_blank(), 
-        axis.ticks.x = element_blank())+
-    labs(title = "Correlation Plot of Elem. Ed. Exp and Property Taxes",
-       subtitle = "in real USD by state",
-       y = "Elem. Ed. Exp.",
-       x = "Property Taxes")
-
 ```
-
-
-```{r}
-
-for(fip in unique(mines_restr$fips)){
-  gdp_var <- %>% %>% 
-    filter(fips == fip) %>% 
-    pull(real_gdp_priv_ind)
-  
-  elem_ed_var <- mines_restr %>% 
-    filter(fips == fip) %>% 
-    pull(real_Elem_Educ_Total_Exp)
-    
-  cor(gdp_var, elem_ed_var)
-  ccf(as.numeric(gdp_var), as.numeric(elem_ed_var)) %>% print
-}
-
-```
-
+:::
+:::
