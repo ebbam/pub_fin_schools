@@ -83,7 +83,7 @@ conflict_prefer_all("dplyr", quiet = TRUE)
 
 setFixest_etable(fitstat = ~ . + ivf1 + ivf1.p + ivf2 + ivf2.p + wh + wh.p + ivwaldall + ivwaldall.p, se.below = TRUE)
 
-unit_id = "cz_id"
+unit_id = "fips"
 
 ```
 
@@ -105,7 +105,7 @@ if(unit_id == "cz_id"){
   print(paste0("Running analysis on CZs (", unit_id, ")."))
   mines_cz <- readRDS(here("data/out/cz_dataset.RDS")) %>% 
   # rename all variables that contain monetary values to exclude "real" - all values in this dataset DO have real values!!! see school_dist_cleaning.Rmd
-  rename_with(~gsub("real_", "", .x, fixed = TRUE)) %>% 
+  #rename_with(~gsub("real_", "", .x, fixed = TRUE)) %>% 
     mutate(unit = get(unit_id)) %>% 
     rename(state = main_state)
   
@@ -118,7 +118,7 @@ if(unit_id == "cz_id"){
     mutate(unit = get(unit_id)) %>% 
       group_by(unit) %>%
     arrange(unit, year) %>% 
-  mutate(across(c(starts_with("log_gdp_total") | starts_with("log_gdp_priv_ind")), ~.- dplyr::lag(., 1), .names = "diff_{.col}")) %>% 
+  mutate(across(c(starts_with("log_real_gdp_total") | starts_with("log_real_gdp_priv_ind")), ~.- dplyr::lag(., 1), .names = "diff_{.col}")) %>% 
   ungroup 
   
     ss <- readRDS(here("data/temp/shift_shares_base_01_05_11.RDS")) %>% 
@@ -128,10 +128,10 @@ if(unit_id == "cz_id"){
 
 mean_df <- mines_cz %>% 
   group_by(year) %>%
-             summarise(Total_Educ_Total_Exp = mean(Total_Educ_Total_Exp, na.rm = TRUE),
-                       Total_Educ_Total_Exp_pp = mean(Total_Educ_Total_Exp_pp, na.rm = TRUE),
-                       log_Total_Educ_Total_Exp = mean(log_Total_Educ_Total_Exp, na.rm = TRUE),
-                       log_Total_Educ_Total_Exp_pp = mean(log_Total_Educ_Total_Exp_pp, na.rm = TRUE))
+             summarise(real_Total_Educ_Total_Exp = mean(real_Total_Educ_Total_Exp, na.rm = TRUE),
+                       real_Total_Educ_Total_Exp_pp = mean(real_Total_Educ_Total_Exp_pp, na.rm = TRUE),
+                       real_log_Total_Educ_Total_Exp = mean(log_real_Total_Educ_Total_Exp, na.rm = TRUE),
+                       real_log_Total_Educ_Total_Exp_pp = mean(log_real_Total_Educ_Total_Exp_pp, na.rm = TRUE))
 
 ```
 ## Summary statistics with coal production
@@ -144,11 +144,11 @@ All dollar values are reported in thousands.
 vars <- c("Property_Tax", "Total_IG_Revenue", "Total_Fed_IG_Revenue", "Total_State_IG_Revenue", "Total_Educ_Total_Exp", "Elem_Educ_Total_Exp") # Total_Revenu
 
 mines_cz %>%
-  select(Enrollment, pop_total, Elem_Educ_Total_Exp_pp, Property_Tax_pp, Total_IG_Revenue_pp, Total_Fed_IG_Revenue_pp, 
-         Total_State_IG_Revenue_pp, gdp_total_pc, gdp_priv_ind_pc, gdp_o_g_mining_quarr_21_pc,
-         Elem_Educ_Total_Exp, Property_Tax, Total_IG_Revenue, Total_Fed_IG_Revenue, 
-         Total_State_IG_Revenue, gdp_total, gdp_priv_ind, gdp_o_g_mining_quarr_21, total_active_n, total_active_prod) %>% 
-  mutate(across(c(gdp_total, gdp_priv_ind, gdp_o_g_mining_quarr_21, gdp_total_pc, gdp_priv_ind_pc, gdp_o_g_mining_quarr_21_pc))) %>%  # gdp_govt, 
+  select(Enrollment, pop_total, real_Elem_Educ_Total_Exp_pp, real_Property_Tax_pp, real_Total_IG_Revenue_pp, real_Total_Fed_IG_Revenue_pp, 
+         real_Total_State_IG_Revenue_pp, real_gdp_total_pc, real_gdp_priv_ind_pc, real_gdp_o_g_mining_quarr_21_pc,
+         real_Elem_Educ_Total_Exp, real_Property_Tax, real_Total_IG_Revenue, real_Total_Fed_IG_Revenue, 
+         real_Total_State_IG_Revenue, real_gdp_total, real_gdp_priv_ind, real_gdp_o_g_mining_quarr_21, total_active_n, total_active_prod) %>% 
+  mutate(across(c(real_gdp_total, real_gdp_priv_ind, real_gdp_o_g_mining_quarr_21, real_gdp_total_pc, real_gdp_priv_ind_pc, real_gdp_o_g_mining_quarr_21_pc))) %>%  # gdp_govt, 
           data.frame() %>%
           stargazer(digits = 0, digits.extra = 3, covariate.labels = c(
          "Enrollment",
@@ -320,10 +320,10 @@ What would be great is to be able to econometrically test when a commuting zone 
 
 state_lev <- mines_cz %>% 
   group_by(state, year) %>% 
-  summarise(across(c(gdp_priv_ind, gdp_total, pop_total), ~sum(., na.rm = TRUE))) %>% 
+  summarise(across(c(real_gdp_priv_ind, real_gdp_total, pop_total), ~sum(., na.rm = TRUE))) %>% 
   ungroup %>% 
-  mutate(gdp_priv_ind_pc = gdp_priv_ind/pop_total,
-         gdp_total_pc = gdp_total/pop_total,
+  mutate(real_gdp_priv_ind_pc = real_gdp_priv_ind/pop_total,
+         real_gdp_total_pc = real_gdp_total/pop_total,
          across(!c(state, year), ~log(. + 1), .names = "log_{.col}")) %>% 
   group_by(state) %>% 
   mutate(across(contains("log"), ~.- dplyr::lag(., 1), .names = "diff_{.col}")) %>% 
@@ -331,10 +331,10 @@ state_lev <- mines_cz %>%
 
 natl_lev <- mines_cz %>% 
   group_by(year) %>% 
-  summarise(across(c(gdp_priv_ind, gdp_total, pop_total), ~sum(., na.rm = TRUE))) %>% 
+  summarise(across(c(real_gdp_priv_ind, real_gdp_total, pop_total), ~sum(., na.rm = TRUE))) %>% 
   ungroup %>% 
-  mutate(gdp_priv_ind_pc = gdp_priv_ind/pop_total,
-         gdp_total_pc = gdp_total/pop_total,
+  mutate(real_gdp_priv_ind_pc = real_gdp_priv_ind/pop_total,
+         real_gdp_total_pc = real_gdp_total/pop_total,
          across(!c(year), ~log(. + 1), .names = "log_{.col}"),
          across(contains("log"), ~.- dplyr::lag(., 1), .names = "diff_{.col}"))
 
@@ -349,10 +349,10 @@ growth_rates <- mines_cz %>%
 
 ```{r, echo = FALSE, fig.height = 10, warning = FALSE}
 
-trend_forms <- c("trend" = "diff_log_gdp_total ~ diff_log_gdp_total_state + diff_log_gdp_total_natl", 
-                "trend_pc" = "diff_log_gdp_total_pc ~ diff_log_gdp_total_pc_state + diff_log_gdp_total_pc_natl")
-                # "trend_pc" = "diff_log_gdp_total_pc ~ diff_log_gdp_total_pc_state")
-                 #"trend_pc" = "diff_log_gdp_total_pc ~ diff_log_gdp_total_pc_natl")
+trend_forms <- c("trend" = "diff_log_real_gdp_total ~ diff_log_real_gdp_total_state + diff_log_real_gdp_total_natl", 
+                "trend_pc" = "diff_log_real_gdp_total_pc ~ diff_log_real_gdp_total_pc_state + diff_log_real_gdp_total_pc_natl")
+                # "trend_pc" = "diff_log_real_gdp_total_pc ~ diff_log_real_gdp_total_pc_state")
+                 #"trend_pc" = "diff_log_real_gdp_total_pc ~ diff_log_real_gdp_total_pc_natl")
 
 for(k in names(trend_forms)){
   # runs model of growth rate in gdp_total and gdp_total_pc conditional on state and national growth rates
@@ -553,11 +553,11 @@ As you can see in the scatterplot below, there is a somewhat non-linear relation
 
 mines_no_outliers <- mines_cz %>% 
   group_by(unit) %>% 
-  filter(!any(log_Elem_Educ_Total_Exp_pp > 10.25)) %>% 
+  filter(!any(log_real_Elem_Educ_Total_Exp_pp > 10.25)) %>% 
   ungroup
 
 mines_cz %>% 
-  ggplot(aes(x = log_Elem_Educ_Total_Exp_pp, y = log_Property_Tax_pp, colour = share_own_discrete)) +
+  ggplot(aes(x = log_real_Elem_Educ_Total_Exp_pp, y = log_real_Property_Tax_pp, colour = share_own_discrete)) +
   geom_jitter() +
     #geom_smooth(method=lm, colour = "black", linetype = "dashed") +
   labs(title = "Elem Education Expenditure pp vs Property Tax pp") +
@@ -717,7 +717,7 @@ ss_oil_gas_instruments <- c(
 
 ss_oil_gas_instruments_res <- list()
 for(ss in ss_oil_gas_instruments){
-  ss_oil_gas_instruments_res  <- append(paste0("log_Total_Educ_Total_Exp_pp ~ log_Total_State_IG_Revenue_pp + log_Total_Fed_IG_Revenue_pp | unit + year | log_Property_Tax_pp ~ ", ss), ss_oil_gas_instruments_res)
+  ss_oil_gas_instruments_res  <- append(paste0("log_real_Total_Educ_Total_Exp_pp ~ log_real_Total_State_IG_Revenue_pp + log_real_Total_Fed_IG_Revenue_pp | unit + year | log_real_Property_Tax_pp ~ ", ss), ss_oil_gas_instruments_res)
 } 
 
 run_model(ss_oil_gas_instruments_res, scaled_ss) %>% etable(headers = ss_oil_gas_instruments)
@@ -740,7 +740,7 @@ ss_ff_instruments <- c(
 
 ss_ff_instruments_res <- list()
 for(ss in ss_ff_instruments){
-  ss_ff_instruments_res  <- append(paste0("log_Total_Educ_Total_Exp_pp ~ log_Total_State_IG_Revenue_pp + log_Total_Fed_IG_Revenue_pp | unit + year | log_Property_Tax_pp ~ ", ss), ss_ff_instruments_res)
+  ss_ff_instruments_res  <- append(paste0("log_real_Total_Educ_Total_Exp_pp ~ log_real_Total_State_IG_Revenue_pp + log_real_Total_Fed_IG_Revenue_pp | unit + year | log_real_Property_Tax_pp ~ ", ss), ss_ff_instruments_res)
 } 
 
 run_model(ss_ff_instruments_res, scaled_ss) %>% etable(headers = ss_ff_instruments)
@@ -762,7 +762,7 @@ ss_extraction_instruments <- c(
 
 ss_extraction_instruments_res <- list()
 for(ss in ss_extraction_instruments){
-  ss_extraction_instruments_res  <- append(paste0("log_Total_Educ_Total_Exp_pp ~ log_Total_State_IG_Revenue_pp + log_Total_Fed_IG_Revenue_pp | unit + year | log_Property_Tax_pp ~ ", ss), ss_extraction_instruments_res)
+  ss_extraction_instruments_res  <- append(paste0("log_real_Total_Educ_Total_Exp_pp ~ log_real_Total_State_IG_Revenue_pp + log_real_Total_Fed_IG_Revenue_pp | unit + year | log_real_Property_Tax_pp ~ ", ss), ss_extraction_instruments_res)
 } 
 
 run_model(ss_extraction_instruments_res, scaled_ss) %>% etable(headers = ss_extraction_instruments)
@@ -796,7 +796,6 @@ This dataset includes data on large-scale installations of solar PV across count
 Source: https://energy.usgs.gov/uspvdb/data/
 
 ```{r, warnings = FALSE, echo = FALSE}
-
 
 spv_fips <- read.csv(here('data/raw/us_large_scale_solar_pv/uspvdbCSV/uspvdb_v2_0_20240801.csv')) %>% 
   tibble %>% 
@@ -844,90 +843,6 @@ run_model(solar_iv_models_pc, mines_solar) %>%
 
 ```
 
-<!-- ```{r, echo = FALSE, warnings = FALSE} -->
-<!-- mines_restr <- readRDS(here("data/out/regression_data_complete_fips.RDS"))  -->
-
-<!-- spv_fips <- spv_fips %>%  -->
-<!--   group_by(year, fips) %>%  -->
-<!--          summarise(across(c(p_area, p_cap_ac, p_cap_dc), ~sum(., na.rm = TRUE), .names = "pv_{.col}")) -->
-
-<!-- mines_fips_solar <- left_join(mines_restr, spv_fips, by = c("fips", "year")) %>%  -->
-<!--   group_by(fips) %>%  -->
-<!--   fill(pv_p_area, .direction = "down") %>%  -->
-<!--   fill(pv_p_cap_ac, .direction = "down") %>%  -->
-<!--   fill(pv_p_cap_dc, .direction = "down") %>%  -->
-<!--   ungroup %>%  -->
-<!--   mutate(across(c(pv_p_area, pv_p_cap_ac, pv_p_cap_dc), ~./pop_total, .names = "{.col}_pc")) -->
-
-<!-- solar_iv_models = c(log_Elem_Educ_Total_Exp_pp ~ log_Total_State_IG_Revenue_pp + log_Total_Fed_IG_Revenue_pp | fips + year | log_Property_Tax_pp ~ pv_p_area, -->
-<!--                        log_Elem_Educ_Total_Exp_pp ~ log_Total_State_IG_Revenue_pp + log_Total_Fed_IG_Revenue_pp | fips + year | log_Property_Tax_pp ~ pv_p_cap_ac, -->
-<!--                     log_Elem_Educ_Total_Exp_pp ~ log_Total_State_IG_Revenue_pp + log_Total_Fed_IG_Revenue_pp | fips + year | log_Property_Tax_pp ~ pv_p_cap_dc, -->
-<!--                        log_Elem_Educ_Total_Exp_pp ~ log_Total_State_IG_Revenue_pp + log_Total_Fed_IG_Revenue_pp | fips + year | log_gdp_total_pc ~ pv_p_area, -->
-<!--                        log_Elem_Educ_Total_Exp_pp ~ log_Total_State_IG_Revenue_pp + log_Total_Fed_IG_Revenue_pp | fips + year | log_gdp_total_pc ~ pv_p_cap_ac, -->
-<!--                     log_Elem_Educ_Total_Exp_pp ~ log_Total_State_IG_Revenue_pp + log_Total_Fed_IG_Revenue_pp | fips + year | log_gdp_total_pc ~ pv_p_cap_dc) -->
-
-<!-- solar_iv_models_pc = c(log_Elem_Educ_Total_Exp_pp ~ log_Total_State_IG_Revenue_pp + log_Total_Fed_IG_Revenue_pp | fips + year | log_Property_Tax_pp ~ pv_p_area_pc, -->
-<!--                     log_Elem_Educ_Total_Exp_pp ~ log_Total_State_IG_Revenue_pp + log_Total_Fed_IG_Revenue_pp | fips + year | log_Property_Tax_pp ~ pv_p_cap_ac_pc, -->
-<!--                     log_Elem_Educ_Total_Exp_pp ~ log_Total_State_IG_Revenue_pp + log_Total_Fed_IG_Revenue_pp | fips + year | log_Property_Tax_pp ~ pv_p_cap_dc_pc, -->
-<!--                     log_Elem_Educ_Total_Exp_pp ~ log_Total_State_IG_Revenue_pp + log_Total_Fed_IG_Revenue_pp | fips + year | log_gdp_total_pc ~ pv_p_area_pc, -->
-<!--                     log_Elem_Educ_Total_Exp_pp ~ log_Total_State_IG_Revenue_pp + log_Total_Fed_IG_Revenue_pp | fips + year | log_gdp_total_pc ~ pv_p_cap_ac_pc, -->
-<!--                     log_Elem_Educ_Total_Exp_pp ~ log_Total_State_IG_Revenue_pp + log_Total_Fed_IG_Revenue_pp | fips + year | log_gdp_total_pc ~ pv_p_cap_dc_pc) -->
-
-<!-- run_model_fips(solar_iv_models, mines_fips_solar) %>%  -->
-<!--   etable() -->
-
-<!-- run_model_fips(solar_iv_models_pc, mines_fips_solar) %>%  -->
-<!--   etable() -->
-
-<!-- ``` -->
-
-<!-- ```{r, warnings = FALSE, echo = FALSE} -->
-<!-- library(fipio) -->
-
-<!-- spv <- read.csv(here('data/raw/us_large_scale_solar_pv/uspvdbCSV/uspvdb_v2_0_20240801.csv')) %>%  -->
-<!--   tibble %>%  -->
-<!--   mutate(p_county = ifelse(p_state == "CA" & p_county == "San" & p_name == "Lockhart Solar PV II", "San Bernardino", p_county)) %>%  -->
-<!--   mutate(fips = as_fips(p_state, p_county), -->
-<!--          fips = case_when(fips == "12" & p_state == "FL" & p_county == "St Lucie" ~ "12111", -->
-<!--                 fips == "12" & p_state == "FL" & p_county == "Miami Dade" ~ "12086", -->
-<!--                 fips == "18" & p_state == "IN" & p_county == "St Joseph" ~ "18141", -->
-<!--                 fips == "24" & p_state == "MD" & p_county == "Queen Annes" ~ "24035",  -->
-<!--                 fips == "24" & p_state == "MD" & p_county == "Prince Georges" ~ "24033", -->
-<!--                 fips == "26" & p_state == "MI" & p_county == "St Joseph" ~ "26149", -->
-<!--                 fips == "35" & p_state == "NM" & p_county == "Dona Ana" ~ "35013", -->
-<!--                 fips == "36" & p_state == "NY" & p_county == "St Lawrence" ~ "36089", -->
-<!--                 fips == "51" & p_state == "VA" & p_county == "Chesapeake City" ~ "51550", -->
-<!--                 fips == "51" & p_state == "VA" & p_county == "Suffolk City" ~ "51800", -->
-<!--                 TRUE ~ fips), -->
-<!--          fips = case_when(!is.na(getfips[fips]) ~ getfips[fips], -->
-<!--                           TRUE ~ fips)) %>%  -->
-<!--     rename(year = p_year) %>%  -->
-<!--   group_by(fips) %>%  -->
-<!--   complete(case_id, year = 2000:2023, fill = list(NA)) %>%  -->
-<!--   left_join(., czs, by = c("fips"), multiple = "first") %>%  -->
-<!--   group_by(case_id) %>%  -->
-<!--   fill(p_area, .direction = "down") %>%  -->
-<!--   fill(p_cap_ac, .direction = "down") %>%  -->
-<!--   fill(p_cap_dc, .direction = "down") %>%  -->
-<!--   ungroup %>%  -->
-<!--   group_by(year, unit) %>%  -->
-<!--          summarise(across(c(p_area, p_cap_ac, p_cap_dc), ~sum(., na.rm = TRUE), .names = "pv_{.col}")) -->
-
-<!-- mines_cz_solar <- left_join(mines_cz, spv, by = c("unit", "year")) %>%  -->
-<!--   group_by(unit) %>%  -->
-<!--   fill(pv_p_area, .direction = "down") %>%  -->
-<!--   fill(pv_p_cap_ac, .direction = "down") %>%  -->
-<!--   fill(pv_p_cap_dc, .direction = "down") %>%  -->
-<!--   ungroup %>%  -->
-<!--   mutate(across(c(pv_p_area, pv_p_cap_ac, pv_p_cap_dc), ~./pop_total, .names = "{.col}_pc")) -->
-
-<!-- # run_model(solar_iv_models, mines_cz_solar) %>%  -->
-<!-- #   etable() -->
-
-<!-- run_model(solar_iv_models_pc, mines_cz_solar) %>%  -->
-<!--   etable() -->
-
-<!-- ``` -->
 
 ## Also interesting...
 ### Energy mix
