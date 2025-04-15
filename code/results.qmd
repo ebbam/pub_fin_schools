@@ -450,7 +450,7 @@ state_trends_dat %>%
 
 ```
 
-#### CZs
+#### Trend Lines
 
 ::: panel-tabset
 ```{r, echo = FALSE, results = 'asis', fig.height = 12}
@@ -466,38 +466,7 @@ temp_natl <- natl_trends_dat %>%
 temp_state <- state_trends_dat %>% 
   filter(year > 2001 & state != "ME") %>% 
   mutate(delta_ma3_log_real_Elem_Educ_Total_Exp_pp = ifelse(year == 2002, 0, delta_ma3_log_real_Elem_Educ_Total_Exp_pp))
-# 
-# ## CZ level trends by state with national trend reference line
-# for(k in names(select(temp_cz, contains('delta') & contains('log_real_Elem_Educ_Total_Exp_pp')))){
-#   cat('##### ', k, ' \n')
-#     p <- temp_cz %>% 
-#       filter(state != "ME") %>% 
-#       select(state, cz_id, year, k) %>% 
-#       pivot_longer(!c(state, year, cz_id)) %>% 
-#       ggplot(aes(x = year, y = value, colour = cz_id)) +
-#       geom_line() +
-#       geom_line(data = temp_natl, aes(x = year, y = get(k)), colour = "black", linetype = "dashed") +
-#       geom_line(data = temp_state, aes(x = year, y = get(k)), colour = "red", linetype = "dashed") +
-#       theme_minimal() +
-#       theme(legend.position = 'none', strip.text = element_text(size = 12)) +
-#       scale_colour_viridis(discrete = TRUE) + 
-#       facet_wrap(~state, ncol = 7, scales = "free") +
-#       labs(title = paste0("Trends: ", k), 
-#            subtitle = "Commuting Zones",
-#            x = "Year",
-#            y = k) 
-#     
-#     print(p)
-#               cat('\n')
-#               cat('\n')
-#               }
 
-```
-
-#### Counties
-
-::: panel-tabset
-```{r, echo = FALSE, results = 'asis', fig.height = 12}
 
 temp_fips <- fips_trends_dat %>%
   filter(year > 2001) %>%  #& state_name != "ME") %>%
@@ -863,7 +832,7 @@ mines_state %>%
 
 ```
 
-#### Commuting Zones
+#### Growth Rates - CZ or FIPS
 
 ```{r, echo = FALSE}
 
@@ -890,28 +859,7 @@ mines_restr %>%
 
 ```
 
-#### Counties
-
-```{r, echo = FALSE}
-
-# Outliers
-
-pos_coefs <- mute_outliers(county_ed_coefs, "trend_cont_natl") %>%
-  filter(var_muted != trend_cont_natl & var_muted > 0) %>%
-  pull(unit) %>% unique
-
-mines_restr %>%
-  filter(unit %in% pos_coefs) %>%
-  select(unit, year, log_real_Property_Tax_pp, log_real_Elem_Educ_Total_Exp_pp) %>%
-  pivot_longer(!c(unit, year)) %>%
-  ggplot(aes(x = year, y = value, color = name)) +
-  geom_line() +
-  facet_wrap(~unit, scales = "free")
-
-```
-:::
-
-### Outliers
+#### Outliers
 
 ::: panel-tabset
 #### Negative
