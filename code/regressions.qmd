@@ -556,7 +556,7 @@ mines_no_outliers <- mines_cz %>%
   filter(!any(log_Elem_Educ_Total_Exp_pp > 10.25)) %>% 
   ungroup
 
-mines_cz%>% 
+mines_cz %>% 
   ggplot(aes(x = log_Elem_Educ_Total_Exp_pp, y = log_Property_Tax_pp, colour = share_own_discrete)) +
   geom_jitter() +
     #geom_smooth(method=lm, colour = "black", linetype = "dashed") +
