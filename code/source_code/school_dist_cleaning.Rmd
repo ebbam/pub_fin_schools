@@ -555,6 +555,34 @@ mines_dff %>%
   dplyr::select(fips, year, total_n, diff_total_active_n, l1_diff_total_active_n, l2_diff_total_active_n, diff_total_active_prod, l1_diff_total_active_prod, l2_diff_total_active_prod) %>% 
   ungroup %>% filter(!complete.cases(.)) 
 
+# deflators <- mines_dff %>% 
+#   dplyr::select(year, fips, real_gdp_total, gdp_total) %>% 
+#   group_by(year) %>% 
+#   summarise(nom_gdp = sum(gdp_total),
+#             real_gdp = sum(real_gdp_total)) %>% 
+#   mutate(defl = nom_gdp/real_gdp) %>% 
+#   dplyr::select(-c(nom_gdp, real_gdp))
+
+# mines_df <- mines_dff %>% 
+#   filter(year >= 2001) %>% 
+#   #mutate(ruc_bin = as.factor(ruc_bin)) %>% 
+#   mutate(across(all_of(dep), ~.*1000),
+#          time = year - 2000) %>% 
+#   mutate(across(contains("log"), ~ifelse(is.infinite(.), 0, .)),
+#          across(c(log_esa_tot_exp_pp, log_esa_tot_exp), ~ifelse(is.na(.), 0, .))) %>% 
+#   left_join(deflators, by = "year") %>% 
+#   mutate(across(c(diff_log_Total_Educ_Total_Exp_pp, log_Total_Educ_Total_Exp, log_Total_Educ_Total_Exp_pp,Total_Educ_Total_Exp, Total_Educ_Total_Exp_pp,
+#   diff_log_Elem_Educ_Total_Exp_pp, log_Elem_Educ_Total_Exp_pp, Elem_Educ_Total_Exp, log_Elem_Educ_Total_Exp,
+#   log_Property_Tax_pp, log_Property_Tax, diff_log_Property_Tax_pp, diff_log_Property_Tax_pp, Property_Tax, log_Total_Rev_Own_Sources_pp, log_Total_Rev_Own_Sources, log_Total_IG_Revenue, log_Total_IG_Revenue_pp, log_Total_Fed_IG_Revenue, log_Total_Fed_IG_Revenue_pp, log_Total_State_IG_Revenue_pp, log_Total_State_IG_Revenue, log_Total_Revenue_pp, ), ~./defl, .names = "real_{.col}")) %>% 
+#   group_by(fips) %>% 
+#   mutate(share_fed = sum(Fed_IGR_Education, na.rm = TRUE)/sum(Elem_Educ_Total_Exp),
+#          share_state = sum(State_IGR_Education, na.rm = TRUE)/sum(Elem_Educ_Total_Exp),
+#          share_local_ig = sum(Tot_Local_IG_Rev, na.rm = TRUE)/sum(Elem_Educ_Total_Exp),
+#          share_own = sum(Total_Rev_Own_Sources, na.rm = TRUE)/sum(Elem_Educ_Total_Exp),
+#          share_own_discrete = case_when(share_own > 0.5 ~ "1 = high",
+#                                         share_own < 0.25 ~ "3 = low",
+#                                         TRUE ~ "2 = medium")) %>% 
+#   ungroup
 
 mines_restr <- mines_dff %>% 
   group_by(fips) %>% 
