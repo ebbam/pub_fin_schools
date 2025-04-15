@@ -68,11 +68,7 @@ Data on Property Taxes, Elementary Education Expenditure, Private Industry and T
 
 ```{r, echo = FALSE, message = FALSE, cache = TRUE}
 
-mines_df <- readRDS(here('data/temp/mines_restr.RDS')) %>% 
-  left_join(., czs, by = "fips") %>% 
-  mutate(cz_id = as.character(cz_id),
-         cz_id_1990 = as.character(cz_id_1990))
-
+mines_df <- readRDS(here("data/out/regression_data_complete_fips.RDS"))
 
 ```
 
@@ -107,6 +103,8 @@ vars_grab_restr <- c("real_gdp_priv_ind",
                "pop_total")
 
 mines_restr <- mines_df %>% 
+  group_by(fips) %>% 
+  arrange(fips, year) %>% 
   mutate(across(c(vars_grab_restr, paste0("log_", vars_grab_restr)), ~. - dplyr::lag(., 1), .names = "diff_{.col}")) %>% 
   group_by(year) %>% 
   mutate(natl_pop = sum(pop_total, na.rm = TRUE)) %>% 
@@ -475,31 +473,31 @@ Some current options:
 ::: panel-tabset
 ## Education
 
-<!-- ### State Time Trends -->
+### State Time Trends
 
-<!-- ```{r, echo = FALSE, cache = TRUE} -->
+```{r, echo = FALSE, cache = TRUE}
 
-<!-- trends <- feols(log_real_gdp_priv_ind ~ time:as.factor(state_name) | state_name + year, data = mines_state, se = "cluster", cluster = "state_name", panel.id = ~state_name+year) -->
+trends <- feols(log_real_gdp_priv_ind ~ time:as.factor(state_name) | state_name + year, data = mines_state, se = "cluster", cluster = "state_name", panel.id = ~state_name+year)
 
-<!-- #trends %>% etable(., se.below = TRUE) -->
+#trends %>% etable(., se.below = TRUE)
 
-<!-- trends$coefficients %>% -->
+trends$coefficients %>%
 
-<!--   tibble %>% -->
+  tibble %>%
 
-<!--   rename(coef = '.') %>% -->
+  rename(coef = '.') %>%
 
-<!--   ggplot() + -->
+  ggplot() +
 
-<!--   geom_histogram(aes(x = coef), bins = 15) + -->
+  geom_histogram(aes(x = coef), bins = 15) +
 
-<!--   theme_bw() + -->
+  theme_bw() +
 
-<!--   labs(title = "Histogram of State-level Trend Coefficient: (log) Real Private Industry GDP")+ -->
+  labs(title = "Histogram of State-level Trend Coefficient: (log) Real Private Industry GDP")+
 
-<!--   geom_vline(aes(xintercept = 0), colour = "red", linetype = "dotted") -->
+  geom_vline(aes(xintercept = 0), colour = "red", linetype = "dotted")
 
-<!-- ``` -->
+```
 
 ::: panel-tabset
 ### Deviation from T0
