@@ -15,7 +15,8 @@ Citation: Suss, Joel, Connor, Dylan, and Kemeny, Tom. GEOWEALTH-US: Spatial weal
 
 ```{r cars}
 
-wealth_cz <- read.csv(here("data/raw/cz_wealth_inequality.csv")) %>% tibble %>% filter(year >= 2000) %>% mutate(cz_id_1990 = as.character(czone))
+wealth_cz <- read.csv(here("data/raw/geo_wealth_inequality/cz_wealth_inequality.csv")) %>% tibble  %>% mutate(cz_id_1990 = as.character(czone))
+wealth_puma <- read.csv(here("data/raw/geo_wealth_inequality/puma_wealth_inequality.csv")) %>% tibble 
 cz_1990_trends_dat <- readRDS(here('data/temp/cz_1990_trends_dat.rds')) %>% tibble
 
 wealth_cz %>% pull(cz_id_1990) %>% unique
@@ -28,9 +29,6 @@ cz_1990_trends_dat %>% left_join(., wealth_cz, by = c("year", 'cz_id_1990'))
 
 ```
 
-## Including Plots
-
-You can also embed plots, for example:
 
 ```{r pressure, echo=FALSE}
 
