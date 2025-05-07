@@ -6,16 +6,18 @@ library(conflicted)
 library(zoo)
 library(patchwork)
 library(tidyquant)
+library(assertthat)
 conflict_prefer_all("dplyr", quiet = TRUE)
 source(here("code/source_code/dicts.R"))
 source(here("code/source_code/useful_functions.R"))
 
-cz = TRUE
+testing = TRUE
 
 # Source: https://www.bls.gov/cew/downloadable-data-files.htm.  - CSVs Single Files: Annual Averages
 
 # Industry codes provided by QCEW BLS: https://www.bls.gov/cew/classifications/industry/industry-titles.htm
 ind_codes <- read_excel(here("data/raw/QCEW/industry-titles.xlsx"))
+source(here("code/source_code/cz_cleaning.R"))
 
 # df_list_natl <- list()
 # for(y in 2009:2022){
@@ -83,10 +85,6 @@ ind_codes <- read_excel(here("data/raw/QCEW/industry-titles.xlsx"))
 # rm(temp_test)
 ################################################################################
 ################################################################################
-
-
-################################################################################
-################################################################################
 ################### National ###################################################
 ################################################################################
 ################################################################################
@@ -110,286 +108,174 @@ natl_rates <- natl_rates_plot %>%
   pivot_wider(id_cols = c(year), names_from = industry_code, values_from = natl_annual_avg_emplvl:gr_natl_annual_avg_wkly_wage)
 
 natl_rates_plot %>% 
-  ggplot(aes(x = year, y = gr_natl_annual_avg_wkly_wage, color = industry_code)) + 
+  pivot_longer(!c(year, industry_code)) %>% 
+  mutate(name = gsub("natl_annual_avg_emplvl", "Average Employment Level", gsub("natl_total_annual_wages", "Total Wages", gsub("natl_annual_avg_wkly_wage", "Avg. Weekly Wage", gsub("gr_", "Growth Rate ", name))))) %>% 
+  filter(industry_code != 10) %>% 
+  ggplot(aes(x = year, y = value, color = industry_code)) + 
   geom_point() + 
-  #geom_ma(ma_fun = SMA, n = 5) +
-  theme(legend.position = "none")
+  facet_wrap(~name, scales = "free_y") +
+  theme(legend.position = "none") + 
+  labs(title = "National Wage and Employment (Levels & Growth Rates by Industry)")
 #saveRDS(natl_rates, here("data/temp/natl_rates.RDS"))
 
-# Import base year for Bartik instrument - 2001
-temp_test <- read.csv(here(paste0("data/raw/QCEW/2001.annual.singlefile.csv"))) %>%
-  tibble
-
-temp <- temp_test %>%
-  filter(nchar(industry_code) <= 3) %>% 
-  filter(substr(area_fips, 3,5) != "000" & substr(area_fips, 3,5) != "999" & !grepl("US", area_fips)) %>%
-  mutate(fips_state = substr(area_fips, 1,2)) %>%
-  rename(fips = area_fips) %>%
-  filter(!(fips_state %in% c("72","78", "C1", "C2", "C3", "C4", "CS"))) %>%
-  mutate(fips = ifelse(fips %in% names(getfips), unname(getfips[fips]), fips)) %>%
-  filter(!(fips %in% c("51560", "51515")) & !(fips == "46113" & year <= 2015)) %>%
-  mutate(fips = ifelse(fips == "46113", "46102", fips)) %>% 
-  select(-fips_state) %>% 
-  filter(agglvl_code %in% c(70, 74, 76, 75) & disclosure_code != "N") %>% 
-  group_by(fips, year, industry_code) %>% 
-  summarise(across(c(annual_avg_emplvl, total_annual_wages), ~sum(., na.rm = TRUE)),
-            annual_avg_wkly_wage = mean(annual_avg_wkly_wage, na.rm = TRUE)) %>% 
-  ungroup 
-
-shift_share_fips <- temp %>% 
-  left_join(natl_rates, by = "year") %>% 
-  pivot_wider(id_cols = c(fips, year), names_from = industry_code, values_from = c(annual_avg_emplvl, total_annual_wages)) %>%
-  group_by(fips) %>% 
-  mutate(across(where(is.numeric), ~ na.approx(., maxgap = 3, na.rm = FALSE))) %>% #filter(!all(is.na(annual_avg_emplvl_2121))) %>% ggplot(aes(x = year, y = annual_avg_emplvl_2121, color = fips)) + geom_line() + facet_wrap(~fips_state)
-  ungroup %>%
-  # Calculates share of employment and wage per industry in each county 
-  mutate(across(contains("avg_emplvl"), ~./annual_avg_emplvl_10, .names = "share_{.col}"),
-         across(contains("total_annual_wages"), ~./total_annual_wages_10, .names = "share_{.col}")) %>% 
-  complete(fips, year = 2001:2022) %>% 
-  group_by(fips) %>%
-  fill(everything(), .direction = "down") %>% 
-  ungroup
-
-# Creates a shift-share measure with a baseline of 2001 (first time period in series), 2006 (local peak prior to global peak in national FF employment), 2011 (peak national FF employment)
-full_fips <- shift_share_fips %>% 
-  left_join(., natl_rates, by = "year", relationship = "many-to-one")
-
-
-temp_plot_fips <- full_fips %>% 
-  select(year, fips, share_annual_avg_emplvl_51, gr_natl_annual_avg_wkly_wage_51,
-         share_annual_avg_emplvl_54, gr_natl_annual_avg_wkly_wage_54,
-         share_annual_avg_emplvl_11, gr_natl_annual_avg_wkly_wage_11,
-         share_annual_avg_emplvl_21, gr_natl_annual_avg_wkly_wage_21,
-         share_annual_avg_emplvl_23, gr_natl_annual_avg_wkly_wage_23,
-         share_annual_avg_emplvl_321, gr_natl_annual_avg_wkly_wage_321) %>% 
-  mutate(ss_51 = share_annual_avg_emplvl_51*gr_natl_annual_avg_wkly_wage_51, 
-         ss_11 = share_annual_avg_emplvl_11*gr_natl_annual_avg_wkly_wage_11,
-         ss_54 = share_annual_avg_emplvl_54*gr_natl_annual_avg_wkly_wage_54,
-         ss_21 = share_annual_avg_emplvl_21*gr_natl_annual_avg_wkly_wage_21,
-         ss_23 = share_annual_avg_emplvl_23*gr_natl_annual_avg_wkly_wage_23,
-         ss_321 = share_annual_avg_emplvl_321*gr_natl_annual_avg_wkly_wage_321)
-
-p1 <- temp_plot_fips %>% 
-  ggplot() +
-  geom_line(aes(x = year, y = ss_51, color = fips))+
-  theme(legend.position = "none") +
-  ylim(-0.002, 0.018) + 
-  labs(title = "Information Sector Wage Growth")
-
-p2 <- temp_plot_fips %>% 
-  ggplot() +
-  geom_line(aes(x = year, y = ss_54, color = fips))+
-  theme(legend.position = "none") +
-  ylim(-0.002, 0.018) + 
-  labs(title = "Prof, Sci, Tech Services Sector Wage Growth")
-
-p3 <- temp_plot_fips %>% 
-  ggplot() +
-  geom_line(aes(x = year, y = ss_321, color = fips))+
-  theme(legend.position = "none") +
-  ylim(-0.002, 0.018) + 
-  labs(title = "Manufacturing Services Sector Wage Growth")
-
-p4 <- temp_plot_fips %>% 
-  ggplot() +
-  geom_line(aes(x = year, y = ss_11, color = fips))+
-  theme(legend.position = "none") +
-  ylim(-0.002, 0.018) + 
-  labs(title = "Ag, Forest, Fishing, Hunting Sector Wage Growth")
-
-p5 <- temp_plot_fips %>% 
-  ggplot() +
-  geom_line(aes(x = year, y = ss_21, color = fips))+
-  theme(legend.position = "none") +
-  ylim(-0.002, 0.018) + 
-  labs(title = "Mining & Extraction Sector Wage Growth")
-
-p6<- temp_plot_fips %>% 
-  ggplot() +
-  geom_line(aes(x = year, y = ss_23, color = fips))+
-  theme(legend.position = "none") +
-  ylim(-0.002, 0.018) + 
-  labs(title = "Construction Sector Wage Growth")
-
-
-(p1 + p2 + p3) / (p4 + p5 + p6)
-
-
-rm(temp_test)
-
 ################################################################################
 ################################################################################
-################### CZs ########################################################
+################# Shift Shares Transformation Function #########################
 ################################################################################
 ################################################################################
-source(here("code/source_code/cz_cleaning.R"))
-if(cz){
-  czs <- czs %>% 
-    rename(old_fips = fips) %>% 
-    mutate(fips = case_when(!is.na(getfips[old_fips]) ~ getfips[old_fips],
-                            TRUE ~ old_fips),
-           cz_id = as.character(cz_id))
-  
-  czs %>% 
-    pull(fips) %>% 
-    unique %>% 
-    setdiff(unique(temp$fips), .)
-  
-  temp_cz <- temp %>% 
-    left_join(., czs, by = "fips", multiple = "first") %>% 
-    filter(agglvl_code %in% c(70, 74, 76, 75) & disclosure_code != "N") %>% 
-    group_by(cz_id, year, industry_code) %>% 
-    # summarise(across(contains("total"), ~sum(., na.rm = TRUE)),
-    #           across(contains("avg"), ~mean(., na.rm = TRUE)))
-    summarise(across(c(annual_avg_emplvl, total_annual_wages), ~sum(., na.rm = TRUE)),
-              annual_avg_wkly_wage = mean(annual_avg_wkly_wage, na.rm = TRUE)) %>% 
-    ungroup
-  
-  
-  shift_share_cz <- temp_cz %>% 
-    pivot_wider(id_cols = c(cz_id, year), names_from = industry_code, values_from = c(annual_avg_emplvl, total_annual_wages)) %>%
-    group_by(cz_id) %>% 
-    mutate(across(where(is.numeric), ~ na.approx(., maxgap = 3, na.rm = FALSE))) %>% #filter(!all(is.na(annual_avg_emplvl_2121))) %>% ggplot(aes(x = year, y = annual_avg_emplvl_2121, color = fips)) + geom_line() + facet_wrap(~fips_state)
-    ungroup %>%
-    # Calculates share of employment and wage per industry in each county 
-    mutate(across(contains("avg_emplvl"), ~./annual_avg_emplvl_10, .names = "share_{.col}"),
-           across(contains("total_annual_wages"), ~./total_annual_wages_10, .names = "share_{.col}")) %>% 
-    complete(cz_id, year = 2001:2022) %>% 
-    group_by(cz_id) %>%
-    fill(everything(), .direction = "down") %>% 
-    ungroup
-    
-  
-  # Creates a shift-share measure with a baseline of 2001 (first time period in series), 2006 (local peak prior to global peak in national FF employment), 2011 (peak national FF employment)
-  full_cz <- shift_share_cz %>% 
-    left_join(., natl_rates, by = "year", relationship = "many-to-one")
-  
-  
-  temp_plot <- full_cz %>% 
-    select(year, cz_id, share_annual_avg_emplvl_51, gr_natl_annual_avg_wkly_wage_51,
-           share_annual_avg_emplvl_54, gr_natl_annual_avg_wkly_wage_54,
-           share_annual_avg_emplvl_11, gr_natl_annual_avg_wkly_wage_11,
-           share_annual_avg_emplvl_21, gr_natl_annual_avg_wkly_wage_21,
-           share_annual_avg_emplvl_23, gr_natl_annual_avg_wkly_wage_23,
-           share_annual_avg_emplvl_321, gr_natl_annual_avg_wkly_wage_321) %>% 
-    mutate(ss_51 = share_annual_avg_emplvl_51*gr_natl_annual_avg_wkly_wage_51, 
-           ss_11 = share_annual_avg_emplvl_11*gr_natl_annual_avg_wkly_wage_11,
-           ss_54 = share_annual_avg_emplvl_54*gr_natl_annual_avg_wkly_wage_54,
-           ss_21 = share_annual_avg_emplvl_21*gr_natl_annual_avg_wkly_wage_21,
-           ss_23 = share_annual_avg_emplvl_23*gr_natl_annual_avg_wkly_wage_23,
-           ss_321 = share_annual_avg_emplvl_321*gr_natl_annual_avg_wkly_wage_321)
-    
-    p1 <- temp_plot %>% 
-      ggplot() +
-      geom_line(aes(x = year, y = ss_51, color = cz_id))+
-      theme(legend.position = "none") +
-      ylim(-0.002, 0.018) + 
-      labs(title = "Information Sector Wage Growth")
-    
-    p2 <- temp_plot %>% 
-      ggplot() +
-      geom_line(aes(x = year, y = ss_54, color = cz_id))+
-      theme(legend.position = "none") +
-      ylim(-0.002, 0.018) + 
-      labs(title = "Prof, Sci, Tech Services Sector Wage Growth")
-    
-    p3 <- temp_plot %>% 
-      ggplot() +
-      geom_line(aes(x = year, y = ss_321, color = cz_id))+
-      theme(legend.position = "none") +
-      ylim(-0.002, 0.018) + 
-      labs(title = "Manufacturing Services Sector Wage Growth")
-    
-    p4 <- temp_plot %>% 
-      ggplot() +
-      geom_line(aes(x = year, y = ss_11, color = cz_id))+
-      theme(legend.position = "none") +
-      ylim(-0.002, 0.018) + 
-      labs(title = "Ag, Forest, Fishing, Hunting Sector Wage Growth")
-  
-    p5 <- temp_plot %>% 
-      ggplot() +
-      geom_line(aes(x = year, y = ss_21, color = cz_id))+
-      theme(legend.position = "none") +
-      ylim(-0.002, 0.018) + 
-      labs(title = "Mining & Extraction Sector Wage Growth")
-    
-    p6<- temp_plot %>% 
-      ggplot() +
-      geom_line(aes(x = year, y = ss_23, color = cz_id))+
-      theme(legend.position = "none") +
-      ylim(-0.002, 0.018) + 
-      labs(title = "Construction Sector Wage Growth")
-    
-  
-    (p1 + p2 + p3) / (p4 + p5 + p6)
-  
-  
-  for(years in c(2001, 2005, 2011)){
-    print(years)
-    full_cz <- full_cz %>%
-      group_by(cz_id) %>%
-      mutate(
-        #share_emp_coal = annual_avg_emplvl_2121/annual_avg_emplvl_10,
-             share_emp_extraction = annual_avg_emplvl_21/annual_avg_emplvl_10,
-             #share_emp_ff = (annual_avg_emplvl_2121 + annual_avg_emplvl_211)/annual_avg_emplvl_10,
-             share_emp_oil_gas =  annual_avg_emplvl_211/annual_avg_emplvl_10,
-             #share_wage_coal = total_annual_wages_2121/total_annual_wages_10,
-             share_wage_extraction = total_annual_wages_21/total_annual_wages_10,
-             #share_wage_ff = (total_annual_wages_2121 + total_annual_wages_211)/total_annual_wages_10,
-             share_wage_oil_gas =  total_annual_wages_211/total_annual_wages_10) %>% 
-      mutate(across(c(natl_annual_avg_emplvl_21, natl_annual_avg_emplvl_211, natl_total_annual_wages_21, natl_total_annual_wages_211),
-                    .fns = list(l1 = ~lag(.x), fd = ~.x - lag(.x)), .names = "{.fn}_{.col}"),
-        #"ss_emp_coal_{years}" := share_emp_coal[year == years]*fd_natl_annual_avg_emplvl_2121,
-             "ss_emp_extraction_{years}" := share_emp_extraction[year == years]*fd_natl_annual_avg_emplvl_21,
-             #"ss_emp_ff_{years}" :=  share_emp_ff[year == years]*(fd_natl_annual_avg_emplvl_2121 + fd_natl_annual_avg_emplvl_211),
-             "ss_emp_oil_gas_{years}" :=  share_emp_oil_gas[year == years]*fd_natl_annual_avg_emplvl_211,
-           #  "ss_wage_coal_{years}" := share_wage_coal[year == years]*fd_natl_total_annual_wages_2121,
-             "ss_wage_extraction_{years}"  := share_wage_extraction[year == years]*fd_natl_total_annual_wages_21,
-             #"ss_wage_ff_{years}" :=  share_wage_ff[year == years]*(fd_natl_total_annual_wages_2121 + fd_natl_total_annual_wages_211),
-             "ss_wage_oil_gas_{years}" :=  share_wage_oil_gas[year == years]*fd_natl_total_annual_wages_211) %>%
-      ungroup %>% select(cz_id, year, contains(as.character(years))) %>% left_join(full_cz, ., by = c("cz_id", "year"))
+
+compute_ss <- function(source = NULL, base_year, industry_codes, unit_id = "fips"){
+  if(source == "QCEW"){
+    # Import base year for Bartik instrument - 2001
+    # Format for QCEW files
+    temp_test <- read.csv(here(paste0("data/raw/QCEW/", base_year, ".annual.singlefile.csv"))) %>%
+      tibble
+    print(paste0("Downloaded QCEW data for ", base_year, "."))
   }
   
-  # full_cz %>% select(cz_id, year, contains("ss_emp_coal")) %>% 
-  #   group_by(cz_id) %>% filter(!any(is.na(ss_emp_coal_2001)) | !any(is.na(ss_emp_coal_2005)) | !any(is.na(ss_emp_coal_2011))) %>% 
-  #   pivot_longer(cols = !c(cz_id, year), values_to = "ss", names_to = "base_year") %>% 
-  #   filter(base_year == "ss_emp_coal_2001") %>% 
-  #   ggplot(aes(x = year, y = ss, color = base_year)) + geom_line() + facet_wrap(~cz_id, scales = "free")
+  # This section cleans the base_file
+  temp <- temp_test %>%
+    # Filters industry codes that have 4-digits or more
+    filter(nchar(industry_code) <= 3) %>% 
+    # Filters out national and missing area codes
+    filter(substr(area_fips, 3,5) != "000" & substr(area_fips, 3,5) != "999" & !grepl("US", area_fips)) %>%
+    mutate(fips_state = substr(area_fips, 1,2)) %>%
+    rename(fips = area_fips) %>%
+    # Rules our PR, Samoa, etc
+    filter(!(fips_state %in% c("72","78", "C1", "C2", "C3", "C4", "CS"))) %>%
+    # Mutates fips that are often mislabelled
+    mutate(fips = ifelse(fips %in% names(getfips), unname(getfips[fips]), fips)) %>%
+    filter(!(fips %in% c("51560", "51515")) & !(fips == "46113" & year <= 2015)) %>%
+    mutate(fips = ifelse(fips == "46113", "46102", fips)) %>% 
+    select(-fips_state) %>% 
+    # Removes 
+    filter(agglvl_code %in% c(70, 74, 75) & disclosure_code != "N") 
   
-  
-  # full_cz %>% select(cz_id, year, contains("ss_emp_coal")) %>% 
-  #   group_by(cz_id) %>% filter(!any(is.na(ss_emp_coal_2001)) | !any(is.na(ss_emp_coal_2005)) | !any(is.na(ss_emp_coal_2011))) %>% 
-  #   ungroup %>% summarise(across(ss_emp_coal_2001:ss_emp_coal_2011, ~sum(is.na(.))))
-  
-    full_cz %>% select(cz_id, year, contains("ss_emp_extraction")) %>% 
-      group_by(cz_id) %>% 
-      filter(any(!is.na(ss_emp_extraction_2001)) | any(!is.na(ss_emp_extraction_2005)) | any(!is.na(ss_emp_extraction_2011))) %>% 
-      pivot_longer(cols = !c(cz_id, year), values_to = "ss", names_to = "base_year") %>%
-      ggplot(aes(x = year, y = ss, group = cz_id)) + geom_line(colour = "pink") + facet_wrap(~base_year) + 
-      theme(legend.position = "none")+
-      theme_minimal()
+  if(unit_id == "cz_id"){
+    czs <- czs %>% 
+      rename(old_fips = fips) %>% 
+      mutate(fips = case_when(!is.na(getfips[old_fips]) ~ getfips[old_fips],
+                              TRUE ~ old_fips),
+             cz_id = as.character(cz_id))
     
-    full_cz %>% select(cz_id, year, contains("ss_emp_extraction")) %>% 
-      group_by(cz_id) %>% 
-      filter(any(!is.na(ss_emp_extraction_2001)) | any(!is.na(ss_emp_extraction_2005)) | any(!is.na(ss_emp_extraction_2011))) %>% 
-      ungroup %>%
-      summarise(across(ss_emp_extraction_2001:ss_emp_extraction_2011, ~sum(is.na(.))/nrow(full_cz)))
+    missing_fips <- czs %>% 
+      pull(fips) %>% 
+      unique %>% 
+      setdiff(unique(temp$fips), .) 
     
-  full_cz %>% select(cz_id, year, contains("ss_emp_oil_gas")) %>% 
-    group_by(cz_id) %>% 
-    filter(any(!is.na(ss_emp_oil_gas_2001)) | any(!is.na(ss_emp_oil_gas_2005)) | any(!is.na(ss_emp_oil_gas_2011))) %>% 
-    pivot_longer(cols = !c(cz_id, year), values_to = "ss", names_to = "base_year") %>%
-    ggplot(aes(x = year, y = ss, group = cz_id)) + 
-    geom_line(colour = "lightblue") + 
-    facet_wrap(~base_year) + 
+    if (length(missing_fips) > 0) {
+      message("Warning: Some FIPS codes are missing from czs.")
+    }
+    
+    temp <- temp %>% 
+      left_join(., czs, by = "fips", multiple = "first") %>% 
+      rename("unit" = cz_id) %>% 
+      select(-fips)
+    
+  }else if(unit_id == "fips"){
+    temp <- temp %>% 
+      rename(unit = fips)
+  }
+  
+  temp <- temp %>% 
+    group_by(unit, year, industry_code) %>% 
+    summarise(across(c(annual_avg_emplvl, total_annual_wages), ~sum(., na.rm = TRUE)),
+              annual_avg_wkly_wage = mean(annual_avg_wkly_wage, na.rm = TRUE)) %>% 
+    ungroup %>% 
+    filter(!industry_code %in% c(99,999))
+  
+  rm(temp_test)
+  
+  print("Cleaned temp file.")
+  
+  shift_share <- temp %>% 
+   # left_join(natl_rates, by = "year") %>% 
+    pivot_wider(id_cols = c(unit, year), names_from = industry_code, values_from = c(annual_avg_emplvl, total_annual_wages)) %>%
+    # Calculates share of employment and wage per industry in each county 
+    mutate(across(contains("avg_emplvl"), ~./annual_avg_emplvl_10, .names = "share_{.col}"),
+           across(contains("total_annual_wages"), ~./total_annual_wages_10, .names = "share_{.col}")) 
+  
+  # 2-digit coverage ratios
+  coverage_2digit_naics <- shift_share %>% 
+    select(year, unit, matches("^share_annual_avg_emplvl_\\d{2}$")) %>% 
+    rowwise() %>% mutate(coverage_2digit_naics = sum(c_across(!c(year, unit)), na.rm = TRUE) - 1) %>%
+    ungroup() %>% 
+    select(year, unit, coverage_2digit_naics)
+  
+  # 3-digit coverage ratios
+  coverage_3digit_naics <- shift_share %>% 
+    select(year, unit, matches("^share_annual_avg_emplvl_\\d{3}$")) %>% 
+    rowwise() %>% mutate(coverage_3digit_naics = sum(c_across(!c(year, unit)), na.rm = TRUE)) %>%
+    ungroup() %>% 
+    select(year, unit, coverage_3digit_naics)
+  
+  shift_share <- shift_share %>% 
+    left_join(., coverage_2digit_naics, by = c("unit", "year")) %>% 
+    left_join(., coverage_3digit_naics, by = c("unit", "year")) %>% 
+    complete(unit, year = 2001:2022) %>% 
+    group_by(unit) %>%
+    fill(everything(), .direction = "updown") %>% 
+    ungroup
+  
+  print("Created employment share values.")
+
+  assert_that(nrow(shift_share) == n_distinct(shift_share$unit) * n_distinct(shift_share$year))
+  
+  # Creates a shift-share measure with a baseline of 2001 (first time period in series), 2006 (local peak prior to global peak in national employment), 2011 (peak national employment)
+  full <- shift_share %>% 
+    left_join(., natl_rates, by = "year", relationship = "many-to-one") %>% 
+    rename(!!unit_id := unit)
+  
+  print("Appended national shock variables.")
+  
+  return(full)
+}
+
+################################################################################
+################### PLOTTING FUNCTION ##########################################
+################################################################################
+plot_ss <- function(dat, code, shock_var, unit_id, ind_codes = NULL){
+  # Need to call them dynamically using the code variable
+  share_col <- sym(paste0("share_annual_avg_emplvl_", code))
+  shock_col <- sym(paste0(shock_var, code))
+  # name of SS variable
+  ss_name <- sym(paste0("ss_", code))
+  if(!is.null(ind_codes)){
+    industry_name <- ind_codes %>% 
+       filter(industry_code == code) %>% 
+       pull(industry_title)
+  }else{
+    industry_name <- NULL
+    print('Consider providing an industry code list for accurate title.')}
+  
+  colors = c("fips" = "darkorchid4", "cz_id" = "tomato4")
+  
+  dat %>% 
+    select(year, !!unit_id, !!share_col, !!shock_col) %>% 
+    mutate(!!ss_name := !!share_col*!!shock_col) %>% 
+    ggplot() +
+    geom_line(aes(x = year, y = !!ss_name, group = !!sym(unit_id)), color = colors[unit_id]) +
     theme(legend.position = "none") +
-    theme_minimal()
+    labs(title = industry_name, subtitle = paste0("Unit: ", toupper(gsub("_id", "", unit_id))), x = "Year", y= "Industry-Specific Shift-Share Value") + 
+    theme_minimal() + theme(legend.position = "none")
+}
+
+################################################################################
+################### FIPS #######################################################
+################################################################################
+if(testing){
   
-  full_cz %>% select(cz_id, year, contains("ss_emp_oil_gas")) %>% 
-    group_by(cz_id) %>% 
-    filter(any(!is.na(ss_emp_oil_gas_2001)) | any(!is.na(ss_emp_oil_gas_2005)) | any(!is.na(ss_emp_oil_gas_2011))) %>% 
-    ungroup %>% summarise(across(ss_emp_oil_gas_2001:ss_emp_oil_gas_2011, ~sum(is.na(.))/nrow(full_cz)))
-  
-  #saveRDS(full_cz, here("data/temp/shift_shares_cz_base_01_05_11.RDS"))
+full_fips <- compute_ss(source = "QCEW", base_year = 2001, unit_id = "fips")
+
+plot_ss(full_fips, "51", "gr_natl_annual_avg_wkly_wage_", "fips", ind_codes)
+
+################################################################################
+################### TESTING CZs ################################################
+################################################################################
+
+full_cz <- compute_ss(source = "QCEW", base_year = 2001, unit_id = "cz_id")
+
+plot_ss(full_cz, "51", "gr_natl_annual_avg_wkly_wage_", "cz_id", ind_codes)
+
+################################################################################
 }
