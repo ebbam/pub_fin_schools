@@ -12,7 +12,7 @@ format:
 params:
   font_size: 6
 editor_options: 
-  chunk_output_type: console
+  chunk_output_type: inline
 ---
 
 # Introduction
@@ -21,7 +21,7 @@ The following document summarises the progress made thus far on Chapter 1: Local
 
 Updates since last time:
 
-1.  Converted the Bartik instruments using wage and employment shares in various fossil fuel industries to commuting zone level to test pass-through via property taxes and local GDP. Might be worth reconsidering specification/economic theory here?     
+1.  Converted the Bartik instruments using wage and employment shares in various fossil fuel industries to commuting zone level to test pass-through via property taxes and local GDP.    
 2. Incorporated data on large-scale solar panel installations. For now use these as instrument on property taxes and local GDP as previously done with coal mine activity.        
 3. I wonder if there is a way to bring together the logic behind a Bartik instrument and the calculations on local growth/decline. 
 
@@ -51,6 +51,7 @@ library(viridis)
 library(datasets)
 library(broom)
 library(fipio)
+library(panelvar)
 library(fixest)
 library(paletteer)
 library(readxl)
@@ -83,7 +84,7 @@ conflict_prefer_all("dplyr", quiet = TRUE)
 
 setFixest_etable(fitstat = ~ . + ivf1 + ivf1.p + ivf2 + ivf2.p + wh + wh.p + ivwaldall + ivwaldall.p, se.below = TRUE)
 
-unit_id = "fips"
+unit_id = "cz_id"
 
 ```
 
@@ -104,8 +105,6 @@ All data used is reported annually at the commuting zone level. Therefore, no ti
 if(unit_id == "cz_id"){
   print(paste0("Running analysis on CZs (", unit_id, ")."))
   mines_cz <- readRDS(here("data/out/cz_dataset.RDS")) %>% 
-  # rename all variables that contain monetary values to exclude "real" - all values in this dataset DO have real values!!! see school_dist_cleaning.Rmd
-  #rename_with(~gsub("real_", "", .x, fixed = TRUE)) %>% 
     mutate(unit = get(unit_id)) %>% 
     rename(state = main_state)
   
@@ -703,7 +702,7 @@ scaled_ss <- ss_df %>%
 
 ## Oil and Gas Instruments
 
-```{r}
+```{r, echo = FALSE}
 
 
 ss_oil_gas_instruments <- c(
@@ -727,7 +726,7 @@ run_model(ss_oil_gas_instruments_res, scaled_ss) %>% etable(headers = ss_oil_gas
 
 ## Fossil Fuel Instruments
 
-```{r}
+```{r, echo = FALSE}
 
 ss_ff_instruments <- c(
    "ss_wage_ff_2001",
@@ -750,7 +749,7 @@ run_model(ss_ff_instruments_res, scaled_ss) %>% etable(headers = ss_ff_instrumen
 
 ## Extraction Instruments
 
-```{r}
+```{r, echo = FALSE}
 
 ss_extraction_instruments <- c(
    "ss_wage_extraction_2001",
@@ -772,8 +771,7 @@ run_model(ss_extraction_instruments_res, scaled_ss) %>% etable(headers = ss_extr
 
 
 ### PANELVAR
-```{r}
-
+```{r, echo = FALSE}
 # library(panelvar)
 # 
 # test_pvar <- pvargmm(
@@ -784,6 +782,180 @@ run_model(ss_extraction_instruments_res, scaled_ss) %>% etable(headers = ss_extr
 #   data = data.frame(mines_restr)
 # )
 
+wages <- readRDS(here("data/raw/QCEW/QCEW_wage_stats_cz.RDS")) %>% 
+  mutate(across(!c(cz_id, year), ~log(.), .names = "log_{.col}")) %>% 
+  group_by(cz_id) %>% 
+  arrange(year) %>% 
+  mutate(across(contains("log"), ~. - lag(., 1), .names = "gr_{.col}")) %>% 
+  rename(unit = cz_id)
+
+mines_cz <- mines_cz %>% 
+  left_join(., wages, by = c("unit", "year"))
+```
+
+
+```{r, echo = FALSE}
+# =======================
+# 1. FIXED EFFECTS PANEL REGRESSION
+# =======================
+fe_model <- feols(
+  log_real_Total_Educ_Total_Exp_pp ~ log_real_gdp_total_pc + log_weighted_annual_avg_wkly_wage | unit + year,
+  data = mines_cz
+)
+
+summary(fe_model)
+
+# =======================
+# 2. SHIFT-SHARE IV REGRESSION
+# =======================
+source(here("data/raw/QCEW/industry_shares_cleaning.R"))
+ss_inst <- compute_ss(source = "QCEW", base_year = 2001, unit_id = "cz_id") %>% 
+  plot_ss(., "52", "gr_natl_annual_avg_wkly_wage_", "cz_id", ind_codes)
+
+# Assume you have:
+# - industry_share_XX: share of local employment in industry XX
+# - natl_growth_XX: national growth in industry XX
+# Let's compute the shift-share instrument:
+
+# IV regression using shift-share instrument
+iv_model <- feols(
+  log_real_Total_Educ_Total_Exp_pp ~ log_real_gdp_total_pc | unit + year | ss_52 ~ log_real_Property_Tax_pp,
+  data = left_join(mines_cz, rename(ss_inst, unit = cz_id), by = c("year", "unit"))
+)
+
+summary(iv_model)
+
+# =======================
+# 3. DISTRIBUTED LAG MODEL
+# =======================
+
+# Assume you have already lagged variables created like:
+# local_gdp_growth_lag1, local_gdp_growth_lag2, etc.
+
+# Run distributed lag model
+dl_model <- feols(
+   log_real_Total_Educ_Total_Exp_pp ~ diff_log_real_gdp_total_pc + l(diff_log_real_gdp_total_pc) + l(diff_log_real_gdp_total_pc,2) +
+    log_weighted_annual_avg_wkly_wage + l(log_weighted_annual_avg_wkly_wage) | unit + year, 
+   panel.id = c('unit', 'year'),
+  data = mines_cz
+)
+
+summary(dl_model)
+
+```
+
+```{r, echo = FALSE}
+# Install if needed
+# install.packages("remotes")
+# remotes::install_github("joaopalmeiro/panelvar")
+
+# Prepare your dataset
+# Required: 'id' column (unit), 'time' column (year), and variables to include
+pvar_data <- mines_cz %>%
+  #select(unit, year, contains("real_Total_Educ_Total_Exp"), contains("real_gdp_total")) %>%
+  filter(unit != 1) %>% 
+  data.frame()
+
+# Estimate PVAR with 1 lag
+pvar_model <- pvarfeols(
+  dependent_vars = c("log_real_Total_Educ_Total_Exp", "log_real_gdp_total", "log_real_Property_Tax", "log_real_Total_State_IG_Revenue", "log_real_Total_Fed_IG_Revenue", "log_weighted_annual_avg_wkly_wage"),
+  lags = 4,
+  #transformation = "demean",   # alternative: "firstdiff"
+  data = pvar_data,
+  panel_identifier = c("unit", "year")
+)
+
+summary(pvar_model)
+
+# Impulse response function
+irf_result <- pvar_model %>% girf(n.ahead = 7, ma_approx_steps= 7)
+
+# Plot IRFs
+plot(irf_result, scales = "free")
+
+```
+
+
+```{r, echo = FALSE}
+
+# ================================
+# 1. HIERARCHICAL FIXED EFFECTS MODEL
+# ================================
+
+# This model decomposes variation in CZ-level GDP growth
+# into national, state-level, and region-level time effects
+
+# Estimate fixed effects model
+fe_model <- feols(
+  diff_log_real_gdp_total_pc ~ 1 |                      # No independent vars, just fixed effects
+    year +                                     # National time trend
+    interaction(state, year),                 # State-specific time trends
+  data = mines_cz
+)
+
+# View summary
+summary(fe_model)
+
+# You can extract fixed effects for inspection
+fixed_effects <- fixef(fe_model)
+
+# Optionally: compare nested models to see variance explained
+# Model 1: National only
+fe_national <- feols(diff_log_real_gdp_total_pc ~ 1 | year, data = mines_cz)
+
+# Model 2: National + State
+fe_national_state <- feols(diff_log_real_gdp_total_pc ~ 1 | year + interaction(state, year), data = mines_cz)
+
+# Model 3: National + State + Region
+fe_full <- fe_model
+
+# Compare R-squared values to see how much each level explains
+etable(fe_national, fe_national_state, fe_full, se = "standard")
+
+# ================================
+# 2. FACTOR MODEL USING PCA
+# ================================
+
+# Goal: extract latent factors explaining common variation
+# in local GDP growth across commuting zones
+
+# # Convert mines_cz to wide format: one row per year, one column per CZ
+# gdp_matrix <- mines_cz %>%
+#   select(year, unit, diff_log_real_gdp_total_pc) %>%
+#   pivot_wider(names_from = unit, values_from = diff_log_real_gdp_total_pc) %>%
+#   arrange(year) %>%                         # ensure proper time order
+#   select(-year) %>%                         # PCA doesn't need year column
+#   scale(center = TRUE, scale = TRUE)        # standardize for PCA
+# 
+# # Perform principal component analysis
+# pca_result <- prcomp(gdp_matrix, scale. = FALSE)  # already scaled above
+# 
+# # Plot scree plot to visualize variance explained
+# plot(pca_result, type = "lines", main = "Scree Plot of Principal Components")
+# 
+# # Print proportion of variance explained by each PC
+# summary(pca_result)
+# 
+# # Extract first few factors (e.g., first 2)
+# factors <- as.data.frame(pca_result$x[, 1:2])
+# colnames(factors) <- c("Factor1", "Factor2")
+# 
+# # Add year back in (optional)
+# factors$year <- unique(mines_cz$year)
+
+# You can now correlate these with national or state-level aggregates
+# to see if Factor1 aligns with national GDP trends, etc.
+
+# Example: correlate Factor1 with national GDP growth
+# df_national has year and national_gdp_growth
+# cor(factors$Factor1, df_national$national_gdp_growth)
+
+# ================================
+# INTERPRETATION
+# ================================
+# - The fixed effects model attributes variation directly to geography.
+# - The PCA extracts statistical common components (factors) without labels.
+# - You can interpret the PCA factors by comparing them to national/state trends.
 
 ```
 
@@ -824,7 +996,6 @@ if(unit_id == "cz_id"){
   spv <- spv_fips %>% 
     rename(unit = fips)
 }
-
 
 mines_solar <- spv %>% 
   group_by(year, unit) %>% 

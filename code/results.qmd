@@ -82,20 +82,10 @@ unit_id = "cz_id"
 
 ```{r, echo = FALSE, message = FALSE, warnings = FALSE, fig.height = 10, include = FALSE}
 
-# mines_restr <- readRDS(here("data/out/regression_data_complete_fips.RDS")) %>% 
-#   group_by(fips) %>%
-#     arrange(fips, year) %>% 
-#   mutate(across(c(starts_with("log_real_gdp_total") | starts_with("log_real_gdp_priv_ind")), ~.- dplyr::lag(., 1), .names = "diff_{.col}")) %>% 
-#   ungroup  
-# 
-# mines_cz <- readRDS(here("data/out/cz_dataset.RDS"))
-# mines_cz_1990 <- readRDS(here("data/out/cz_1990_dataset.RDS"))
 
 if(unit_id == "cz_id"){
   print(paste0("Running analysis on CZs (", unit_id, ")."))
   mines_restr <- readRDS(here("data/out/cz_dataset.RDS")) %>% 
-  # rename all variables that contain monetary values to exclude "real" - all values in this dataset DO have real values!!! see school_dist_cleaning.Rmd
-  #rename_with(~gsub("real_", "", .x, fixed = TRUE)) %>% 
     mutate(unit = get(unit_id)) %>% 
     rename(state = main_state)
   
@@ -640,6 +630,20 @@ if(unit_id == "fips"){
 rm(county_ed_trends)
 rm(county_ed_trends_controlled_natl)
 rm(county_ed_trends_controlled_state)
+
+
+cz_map_data <- cz_to_map(mines_restr, gen_czs_years(mines_restr, czs)) %>% 
+  group_by(fips) %>% 
+  summarise(mean_log_real_gdp_total = mean(log_real_gdp_total, na.rm = TRUE))
+
+  plot_usmap(data = cz_map_data, values = "mean_log_real_gdp_total", regions = "counties", col = "gray90", linewidth = 0.01, exclude = c("AK", "HI")) +
+  scale_fill_gradient2(midpoint = 0, na.value = "grey98") +
+  #scale_fill_distiller(colours=c(bl,"white", re), name = "", direction = 1, na.value = "gray90", limits = c(-1, 1)) +
+  theme(panel.background = element_rect(color = "white", fill = "white"),
+        plot.title = element_text(face = "bold"), legend.background=element_blank(), legend.title = element_blank()) +
+  labs(title = "Realgdptotal") #+
+  #ggplot2::geom_sf(data = dat, colour = "blue", fill = NA, linewidth = 0.1)
+
 
 ```
 
