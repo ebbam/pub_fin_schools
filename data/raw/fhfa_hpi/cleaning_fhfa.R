@@ -3,8 +3,10 @@ library(readxl)
 library(here)
 library(tidyverse)
 library(janitor)
+library(getspanel)
 source(here("code/source_code/cz_cleaning.R"))
 source(here("code/source_code/useful_functions.R"))
+
 czs <- czs %>% 
   rename(old_fips = fips) %>% 
   mutate(fips = case_when(!is.na(getfips[old_fips]) ~ getfips[old_fips],
@@ -75,3 +77,17 @@ df_cz %>%
 
 # hpi_master.csv is taken from "Master HPI Data" https://www.fhfa.gov/data/hpi/datasets?tab=master-hpi-data
 # With accompanying data dictionary
+
+
+is <- isatpanel(
+      data = df_cz,
+      formula = log_hpi ~ 1,
+      index = c("cz_id", "year"),
+      effect = "twoways",
+      #iis = TRUE,
+      fesis = TRUE,
+      ar = 1,
+      t.pval = 0.01,
+      max.block.size = 20
+    )
+
