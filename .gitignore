@@ -60,3 +60,5 @@ data/raw/BEA_county_econ_stats/**/*.zip
 data/raw/BEA_county_econ_stats/**/*.csv
 !data/raw/BEA_county_econ_stats/**/*ALL_AREAS*.csv
 
+/code/regressions_cache
+/code/regressions_files
