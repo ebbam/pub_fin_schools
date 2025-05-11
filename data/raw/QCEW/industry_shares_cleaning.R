@@ -11,7 +11,7 @@ conflict_prefer_all("dplyr", quiet = TRUE)
 source(here("code/source_code/dicts.R"))
 source(here("code/source_code/useful_functions.R"))
 
-testing = TRUE
+testing = FALSE
 
 # Source: https://www.bls.gov/cew/downloadable-data-files.htm.  - CSVs Single Files: Annual Averages
 
@@ -83,6 +83,7 @@ source(here("code/source_code/cz_cleaning.R"))
 # #saveRDS(natl_rates, here("data/temp/natl_rates.RDS"))
 
 # rm(temp_test)
+
 ################################################################################
 ################################################################################
 ################### National ###################################################
@@ -250,14 +251,18 @@ plot_ss <- function(dat, code, shock_var, unit_id, ind_codes = NULL){
   
   colors = c("fips" = "darkorchid4", "cz_id" = "tomato4")
   
-  dat %>% 
+  dat <- dat %>% 
     select(year, !!unit_id, !!share_col, !!shock_col) %>% 
-    mutate(!!ss_name := !!share_col*!!shock_col) %>% 
+    mutate(!!ss_name := !!share_col*!!shock_col) 
+  
+  dat %>% 
     ggplot() +
     geom_line(aes(x = year, y = !!ss_name, group = !!sym(unit_id)), color = colors[unit_id]) +
     theme(legend.position = "none") +
     labs(title = industry_name, subtitle = paste0("Unit: ", toupper(gsub("_id", "", unit_id))), x = "Year", y= "Industry-Specific Shift-Share Value") + 
     theme_minimal() + theme(legend.position = "none")
+  
+  return(dat)
 }
 
 ################################################################################
