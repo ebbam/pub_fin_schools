@@ -62,3 +62,4 @@ data/raw/BEA_county_econ_stats/**/*.csv
 
 /code/regressions_cache
 /code/regressions_files
+/code/old_versions
