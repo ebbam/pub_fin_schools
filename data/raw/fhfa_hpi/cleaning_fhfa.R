@@ -7,7 +7,7 @@ library(getspanel)
 source(here("code/source_code/cz_cleaning.R"))
 source(here("code/source_code/useful_functions.R"))
 
-czs <- czs %>% 
+czs_new <- czs %>% 
   rename(old_fips = fips) %>% 
   mutate(fips = case_when(!is.na(getfips[old_fips]) ~ getfips[old_fips],
                           TRUE ~ old_fips),
@@ -31,20 +31,39 @@ df <- read_xlsx(here('data/raw/fhfa_hpi/hpi_at_bdl_county.xlsx'), skip = 5) %>%
   group_by(fips, year) %>% 
   summarise(across(c(hpi_annual_change_pct, hpi, hpi_1990_base, hpi_2000_base), ~mean(., na.rm = TRUE))) %>% 
   ungroup %>% 
-  mutate(across(c(hpi, hpi_1990_base, hpi_2000_base), ~log(.), .names = "log_{.col}")) 
+  mutate(across(c(hpi, hpi_1990_base, hpi_2000_base), ~log(.), .names = "log_{.col}")) %>% 
+  group_by(fips) %>% 
+  arrange(year) %>% 
+  mutate(gr_hpi = log_hpi - lag(log_hpi, 1)) %>%
+  ungroup
 
-missing_fips <- czs %>% 
+missing_fips <- czs_new %>% 
   pull(fips) %>% 
   unique %>% 
   setdiff(unique(df$fips), .) 
 
 df_cz <- df %>% 
-  left_join(., czs, by = "fips", multiple = "first") %>% 
+  left_join(., czs_new, by = "fips", multiple = "first") %>% 
   filter(!is.na(cz_id)) %>% 
   group_by(year, cz_id) %>% 
   summarise(across(c(hpi_annual_change_pct, hpi, hpi_1990_base, hpi_2000_base), ~mean(., na.rm = TRUE))) %>% 
   ungroup %>% 
-  mutate(across(c(hpi, hpi_1990_base, hpi_2000_base), ~log(.), .names = "log_{.col}")) 
+  mutate(across(c(hpi, hpi_1990_base, hpi_2000_base), ~log(.), .names = "log_{.col}")) %>% 
+  group_by(cz_id) %>% 
+  arrange(year) %>% 
+  mutate(l1_log_hpi = lag(log_hpi, 1),
+         l2_log_hpi = lag(log_hpi, 2),
+         l3_log_hpi = lag(log_hpi, 3),
+         l4_log_hpi = lag(log_hpi, 4),
+         l5_log_hpi = lag(log_hpi, 5),
+         gr_hpi = log_hpi - lag(log_hpi, 1),
+         l1_gr_hpi = lag(gr_hpi, 1),
+         l2_gr_hpi = lag(gr_hpi, 2),
+         l3_gr_hpi = lag(gr_hpi, 3),
+         l4_gr_hpi = lag(gr_hpi, 4),
+         l_gr_hpi = lag(gr_hpi, 5)
+   ) %>%
+  ungroup
   
 df %>% 
   pivot_longer(!c(fips, year)) %>% 
@@ -63,31 +82,35 @@ df %>%
 
 df_cz %>% 
   pivot_longer(!c(cz_id, year)) %>% 
-  filter(name %in% c("hpi_annual_change_pct", "hpi", "log_hpi")) %>% 
+  filter(name %in% c("hpi_annual_change_pct", "log_hpi")) %>% 
   mutate(label = case_when(name == "hpi_annual_change_pct" ~ "Growth Rate (Annual Pct. Change)", 
                            name == "hpi" ~ "House Price Index", 
                            name == "log_hpi" ~ "(log) House Price Index",
                            TRUE ~ NA)) %>% 
   ggplot(aes(x = year, y = value, group = cz_id, color = label)) + 
-  geom_jitter() + 
+  geom_line() + 
   facet_wrap(~name, scales = "free") + theme_minimal() + 
-  labs(title = "House Price Indices (levels, log-levels, and growth rates)", subtitle = "Unit: Commuting Zones", x = "Year", y = "Value") + 
+  labs(title = "FHFA House Price Indices (log-levels, and growth rates)", subtitle = "Unit: Commuting Zones. 1975-2024", x = "Year", y = "Value") + 
   scale_color_brewer(palette = "Dark2") +
   theme(legend.position = "none")
+
+
+# saveRDS(df, here("data/raw/fhfa_hpi/hpi_fips.RDS"))
+# saveRDS(df_cz, here("data/raw/fhfa_hpi/hpi_cz.RDS"))
 
 # hpi_master.csv is taken from "Master HPI Data" https://www.fhfa.gov/data/hpi/datasets?tab=master-hpi-data
 # With accompanying data dictionary
 
-
-is <- isatpanel(
-      data = df_cz,
-      formula = log_hpi ~ 1,
-      index = c("cz_id", "year"),
-      effect = "twoways",
-      #iis = TRUE,
-      fesis = TRUE,
-      ar = 1,
-      t.pval = 0.01,
-      max.block.size = 20
-    )
+# 
+# is <- isatpanel(
+#       data = df_cz,
+#       formula = log_hpi ~ 1,
+#       index = c("cz_id", "year"),
+#       effect = "twoways",
+#       #iis = TRUE,
+#       fesis = TRUE,
+#       ar = 1,
+#       t.pval = 0.01,
+#       max.block.size = 20
+#     )
 
