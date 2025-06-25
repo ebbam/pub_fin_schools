@@ -33,7 +33,7 @@ source(here('code/source_code/dicts.R'))
 source(here('code/source_code/useful_functions.R'))
 source(here('code/source_code/cz_cleaning.R'))
 
-unit_id = "fips"
+unit_id = "cz_id"
 
 ```
 
@@ -201,7 +201,7 @@ for(k in names(lister)){
 
 When looking at the share of expenditure on elementary education coming from own sources (as opposed to state or national sources) we see a mean of 38.6%.
 ```{r, echo = FALSE, message = FALSE, warnings = FALSE}
-
+library(GGally)
 pp1 <- mines_restr %>% 
   ggplot() + 
   geom_histogram(aes(x = share_own), fill = "darkgreen", alpha = 0.5, bins = 50) +
@@ -209,7 +209,8 @@ pp1 <- mines_restr %>%
   theme_minimal() +
   labs(x = "(Mean) Share of Expenditure on Elementary Education from Own Sources",
        title = "Histogram: Share of Expenditure on Elementary Education from Own Sources", 
-       y = "Number of counties")
+       y = "Number of CZs")  +
+  common_theme
 
 pp2 <- mines_restr %>% 
   filter(year == 2021) %>% 
@@ -221,11 +222,26 @@ pp2 <- mines_restr %>%
  # geom_vline(aes(xintercept = mean(share_own), group = name),col='black', linetype = "dotted") +
   theme_minimal() +
   labs(x = "(Mean) Share of Expenditure on Elementary Education from Own Sources",
-       title = "Histogram: Share of Expenditure on Elementary Education from Own Sources", 
-       y = "Number of counties") + 
-  scale_y_break(c(200, 2000))
+       title = "Share of Expenditure on Elementary Education from Own Sources", 
+       y = "Number of CZs",
+       fill = "Revenue Source") + 
+  scale_y_break(c(200, 2000)) +
+  scale_fill_manual(
+    values = c("share_fed" = "#1f77b4", "share_state" = "#ff7f0e", "share_own" = "#2ca02c"),
+    labels = c(
+      "share_fed" = "Federal Revenue",
+      "share_state" = "State Revenue",
+      "share_own" = "Local Revenue"
+    )
+  ) +
+  theme(legend.position = "bottom") +
+  common_theme
+
 
 pp1 / pp2
+
+pp2
+
 
 ```
 
@@ -233,15 +249,58 @@ pp1 / pp2
 
 ```{r, echo = FALSE, message = FALSE, warnings = FALSE}
 
-mines_restr %>% 
-  ggplot(aes(x = log_real_Elem_Educ_Total_Exp_pp, y = log_real_Property_Tax_pp, colour = share_own_discrete)) +
+common_theme <- theme(
+  plot.title = element_text(size = 20),
+  legend.text = element_text(size = 18),
+  legend.title = element_text(size = 18),
+  axis.title.x = element_text(size = 16),
+  axis.title.y = element_text(size = 16),
+  axis.text.x = element_text(size = 14),
+  axis.text.y = element_text(size = 14)
+)
+
+share_overall <- mines_restr %>% 
+  ggplot(aes(y = log_real_Elem_Educ_Total_Exp_pp, x = log_real_Property_Tax_pp, colour = share_own_discrete)) +
   geom_jitter() +
     #geom_smooth(method=lm, colour = "black", linetype = "dashed") +
   labs(title = "Elem Education Expenditure pp vs Property Tax pp") +
   geom_abline(slope = 1, intercept = 0, linetype = 'dashed') +
   theme_bw() +
-  theme(title = element_text(size = 9)) +
-  labs(colour = "Reliance on Local Sources")
+  theme(title = element_text(size = 9), legend.position = "bottom") +
+  labs(colour = "Reliance on Local Sources",
+       x = "(log) Property Tax pp",
+       y = "(log) Elem Education Expenditure pp") +
+  scale_color_brewer(palette = "Set2") + common_theme
+
+facet_labels <- c(
+  mean_share_own = "Own Revenue Share",
+  mean_share_state = "State Revenue Share",
+  mean_share_fed = "Federal Revenue Share"
+)
+
+
+share_by_source <- mines_restr %>% 
+  group_by(cz_id, state_name) %>% 
+  summarise(mean_share_own = mean(share_own, na.rm = TRUE), 
+            mean_share_state = mean(share_state, na.rm = TRUE),
+            mean_share_fed = mean(share_fed, na.rm = TRUE),
+            mean_log_real_gdp_total_pc = mean(log_real_gdp_total_pc, na.rm = TRUE))  %>% 
+  ungroup %>% 
+  pivot_longer(c(mean_share_own, mean_share_state, mean_share_fed)) %>% 
+  ggplot(aes(x = mean_log_real_gdp_total_pc, y = value, color = name)) +
+  geom_jitter() +
+  facet_wrap(~name, labeller = labeller(name = facet_labels)) +
+  labs(title = "Ed. Exp. Rev. Shares vs. Local GDP (mean by CZ)", subtitle = "Educational expenditure by source of revenue.",
+       x = "(log) Real GDP per capita", y = "Share of Educ. Exp. by Source of Revenue") +
+  geom_abline(slope = 1, intercept = 0, linetype = 'dashed') +
+  theme_bw() +
+  theme(title = element_text(size = 9), legend.position = "none") +
+  scale_color_brewer(palette = "Set1") +
+  common_theme
+
+share_overall / share_by_source
+
+share_overall
 
 
 ```
@@ -569,7 +628,6 @@ for(k in names(lister)){
 }
 
 
-
 ```
 
 #### KR 4: GDP and Education Expenditure
@@ -615,6 +673,8 @@ for(k in names(lister)){
   print((tot + pp)/(tot2 + pp2) + plot_annotation(k, theme=theme(plot.title=element_text(hjust=0.5))))
   
 }
+
+pp/pp2 + plot_annotation(title = "Relationship between GDP pc and Education Expenditure", theme=theme(plot.title=element_text(size = 18, hjust=0.5)))
 
 
 ```
