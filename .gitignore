@@ -63,3 +63,4 @@ data/raw/BEA_county_econ_stats/**/*.csv
 /code/regressions_cache
 /code/regressions_files
 /code/old_versions
+data/raw/TheGovernmentFinanceDatabase_SchoolDistrictData/2006_classification_manual.pdf
