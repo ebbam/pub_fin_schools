@@ -17,11 +17,9 @@ editor_options:
 
 The following document summarises the progress made thus far on Chapter 1: Local Fiscal Risks of Decarbonisation of my DPhil. The work aims to pursue a better understanding of how industrial transformation impacts local well-being. From an original interest in looking at all aspects of local public finance, the project has narrowed to focus on expenditure on public education and its connection to industrial prosperity and transformation.
 
-Below, I provide some descriptive statistics and figures about the data as well as some preliminary efforts to explore the trends in these values. 
+Below, I provide some descriptive statistics and figures about the data as well as some preliminary efforts to explore the trends in these values.
 
 *The main research question is: How does industrial transformation/activity impact county-level expenditure on public education?*
-
-
 
 ```{r, echo = FALSE, message = FALSE}
 
@@ -74,14 +72,12 @@ unit_id = "cz_id"
 
 ```
 
-
 ## CZ-level Education Expenditure
 
 ::: panel-tabset
 ### Data
 
 ```{r, echo = FALSE, message = FALSE, warnings = FALSE, fig.height = 10, include = FALSE}
-
 
 if(unit_id == "cz_id"){
   print(paste0("Running analysis on CZs (", unit_id, ")."))
@@ -204,18 +200,8 @@ mean_df <- mines_tots %>%
                        log_real_Total_Educ_Total_Exp = mean(log_real_Total_Educ_Total_Exp, na.rm = TRUE),
                        log_real_Total_Educ_Total_Exp_pp = mean(log_real_Total_Educ_Total_Exp_pp, na.rm = TRUE))
 
-# mean_df_cz <- mines_cz %>% 
-#   group_by(year) %>%
-#              summarise(real_Total_Educ_Total_Exp = mean(real_Total_Educ_Total_Exp, na.rm = TRUE),
-#                        real_Total_Educ_Total_Exp_pp = mean(real_Total_Educ_Total_Exp_pp, na.rm = TRUE),
-#                        log_real_Total_Educ_Total_Exp = mean(log_real_Total_Educ_Total_Exp, na.rm = TRUE),
-#                        log_real_Total_Educ_Total_Exp_pp = mean(log_real_Total_Educ_Total_Exp_pp, na.rm = TRUE))
-
-
 ```
-
-
-::: 
+:::
 
 :::
 
@@ -336,14 +322,13 @@ macro_natl <- left_join(uer, gdp, by = "DATE") %>%
 
 ```
 
-
 What would be great is to be able to econometrically test when a county is "declining." In the first step, it would be good to identify when a county is declining overall (GDP, poverty, etc) but ideally eventually apply this to the education outcome. My hope is that being able to identify counties that are "declining" we can either use this variable as a covariate or as a central point of analysis. The below analysis looks at state- and commuting zone level variables.
 
 Some current options:
 
 -   Deviation from t_0
 -   Change in logs
--   y ~ beta*t
+-   y \~ beta\*t
 -   Coefficient Fixed Effect Step Indicator Saturation (Breaks in the coefficient for each individual)
 
 <!-- -   Autocorrelation (X) -->
@@ -368,19 +353,12 @@ trends <- feols(log_real_gdp_priv_ind ~ time:as.factor(state) | state + year, da
 #trends %>% etable(., se.below = TRUE)
 
 trends$coefficients %>%
-
   tibble %>%
-
   rename(coef = '.') %>%
-
   ggplot() +
-
   geom_histogram(aes(x = coef), bins = 15) +
-
   theme_bw() +
-
   labs(title = "Histogram of State-level Trend Coefficient: (log) Real Private Industry GDP")+
-
   geom_vline(aes(xintercept = 0), colour = "red", linetype = "dotted")
 
 ```
@@ -496,6 +474,12 @@ for(k in names(select(fips_trends_dat, contains('delta') & contains('log_real_El
 
 Trend in log Elementary Education Expenditure (growth rate). The below plots show the mean of the change in log of the variable of interest. In the first panel I include no additional controls but in the latter two panels I include the state and national level growth rates as controls.
 
+We measure the "residual" growth trends in the following way. 1. Without controls: model the univariate case $\Delta log(E_{it}) = 1 + \epsilon_{it}$
+
+2.  Controlling for state trend: $\Delta log(E_{it}) = \Delta log(E_{st}) + \epsilon_{it}$
+
+3.  Controlling for national trend: $\Delta log(E_{it}) = \Delta log(E_{t}) + \epsilon_{it}$
+
 ```{r, echo = FALSE, cache = TRUE, fig.height = 8}
 
 # Create state-outlines
@@ -589,7 +573,6 @@ county_ed_coefs %>%
   scale_fill_brewer(palette = "Set2") +
   labs(x = NULL, y = "No. of Counties") 
 
-
 if(unit_id == "fips"){
   county_ed_temp <- county_ed_coefs %>% 
     rename_with(~ unit_id, .cols = "unit")
@@ -631,25 +614,172 @@ rm(county_ed_trends)
 rm(county_ed_trends_controlled_natl)
 rm(county_ed_trends_controlled_state)
 
+cz_map_data <- cz_to_map(mutate(rename(county_ed_coefs, cz_id = unit), year = 2001), gen_czs_years(rename(mutate(county_ed_coefs, year = 2001), cz_id = unit), czs)) 
 
-cz_map_data <- cz_to_map(mines_restr, gen_czs_years(mines_restr, czs)) %>% 
-  group_by(fips) %>% 
-  summarise(mean_log_real_gdp_total = mean(log_real_gdp_total, na.rm = TRUE))
-
-  plot_usmap(data = cz_map_data, values = "mean_log_real_gdp_total", regions = "counties", col = "gray90", linewidth = 0.01, exclude = c("AK", "HI")) +
+plot_usmap(data = cz_map_data, values = "trend_cont_natl", regions = "counties", col = "gray90", linewidth = 0.01, exclude = c("AK", "HI")) +
   scale_fill_gradient2(midpoint = 0, na.value = "grey98") +
   #scale_fill_distiller(colours=c(bl,"white", re), name = "", direction = 1, na.value = "gray90", limits = c(-1, 1)) +
   theme(panel.background = element_rect(color = "white", fill = "white"),
         plot.title = element_text(face = "bold"), legend.background=element_blank(), legend.title = element_blank()) +
-  labs(title = "Realgdptotal") #+
-  #ggplot2::geom_sf(data = dat, colour = "blue", fill = NA, linewidth = 0.1)
+  labs(title = "Trend (Overall)") 
 
+plot_usmap(data = cz_map_data, values = "trend_cont_state", regions = "counties", col = "gray90", linewidth = 0.01, exclude = c("AK", "HI")) +
+  scale_fill_gradient2(midpoint = 0, na.value = "grey98") +
+  #scale_fill_distiller(colours=c(bl,"white", re), name = "", direction = 1, na.value = "gray90", limits = c(-1, 1)) +
+  theme(panel.background = element_rect(color = "white", fill = "white"),
+        plot.title = element_text(face = "bold"), legend.background=element_blank(), legend.title = element_blank()) +
+  labs(title = "Trend Controlling for State") 
+
+
+plot_usmap(data = cz_map_data, values = "trend_cont_natl", regions = "counties", col = "gray90", linewidth = 0.01, exclude = c("AK", "HI")) +
+  scale_fill_gradient2(midpoint = 0, na.value = "grey98") +
+  #scale_fill_distiller(colours=c(bl,"white", re), name = "", direction = 1, na.value = "gray90", limits = c(-1, 1)) +
+  theme(panel.background = element_rect(color = "white", fill = "white"),
+        plot.title = element_text(face = "bold"), legend.background=element_blank(), legend.title = element_blank()) +
+  labs(title = "Trend Controlling for National") 
+
+```
+
+$$
+\Delta log(E)_{it}
+= \beta_{0}
++ \beta_{N}\,\mathrm{\Delta log(E)}_{t}^{national}
++ \beta_{S}\,\mathrm{\Delta log(E)}_{it}^{state}
+\;+\;
+b_{0i}
++ b_{Ni}\,\mathrm{\Delta log(E)}_{t}^{national}
++ b_{Si}\,\mathrm{\Delta log(E)}_{it}^{state}
+\;+\;
+\varepsilon_{it},
+$$
+
+```{r}
+# Load necessary packages
+library(lme4)
+
+# 1. Stack national, state, and county data into one panel
+panel <- mines_restr %>%
+  left_join(mines_natl   %>% select(year, nat_trend   = diff_log_real_Elem_Educ_Total_Exp_pp),
+            by = "year") %>%
+  left_join(mines_state %>% select(year, state, state_trend = diff_log_real_Elem_Educ_Total_Exp_pp),
+            by = c("year", "state"))
+
+# 2. Fit the mixed‐effects (“factor”) model
+mod <- lmer(
+  diff_log_real_Elem_Educ_Total_Exp_pp ~ 
+    nat_trend + 
+    state_trend + 
+    (1 + nat_trend + state_trend | unit),
+  data = panel, 
+  REML = FALSE
+)
+
+# 3. Extract fixed effects
+fe      <- fixef(mod)
+beta0   <- fe["(Intercept)"]
+betaN   <- fe["nat_trend"]
+betaS   <- fe["state_trend"]
+
+# 4. Extract county‐level random deviations
+re_unit <- ranef(mod)$unit %>%
+  tibble::rownames_to_column("unit") %>%
+  rename(
+    local_int_dev   = `(Intercept)`,
+    nat_slope_dev   = nat_trend,
+    state_slope_dev = state_trend
+  )
+
+# 5. Compute each county’s factor loadings
+county_factors <- re_unit %>%
+  mutate(
+    local_factor     = beta0 + local_int_dev,
+    nat_sensitivity  = betaN + nat_slope_dev,
+    state_sensitivity = betaS + state_slope_dev
+  )
+
+# 6a. Plot sensitivities: national vs. state
+ggplot(county_factors, aes(x = nat_sensitivity, y = state_sensitivity)) +
+  geom_point(alpha = 0.6) +
+  geom_vline(xintercept = betaN, linetype = "dashed", colour = "grey50") +
+  geom_hline(yintercept = betaS, linetype = "dashed", colour = "grey50") +
+  labs(
+    x = "County Sensitivity to National Trend",
+    y = "County Sensitivity to State Trend",
+    title = "County Co‐movement with National & State Education Spending Trends"
+  ) +
+  theme_minimal()
+# 
+
+panel_contribs <- panel %>%
+  left_join(county_factors, by = "unit") %>%
+  mutate(
+    contr_local     = local_factor,
+    contr_national  = nat_sensitivity  * nat_trend,
+    contr_state     = state_sensitivity * state_trend
+  )
+county_contribs_time <- panel_contribs %>%
+  group_by(unit) %>%
+  summarize(
+    contrib_local    = mean(contr_local,    na.rm = TRUE),
+    contrib_national = mean(contr_national, na.rm = TRUE),
+    contrib_state    = mean(contr_state,    na.rm = TRUE)
+  ) %>%
+  pivot_longer(
+    cols      = -unit,
+    names_to  = "source",
+    values_to = "contribution"
+  )
+# # 6b. Compute average contributions at mean trends
+# mean_nat <- mean(panel$nat_trend, na.rm = TRUE)
+# mean_st  <- mean(panel$state_trend, na.rm = TRUE)
+# 
+# county_contribs <- county_factors %>%
+#   transmute(
+#     unit,
+#     contrib_local    = local_factor,
+#     contrib_national = nat_sensitivity  * mean_nat,
+#     contrib_state    = state_sensitivity * mean_st
+#   ) %>%
+#   pivot_longer(-unit, names_to = "source", values_to = "contribution")
+
+# 6c. Plot stacked contributions (one bar per county, ordered by total)
+ggplot(county_contribs_time, aes(x = reorder(unit, -contribution), y = contribution, fill = source)) +
+  geom_col() +
+  labs(
+    x = NULL,
+    y = "Avg per‐year Δ log per‐pupil spending",
+    fill = "Driver",
+    title = "Decomposed County‐Level Growth Drivers"
+  ) +
+  theme_minimal() +
+  theme(axis.text.x = element_blank()) +
+  scale_fill_brewer(palette = "Set2") +
+    scale_fill_manual(
+    name = "Driver",
+    values = c(
+      "contrib_state" = "#66c2a5",
+      "contrib_national" = "#fc8d62",
+      "contrib_local" = "#8da0cb"
+    ),
+    labels = c(
+      "contrib_state" = "State Factors",
+      "contrib_national" = "National Factor",
+      "contrib_local" = "Local Factors"
+    )
+  )
+
+
+model <- feols(
+  diff_log_real_Elem_Educ_Total_Exp_pp ~ 1 | unit + year + state^year,
+  data = mines_cz,
+  cluster = "unit"  # clustered standard errors at unit level
+)
+
+summary(model)
 
 ```
 
 ```{r}
-
-
 
 # Coefficient on state and national level trends
 county_ed_sensitivities %>% 
@@ -681,6 +811,7 @@ plot_usmap(data = mute_outliers(county_ed_temp, "sensitivity_state"), values = "
 }
 
 ```
+
 ### Trends
 
 Trend in log Elementary Education Expenditure. The below plots show the coefficient estimate on the time-step variable in the trend equation. In the first panel I include no additional controls but in the latter two panels I include the state and national level growth rates as controls.
@@ -821,6 +952,7 @@ rm(county_ed_trends_controlled_natl)
 rm(county_ed_trends_controlled_state)
 
 ```
+
 ### Growth Rates
 
 ::: panel-tabset
@@ -1160,9 +1292,7 @@ state_coefs %>%
 
 ### Outliers
 
-The following isoltes those counties that have significant negative or positive trend values. 
-::: panel-tabset
-#### Negative
+The following isoltes those counties that have significant negative or positive trend values. ::: panel-tabset \#### Negative
 
 ```{r, echo = FALSE}
 
@@ -1301,8 +1431,6 @@ county_gdp %>%
 
 ```
 
-
-
 ### Cointegration testing
 
 Suggestions from Jennie:
@@ -1423,5 +1551,3 @@ for(s in 1:length(state_list[1:6])){
 # cor.test(x, y, method=c("pearson", "kendall", "spearman"))
 
 ```
-
-
