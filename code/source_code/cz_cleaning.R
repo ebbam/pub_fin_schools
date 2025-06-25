@@ -40,14 +40,14 @@ gen_czs_years <- function(df, cz_conversion){
 cz_to_map <- function(df, czs_years, vars = NULL){
   if(!is.null(vars)){
     print("Returning dataframe with selected vars.")
-    temp <- mines_restr %>% 
+    temp <- df %>% 
       select(cz_id, year, all_of(vars)) %>% 
       left_join(czs_years, ., by = c("cz_id", "year")) 
 
   }else{
     print("Returning dataframe with all vars.")
     temp <- czs_years %>% 
-      left_join(., mines_restr, by = c("cz_id", "year"))
+      left_join(., df, by = c("cz_id", "year"))
   }
   return(temp)
 }
