@@ -62,13 +62,13 @@ print("saved county fips file.")
 ################################################################################
 ################################################################################
 
-czs <- czs %>% 
+czs_new <- czs %>% 
   rename(old_fips = fips) %>% 
   mutate(fips = case_when(!is.na(getfips[old_fips]) ~ getfips[old_fips],
                           TRUE ~ old_fips),
          cz_id = as.character(cz_id))
 
-missing_fips <- czs %>% 
+missing_fips <- czs_new %>% 
   pull(fips) %>% 
   unique %>% 
   setdiff(unique(fips_stats$fips), .) 
@@ -78,7 +78,7 @@ if (length(missing_fips) > 0) {
 }
 
 cz_stats <-  fips_stats %>% 
-  left_join(., czs, by = "fips", multiple = "first") %>% 
+  left_join(., czs_new, by = "fips", multiple = "first") %>% 
   rename("unit" = cz_id) %>% 
   select(-fips) %>%
   group_by(unit, year) %>% 
