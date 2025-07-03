@@ -37,7 +37,6 @@ unit_id = "cz_id"
 
 ```
 
-
 ## Descriptive Statistics
 
 ```{r cars, echo = FALSE}
@@ -149,7 +148,7 @@ mean_df_cz <- mines_cz %>%
 
 ```
 
-```{r}
+```{r, echo = FALSE}
 
 if(unit_id == "both"){
   lister = list("cz_id" = mines_cz, "fips" = mines_restr) 
@@ -200,6 +199,7 @@ for(k in names(lister)){
 
 
 When looking at the share of expenditure on elementary education coming from own sources (as opposed to state or national sources) we see a mean of 38.6%.
+
 ```{r, echo = FALSE, message = FALSE, warnings = FALSE}
 library(GGally)
 pp1 <- mines_restr %>% 
@@ -249,16 +249,6 @@ pp2
 
 ```{r, echo = FALSE, message = FALSE, warnings = FALSE}
 
-common_theme <- theme(
-  plot.title = element_text(size = 20),
-  legend.text = element_text(size = 18),
-  legend.title = element_text(size = 18),
-  axis.title.x = element_text(size = 16),
-  axis.title.y = element_text(size = 16),
-  axis.text.x = element_text(size = 14),
-  axis.text.y = element_text(size = 14)
-)
-
 share_overall <- mines_restr %>% 
   ggplot(aes(y = log_real_Elem_Educ_Total_Exp_pp, x = log_real_Property_Tax_pp, colour = share_own_discrete)) +
   geom_jitter() +
@@ -301,6 +291,22 @@ share_by_source <- mines_restr %>%
 share_overall / share_by_source
 
 share_overall
+
+mines_restr %>% 
+  group_by(cz_id, state_name) %>% 
+  summarise(mean_share_own = mean(share_own, na.rm = TRUE), 
+            mean_share_state = mean(share_state, na.rm = TRUE),
+            mean_share_fed = mean(share_fed, na.rm = TRUE))  %>% 
+  ungroup %>% 
+  left_join(czs,., by = "cz_id") %>% 
+  plot_usmap(data = ., values = "mean_share_own", regions = "counties", col = "gray90", linewidth = 0.01, exclude = c("AK", "HI")) +
+  borders("states", color = "black", size = 0.3) +
+  scale_fill_gradient2(midpoint = 0, na.value = "palegreen", low = "mediumvioletred", high = "midnightblue") +
+  #scale_fill_distiller(colours=c(bl,"white", re), name = "", direction = 1, na.value = "gray90", limits = c(-1, 1)) +
+  theme(panel.background = element_rect(color = "white", fill = "white"),
+        plot.title = element_text(face = "bold")) +
+  labs(title = "Share of Exp from Own Sources",
+       fill = "Share of Exp from Own Sources (Mean 2001-2021)") 
 
 
 ```
@@ -683,7 +689,7 @@ pp/pp2 + plot_annotation(title = "Relationship between GDP pc and Education Expe
 
 If we use a Chmura economic diversity indicator and plot GDP, private industry GDP, education expenditure, and elementary education expenditure we see that there is little difference in the mean of expenditure, however higher values of each occur only in more diverse counties. This data is only available at county level, not commuting zone level. 
 
-```{r}
+```{r, echo = FALSE, warning = FALSE, message = FALSE}
 
 t1 <-  mines_restr %>% 
   ggplot(aes(x = econ_div, y = log_real_gdp_total_pc)) +
@@ -867,7 +873,7 @@ enr_schd <- mines_cz %>%
 
 In this sanity check, I look at what proportion of reported school age children per state seem to be represented in the enrollment numbers in our Survey of Local Finances dataset. We see that this share varies in magnitude by state (Maine having only 40% of school-age children covered). Considering that \~ 9% of students are enrolled in private schools across the US, the coverage in the top states is not too bad!
 
-```{r}
+```{r, echo = FALSE, warning = FALSE, message = FALSE}
 
 natl_coverage <- mines_restr %>%
   select(year, Enrollment, pop_school_age) %>%
@@ -912,7 +918,7 @@ mines_restr %>%
 
 #### Maps
 
-```{r}
+```{r, echo = FALSE, warning = FALSE, message = FALSE}
 
 mines_restr_2021 <- mines_restr %>% filter(year == 2021) %>% 
   select(fips, log_real_Property_Tax_pp, log_real_Elem_Educ_Total_Exp_pp, log_real_gdp_priv_ind_pc)
@@ -947,7 +953,7 @@ map_prop_tax + map_elem_ed + map_priv_ind_gdp
 
 
 ## Create map of expenditure per pupil
-```{r}
+```{r, echo = FALSE, warning = FALSE, message = FALSE}
 
 plot_usmap(data = filter(mines_restr, year == 2020), color = "white", values = "log_Total_Revenue_pp", regions = "counties", exclude = c("AK", "HI")) +
     labs(title = "U.S. County Public School Enrollment") + 
