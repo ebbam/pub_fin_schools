@@ -94,8 +94,14 @@ source(here("code/source_code/cz_cleaning.R"))
 df_list_natl <- readRDS(here('data/raw/QCEW/natl_all_industries_99_08.RDS')) %>%
   rbind(readRDS(here("data/raw/QCEW/natl_all_industries_09_22.RDS")))
 
+df_natl_va <- readRDS(here("data/raw/bea_va/va_for_ss.rds")) %>% 
+  select(year, log_real_VA, diff_log_real_VA, ind_code) %>% 
+  mutate(ind_code = gsub("-", "_", ind_code)) %>% 
+  rename(gr_real_VA = diff_log_real_VA) %>% 
+  pivot_wider(id_cols = year, names_from = c(ind_code), values_from = c(log_real_VA, gr_real_VA)) 
+  
 # National rates
-natl_rates_plot <- df_list_natl %>% 
+natl_rates_plot_short <- df_list_natl %>% 
   filter(!(industry_code %in% c("99", "999"))) %>% 
   group_by(year, industry_code, agglvl_code) %>%
   summarise(across(c(annual_avg_emplvl, total_annual_wages), ~sum(., na.rm = TRUE)),
@@ -112,9 +118,39 @@ natl_rates_plot <- df_list_natl %>%
                                     agglvl_code == "15" ~ "C. Disaggregated (3-digit)",
                                     TRUE ~ NA))
 
+# # I need to fill in the industry codes that are "grouped" and therefore separate in df_list_natl
+# "Manufacturing" = "31-33",
+# "Retail Trade" = "44-45",
+# "Transportation and Warehousing" = "48-49",
+inds_missing <- df_list_natl %>% 
+  mutate(industry_code = case_when(substr(industry_code, 1,1) == "3" ~ "31_33", 
+          substr(industry_code, 1,2) %in% c("44", "45") ~ "44_45",
+         substr(industry_code, 1,2) %in% c("48", "49") ~ "48_49",
+  TRUE ~ NA)) %>% 
+    filter(!is.na(industry_code)) %>% 
+    # Exact same lines as above when creating natl_rates_plot
+    group_by(year, industry_code, agglvl_code) %>%
+    summarise(across(c(annual_avg_emplvl, total_annual_wages), ~sum(., na.rm = TRUE)),
+              annual_avg_wkly_wage = mean(annual_avg_wkly_wage, na.rm = TRUE)) %>%
+    ungroup %>% 
+    rename_with(~str_c("natl_", .), annual_avg_emplvl:annual_avg_wkly_wage) %>% 
+    arrange(industry_code, agglvl_code, year) %>% 
+    # Creates first-difference or change and lag for employment and wage levels
+    group_by(industry_code, agglvl_code) %>% 
+    mutate(across(natl_annual_avg_emplvl:natl_annual_avg_wkly_wage, list(gr = ~log(.) - lag(log(.),1), log = ~log(.)), .names = "{.fn}_{.col}")) %>% 
+    ungroup %>% 
+    mutate(agglvl_code ="14",
+           classification = "B. Disaggregated (2-digit)")
+
+identical(names(inds_missing), names(natl_rates_plot_short))
+
+natl_rates_plot <- natl_rates_plot_short %>% 
+  rbind(inds_missing)
+
 natl_rates <- natl_rates_plot %>% 
   filter(!(agglvl_code %in% c(11, 12, 94, 95))) %>%
-  pivot_wider(id_cols = year, names_from = c(industry_code), values_from = natl_annual_avg_emplvl:log_natl_annual_avg_wkly_wage) 
+  pivot_wider(id_cols = year, names_from = c(industry_code), values_from = natl_annual_avg_emplvl:log_natl_annual_avg_wkly_wage) %>% 
+  left_join(df_natl_va, ., by = "year")
 
 p1 <- natl_rates_plot %>% 
   pivot_longer(!c(year, industry_code, agglvl_code, classification)) %>% 
@@ -199,7 +235,7 @@ compute_shares <- function(source = NULL, base_year, industry_codes, unit_id = "
   # This section cleans the base_file
   temp <- temp_test %>%
     # Filters industry codes that have 4-digits or more
-    filter(nchar(industry_code) <= 3) %>% 
+    filter(nchar(industry_code) <= 3 | grepl("-", industry_code)) %>% 
     # Filters out national and missing area codes
     filter(substr(area_fips, 3,5) != "000" & substr(area_fips, 3,5) != "999" & !grepl("US", area_fips)) %>%
     mutate(fips_state = substr(area_fips, 1,2)) %>%
@@ -213,9 +249,11 @@ compute_shares <- function(source = NULL, base_year, industry_codes, unit_id = "
     select(-fips_state) %>% 
     # Removes 72 because it is associated only with the industry code distinction between 101 (Goods-producing) and 102 (service-providing) : https://www.bls.gov/cew/classifications/industry/industry-titles.htm
     # Removes 73 becuase it refers to super sectors, not our relevant sectors : https://www.bls.gov/cew/classifications/aggregation/agg-level-titles.htm
-    filter(agglvl_code %in% c(70, 71, 74, 75) & disclosure_code != "N") 
+    filter(agglvl_code %in% c(70, 71, 74, 75) & disclosure_code != "N") %>% 
   # We keep 71 for now because in a few rare cases, agglvl_code ' 70 is not reported and we need to replace with the sum of 71's values 
   # even though "70" represents the total covered: https://www.bls.gov/cew/classifications/ownerships/ownership-titles.htm
+    mutate(industry_code = gsub("-", "_", industry_code))
+    
 
   
   if(unit_id == "cz_id"){
@@ -289,7 +327,7 @@ compute_shares <- function(source = NULL, base_year, industry_codes, unit_id = "
   
   # 2-digit coverage ratios
   coverage_2digit_naics <- shift_share %>% 
-    select(year, unit, matches("^share_annual_avg_emplvl_\\d{2}$")) %>% 
+    select(year, unit, matches("^share_annual_avg_emplvl_\\d{2}(?:_\\d{2})*$")) %>% 
     rowwise() %>% mutate(coverage_2digit_naics = sum(c_across(!c(year, unit)), na.rm = TRUE) - 1) %>%
     ungroup() %>% 
     select(year, unit, coverage_2digit_naics)
@@ -337,14 +375,19 @@ compute_ss <- function(dat, change = "gr"){
   share_cols <- names(dat)[str_starts(names(dat), "share_annual_avg_emplvl_")]
   shock_cols <- names(dat)[str_starts(names(dat), "gr_natl_annual_avg_wkly_wage_")]
   lev_shock_cols <- names(dat)[str_starts(names(dat), "log_natl_annual_avg_wkly_wage_")]
+  gdp_shock_cols <- names(dat)[str_starts(names(dat), "gr_real_VA_")]
+  lev_gdp_shock_cols <- names(dat)[str_starts(names(dat), "log_real_VA_")]
   
   
   # Extract suffixes
   share_suffixes <- str_remove(share_cols, "^share_annual_avg_emplvl_")
   shock_suffixes <- str_remove(shock_cols, "^gr_natl_annual_avg_wkly_wage_")
   lev_shock_suffixes <- str_remove(lev_shock_cols, "^log_natl_annual_avg_wkly_wage_")
+  gdp_shock_suffixes <- str_remove(gdp_shock_cols, "^gr_real_VA_")
+  lev_gdp_shock_suffixes <- str_remove(lev_gdp_shock_cols, "^log_real_VA_")
   
   # Find matched suffixes
+  # Identical to lev_shock_suffixes so keep as is
   matched_suffixes <- intersect(share_suffixes, shock_suffixes)
   
   # Loop through matched suffixes to compute shift-share terms
@@ -355,21 +398,21 @@ compute_ss <- function(dat, change = "gr"){
     ss_var <- sym(paste0("ss_", suffix))
     lev_ss_var <- sym(paste0("lev_ss_", suffix))
     
-    
     dat <- dat %>%
       mutate(!!ss_var := !!share_var * !!shock_var,
              !!lev_ss_var := !!share_var * !!lev_shock_var)
   }
+  
   # Identify all newly created ss_ columns
   ss_cols <- names(dat)[str_starts(names(dat), "ss_")]
   lev_ss_cols <- names(dat)[str_starts(names(dat), "lev_ss_")]
   
   # Separate by 2-digit and 3-digit suffixes
-  ss_2digit <- ss_cols[str_detect(ss_cols, "^ss_\\d{2}$")]
+  ss_2digit <- ss_cols[str_detect(ss_cols, "^ss_\\d{2}(?:_\\d{2})*$")]
   ss_3digit <- ss_cols[str_detect(ss_cols, "^ss_\\d{3}$")]
   
   # Separate by 2-digit and 3-digit suffixes
-  lev_ss_2digit <- lev_ss_cols[str_detect(lev_ss_cols, "^lev_ss_\\d{2}$")]
+  lev_ss_2digit <- lev_ss_cols[str_detect(lev_ss_cols, "^lev_ss_\\d{2}(?:_\\d{2})*$")]
   lev_ss_3digit <- lev_ss_cols[str_detect(lev_ss_cols, "^lev_ss_\\d{3}$")]
   
   # Add two new columns: row-wise sum for 2-digit and 3-digit suffixes
@@ -381,6 +424,40 @@ compute_ss <- function(dat, change = "gr"){
       lev_ss_2d = sum(c_across(all_of(lev_ss_2digit)), na.rm = TRUE),
       lev_ss_3d = sum(c_across(all_of(lev_ss_3digit)), na.rm = TRUE)
     ) %>%
+    ungroup()
+  
+  # Find matched suffixes for gdp
+  # Identical to lev_shock_suffixes so keep as is
+  matched_suffixes <- intersect(share_suffixes, gdp_shock_suffixes)
+  identical(matched_suffixes, intersect(share_suffixes, lev_gdp_shock_suffixes))
+  
+  # Loop through matched suffixes to compute shift-share terms
+  for (suffix in matched_suffixes) {
+    share_var <- sym(paste0("share_annual_avg_emplvl_", suffix))
+    shock_var <- sym(paste0("gr_real_VA_", suffix))
+    lev_shock_var <- sym(paste0("log_real_VA_", suffix))
+    ss_var <- sym(paste0("gdp_ss_", suffix))
+    lev_ss_var <- sym(paste0("lev_gdp_ss_", suffix))
+    
+    dat <- dat %>%
+      mutate(!!ss_var := !!share_var * !!shock_var,
+             !!lev_ss_var := !!share_var * !!lev_shock_var)
+  }
+  # Identify all newly created ss_ columns
+  ss_cols <- names(dat)[str_starts(names(dat), "gdp_ss_")]
+  lev_ss_cols <- names(dat)[str_starts(names(dat), "lev_gdp_ss_")]
+  
+  # Separate by 2-digit and 3-digit suffixes
+  ss_2digit <- ss_cols[str_detect(ss_cols, "^gdp_ss_\\d{2}(?:_\\d{2})*$")]
+  # Separate by 2-digit and 3-digit suffixes
+  lev_ss_2digit <- lev_ss_cols[str_detect(lev_ss_cols, "^lev_gdp_ss_\\d{2}(?:_\\d{2})*$")]
+  
+  # Add two new columns: row-wise sum for 2-digit and 3-digit suffixes
+  dat <- dat %>%
+    rowwise() %>%
+    mutate(
+      gdp_ss_2d = sum(c_across(all_of(ss_2digit)), na.rm = TRUE),
+      lev_gdp_ss_2d = sum(c_across(all_of(lev_ss_2digit)), na.rm = TRUE)) %>%
     ungroup()
   return(dat)
 }
@@ -419,9 +496,9 @@ if(new_flat){
   saveRDS(shares_flat2, here("data/raw/QCEW/shares_flat_2digit_filled.RDS"))
   
   shares_flat_filled <- shares_flat2 %>% 
-    select(year, unit, matches("^annual_avg_emplvl_\\d{2}$")) %>% 
+    select(year, unit, matches("^annual_avg_emplvl_\\d{2}(?:_\\d{2})*$")) %>% 
     rowwise() %>% 
-    mutate(annual_avg_emplvl_10_filled = sum(c_across(matches("^annual_avg_emplvl_\\d{2}$") & !matches("annual_avg_emplvl_10")), na.rm = TRUE)) %>% 
+    mutate(annual_avg_emplvl_10_filled = sum(c_across(matches("^annual_avg_emplvl_\\d{2}(?:_\\d{2})*$") & !matches("annual_avg_emplvl_10")), na.rm = TRUE)) %>% 
     ungroup %>% 
     mutate(annual_avg_emplvl_10_filled = ifelse(annual_avg_emplvl_10_filled > annual_avg_emplvl_10, annual_avg_emplvl_10_filled, annual_avg_emplvl_10)) %>% 
     select(year, unit, annual_avg_emplvl_10_filled) %>% 
@@ -431,7 +508,7 @@ if(new_flat){
   saveRDS(shares_flat_filled, here("data/raw/QCEW/shares_flat_2digit_filled_corrected_total.RDS"))
   
   coverage <- shares_flat_filled %>% 
-    select(year, unit, matches("^share_annual_avg_emplvl_\\d{2}$")) %>% 
+    select(year, unit, matches("^share_annual_avg_emplvl_\\d{2}(?:_\\d{2})*$")) %>% 
     rowwise() %>% mutate(coverage_2digit_naics = sum(c_across(!c(year, unit)), na.rm = TRUE) - 1) %>%
     ungroup() %>% 
     select(year, unit, coverage_2digit_naics)
