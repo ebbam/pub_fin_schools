@@ -31,7 +31,12 @@ if(unit_id == "cz_id"){
   source(here('data/raw/fhfa_hpi/cleaning_fhfa.R'))
   mines_cz <- mines_cz %>% 
     left_join(., rename(df_cz, unit = cz_id), by = c("unit", "year")) %>%
-    mutate(state_share = real_Total_State_IG_Revenue_pp/real_Total_Educ_Total_Exp_pp)
+    mutate(state_share = real_Total_State_IG_Revenue_pp/real_Total_Educ_Total_Exp_pp) %>% 
+    arrange(cz_id, year) %>% 
+    group_by(cz_id) %>% 
+    mutate(l1_log_real_Elem_Educ_Total_Exp_pp = lag(log_real_Elem_Educ_Total_Exp_pp),
+           l1_diff_log_real_Elem_Educ_Total_Exp_pp = lag(diff_log_real_Elem_Educ_Total_Exp_pp)) %>% 
+    ungroup
   
 }else if(unit_id == "fips"){
   print(paste0("Running analysis on counties (", unit_id, ")."))
