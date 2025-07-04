@@ -953,7 +953,10 @@ challenges with missing data, we compute an average share across
 
 <!-- Instruments](../output/bartik_graphs.jpg){#fig-bartik_graph} -->
 
-```{r, fig.height = 10, fig.width = 8, echo = FALSE, warning = FALSE, message = FALSE}
+```{r appendix_industry_shares_cleaning, include = FALSE, echo = FALSE, results = 'asis'}
+
+append_to_appendix("## SS Construction",
+               "Plots of the data inputs to the shift-share instrument.")
 
 # Draw the functions needed to calculate the SS instruments from the following script.
 source(here("data/raw/QCEW/industry_shares_cleaning.R"))
@@ -1410,17 +1413,17 @@ trend_pc_hist <- cz_trends %>%
 
 trend_hist / trend_pc_hist
 
-# Declining is inconsistent in 21.5% of cases
-cz_trends %>%
-  filter(declining != declining_pc) %>% nrow()/nrow(cz_trends)
-
-# Declining extreme is inconsistent in 15.4% of cases
-cz_trends %>%
-  filter(declining_extreme != declining_pc_extreme) %>% nrow()/nrow(cz_trends)
-
-# Growing extreme is inconsistent in 11.9% of cases
-cz_trends %>%
-  filter(growing_extreme != growing_pc_extreme) %>% nrow()/nrow(cz_trends)
+# # Declining is inconsistent in 21.5% of cases
+# cz_trends %>%
+#   filter(declining != declining_pc) %>% nrow()/nrow(cz_trends)
+# 
+# # Declining extreme is inconsistent in 15.4% of cases
+# cz_trends %>%
+#   filter(declining_extreme != declining_pc_extreme) %>% nrow()/nrow(cz_trends)
+# 
+# # Growing extreme is inconsistent in 11.9% of cases
+# cz_trends %>%
+#   filter(growing_extreme != growing_pc_extreme) %>% nrow()/nrow(cz_trends)
 
 theme_update(plot.background = element_rect(fill = NA, color = NA),
              panel.background = element_rect(fill = NA, color = NA),
@@ -1669,17 +1672,6 @@ map_data <- mines_cz %>%
   filter(year == 2021) %>% 
   select(unit, year, log_weighted_annual_avg_wkly_wage, gr_weighted_annual_avg_wkly_wage) %>% 
   rename(cz_id = unit)
-
-cz_wage_trends %>% rename(cz_id = unit) %>% left_join(czs,., by = "cz_id") %>% 
-  mutate(corrected_trend = 1-wage_trend) %>% 
-  plot_usmap(data = ., values = "corrected_trend", regions = "counties", col = "gray90", linewidth = 0.01, exclude = c("AK", "HI")) +
-  scale_fill_gradient2(midpoint = 1, na.value = "palegreen", low = "mediumvioletred", high = "midnightblue") +
-  #scale_fill_distiller(colours=c(bl,"white", re), name = "", direction = 1, na.value = "gray90", limits = c(-1, 1)) +
-  theme(panel.background = element_rect(color = "white", fill = "white"),
-        plot.title = element_text(face = "bold")) +
-  labs(title = "Growth Rate of Weekly Wage in Relation to Median (CZ)",
-       fill = "Growth Rate in Weekly Wage (2001-2021)") 
-  
 
 map_gr_wage <- gen_czs_years(map_data) %>% 
   left_join(., map_data, by = "cz_id") %>% 
@@ -2529,6 +2521,10 @@ for(mod in list(pvar_model_levels, pvar_model_levels_pc)){
   #           mc.cores = 5)
   # Plot IRFs
   plot(irf_result, scales = "free") %>% print()
+  cat("    \n")
+  cat("    \n")
+  cat("    \n")
+  cat("    \n")
 }
 
 

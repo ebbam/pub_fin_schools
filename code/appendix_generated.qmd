@@ -41,6 +41,13 @@ Below we display key relationships between several of the economic variables in 
 ```{r, ref.label='KRs', echo = FALSE, eval=TRUE, results = 'asis'}
 ```
 
+## SS Construction
+
+Plots of the data inputs to the shift-share instrument.
+
+```{r, ref.label='appendix_industry_shares_cleaning', echo = FALSE, eval=TRUE, results = 'asis'}
+```
+
 ## Panel VAR Specification
 
 $$
@@ -102,33 +109,40 @@ In the following set of results, I report descriptive regressions to establish r
 All regression models that follow include TWFE (CZ- and year- fixed effects) and standard errors clustered by commuting zone.
 All functional forms in the feols() functions below are of the form Y ~ X In the cases in which multiple estimations are included via sw(Xa, Xb, Xc + Xd), the function will return results for Y~Xa, Y~Xb, Y ~ Xc + Xd.
 
-```{r, ref.label='unnamed-chunk-71', echo = FALSE, eval=TRUE, results = 'asis'}
+```{r, ref.label='unnamed-chunk-70', echo = FALSE, eval=TRUE, results = 'asis'}
 ```
 
 ### Property Tax ~ GDP
 
 GDP has a highly relevant relationship to property taxes. A 1% increase in GDP (per capita) leads to a 0.38% (0.32%) increase in property taxes collected (per capita).
 
-```{r, ref.label='unnamed-chunk-72', echo = FALSE, eval=TRUE, results = 'asis'}
+```{r, ref.label='unnamed-chunk-71', echo = FALSE, eval=TRUE, results = 'asis'}
 ```
 
 ### Education Expenditure ~ Revenue Sources
 
 The below regressions are included to establish the relationship between education expenditure and its component parts. These regressions simply corroborate what is displayed in the section on Key Relationships in [LINK](https://ebbam.github.io/pub_fin_schools/code/cz_results.html) (ie. that the largest form of IG revenue is state funding and Own Source revenue is largely sourced from Property Taxes).
 
-```{r, ref.label='unnamed-chunk-73', echo = FALSE, eval=TRUE, results = 'asis'}
+```{r, ref.label='unnamed-chunk-72', echo = FALSE, eval=TRUE, results = 'asis'}
 ```
 
 ### Education Expenditure ~ GDP
 
 A 1% increase in GDP pc is associated with a 0.19% increase in education expenditure per pupil, dominated by the effect of GDP from private industry (0.16%). I include here also the GDP generated from the oil, gas, mining, and quarrying sector. The effect is small and statistically insignificant.
 
-```{r, ref.label='unnamed-chunk-74', echo = FALSE, eval=TRUE, results = 'asis'}
+```{r, ref.label='unnamed-chunk-73', echo = FALSE, eval=TRUE, results = 'asis'}
 ```
 
 ## Key Relationships between Economic Variables
 
 Below we display key relationships between several of the economic variables in our study.
+
+```{r, ref.label='unnamed-chunk-74', echo = FALSE, eval=TRUE, results = 'asis'}
+```
+
+## SS Construction
+
+Plots of the data inputs to the shift-share instrument.
 
 ```{r, ref.label='unnamed-chunk-75', echo = FALSE, eval=TRUE, results = 'asis'}
 ```
