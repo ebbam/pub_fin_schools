@@ -278,8 +278,10 @@ variables. [^5]
     by a partnership with the National Center for Education Statistics,
     observations for US school districts exhibit near-complete coverage
     between 1997-2021 @pierson . I choose to conduct the analysis on the
-    commuting zone level because of a lack of availability of control
-    variables at a school district level.
+    commuting zone level because (1) it is a more accurate picture of a
+    local labor market area ( @carpenterWhenUseCommuting2022) and (2) a
+    lack of availability of control variables at a school district
+    level.
 
 Thus, this dataset provides estimates in current \$USD on total public
 school revenue disaggregated by source (federal, state, local
@@ -291,9 +293,9 @@ therefore the panel reported and used below is restricted to 2001-2021.
 This results in a complete and balanced panel of 636 US commuting zones
 between 2001-2021. [^6] [^7]
 
-[^6]: The reason 13% of CZs are missing from the dataset is because
-    of (1) the exclusion criteria already outlined; (2) Hawaii and
-    Alaska have been excluded due to the methodological challenge of
+[^6]: The reason 13% of CZs are missing from the dataset is because of
+    (1) the exclusion criteria already outlined; (2) Hawaii and Alaska
+    have been excluded due to the methodological challenge of
     incorporating their school districts into spatial econometric work;
     and (3) Connecticut, Maryland, North Carolina, and Virginia have
     been excluded due to unconventional or incomplete public school
@@ -302,8 +304,8 @@ between 2001-2021. [^6] [^7]
     sector.
 
 [^7]: Given the work's intent to rely on data on property taxes
-    collected, any CZ that reports more than five 0 values for
-    property taxes collected is excluded.
+    collected, any CZ that reports more than five 0 values for property
+    taxes collected is excluded.
 
 ```{r, echo = FALSE, message = FALSE, cache = FALSE}
 
@@ -391,8 +393,10 @@ Educational Service Agencies (ESAs) are also sourced from this dataset.
 
 **GDP Controls:** US Bureau of Economic Analysis. Values are also
 reported in current US dollars (real GDP values exist). The controls
-used in the below are total, private industry, and oil, gas, mining and
-quarrying commuting zone-level GDP.
+used in the below are commuting zone-level rivate industry GDP. We
+decide to use private industry GDP as a control variable given the
+remaining portion of GDP is government expenditure which includes
+education expenditure.
 
 **Population controls:** US Census Bureau.
 
@@ -566,44 +570,6 @@ mines_cz %>%
 
 ```
 
-First, shift-share or *Bartik* instruments have gained popularity in
-empirical work as a method of handling endogeneity issues in panel data
-[@ferri2022, @goldsmith-pinkham2020, @bartik1991]. Effectively, they
-combine time-variant yet unit-invariant changes in aggregate economic
-variables (ie., national changes in industry wage levels) with
-time-invariant yet unit-variant shares in exposure to these macro-level
-changes (ie., local shares of employment in particular industries). This
-decomposition of local-level changes via a delocalisation over space and
-time allows for a defensible 'de-endogenising' of the treatment.
-Notably, the method can also be considered to serve a further purpose,
-allowing for, by construction, the examination of a macro phenomenon's
-effect on more local units.
-
-\\footnote{Autor et al use a shift-share instrument to assess the effect
-of Chinese import competition on manufacturing employment in US
-commuting zones @autor2013 . As an extension, @feler2017 use a similar
-shift-share instrument to assess the effect of the same shock on the
-size of local government. @baccini2021 employ a shift-share instrument
-for manufacturing layoffs to tease out the effect of a decline in
-manufacturing on both economically motivated and racial identity voting
-patterns in the US.}
-
-\footnote{Second, an additional popular indicator for modelling industrial shocks
-is *oil price* as values are often assumed to be exogenous to local and
-even national conditions @scheer2022 . Third, separate from specifically
-green transformation shocks, various indicators for measuring
-*deindustrialisation* have been proposed including the manufacturing
-share of employment, value added, and GDP [@tregenna2009,
-@tregenna2020]. These deindustrialisation metrics could be used in
-combination with a shift-share instrument. Finally, in rare instances,
-exogeneity can be secured due to *geographical, climatological, or
-geological factors*. For example, @borge2015 obtain an exogenous measure
-of local revenue by "instrumenting the variation in hydropower revenue,
-and thus total revenue, by topology, average precipitation and meters of
-river in steep terrain." Certain authors have argued that the fact that
-the location of hydrocarbon deposits is dictated by geomorphological
-processes provides a plausible argument for exogeneity [@esposito2021,
-@chen2022].}
 
 <!-- ### Coal Mining Activity -->
 
@@ -632,12 +598,12 @@ strategies. These serve to establish foundational relationships between
 local economic conditions that seem to reasonably generalise across the
 country.
 
-Considerable investigation uncovered the need for a regional or
+However, considerable investigation uncovered the need for a regional or
 state–by-state estimation strategy to truly account for the
 heterogeneity across the units of observation. Therefore, the body of
 the analysis is dedicated to state-by-state and industry-by-industry
 estimation of the relevant econometric specifications. We dedicate
-majority of this manuscript to discussing of this latter exploration of
+majority of this manuscript to discussion of this latter exploration of
 heterogeneity.
 
 ## Descriptive Regressions
@@ -695,7 +661,7 @@ economic fundamentals in shaping patterns of education spending.
 In the levels regressions, intergovernmental revenue per pupil emerges
 as the strongest and most consistent predictor of education expenditure.
 A 1% increase in intergovernmental transfers is associated with
-approximately a 0.35–0.38% increase in per-pupil education spending,
+approximately a 0.2–0.35% increase in per-pupil education spending,
 controlling for unit and year fixed effects. This finding highlights the
 importance of state and federal aid in sustaining local education
 budgets. Lagged economic indicators, particularly private industry GDP
@@ -721,22 +687,19 @@ The growth rate regressions, while explaining less variance overall (as
 expected), largely confirm the patterns observed in the levels
 specifications. Intergovernmental revenue growth remains a strong and
 highly significant determinant of education expenditure growth, with
-coefficients ranging from 0.33 to 0.40. Lagged wage and GDP growth also
+coefficients >0.3%. Lagged wage and GDP growth also
 emerge as important predictors, particularly at longer lags. Notably,
 wage growth two years prior is associated with a 0.31% increase in
 education spending growth, suggesting that labor market improvements
 take time to materialize in local education budgets. Growth in house
-prices also predicts increases in education spending, but these effects
-are concentrated in the contemporaneous and first-lag specifications.
+prices also predicts increases in education spending which hints at the relevance of our primary identifying relationship.
 
 Taken together, these results offer three key insights. First, public
 education investment is strongly mediated by external fiscal flows,
 reaffirming the role of intergovernmental transfers in equalizing local
 education finance. Second, local labor market conditions—captured
 through wages and GDP—exert lagged, cumulative effects on education
-spending, consistent with fiscal inertia and political delays in
-budgetary response. Third, local housing markets play a more modest and
-short-term role in shaping education budgets, reflecting the link
+spending consistent with lagged effects of local economic conditions to industrial change. Third, local housing markets play a significant role shaping education budgets, reflecting the link
 between property values and tax revenues.
 
 ```{r, message = FALSE, warning = FALSE, results = 'asis'}
@@ -764,6 +727,8 @@ Furthermore, given the heterogeneity in reliance on intergovernmental
 transfers (largely coming from the state), we interact all economic
 predictors above with a variable that represents the share of total
 elementary education expenditure coming from state-level funding.
+
+\textcolor{red}{I need help interpreting the below...?}
 
 ```{r, message = FALSE, warning = FALSE, results = 'asis'}
 
@@ -799,27 +764,16 @@ run_model(selected_twfe_models_state_share_interaction, mines_cz) %>% etable(adj
 ## Instrumental Variable Approach
 
 There is a significant endogeneity concern in using wage growth as the
-treatment variable. Therefore, I have tried two instrumental variable
-approaches below and aim to add results using production- and
-employment-based Bartik instruments.
-
-A critical break-through in this work came from understanding the
+treatment variable. A critical break-through in this work came from understanding the
 structure of public financing (described in further detail in Section
 \ref{si_section:Challenges} of the Supplementary Materials). In brief,
 revenue for public education comes from a combination of
 intergovernmental and local sources and revenue generated from local
-sources comes almost entirely from property taxes. Given this, I can
+sources comes almost entirely from property taxes. Given this, we can
 isolate the channel through which I assume our treatment (industrial
 production) will affect our outcome variable using an instrumental
-variable approach. I provide the results of an initial attempt at this
-theory below including the functional form and underlying theoretical
-path diagram of the econometric specification.
-
-We consider using XX as an instrument affecting education expenditure
-through property taxes or GDP. We know that property taxes have an
-endogenous relationship with education expenditure, however, in theory,
-XX is unlikely to affect education expenditure, except via property
-taxes. We test this hypothesis below.
+variable approach. We outline the underlying
+path diagram of this econometric specification.
 
 As a reminder, the intuition behind the idea is
 
@@ -843,11 +797,52 @@ As a reminder, the intuition behind the idea is
 \end{figure}
 
 As seen in Figure \ref{fig:iv_approach}, I hypothesize that property
-taxes have an effect on education expenditure. However, there is
+values have an effect on education expenditure. However, there is
 significant concern of a reverse causal effect as higher income families
 likely gravitate towards school districts with higher levels of
-expenditure per pupil, driving up property values. Therefore, we adopt
-an identification strategy via a shift-share or Bartik instrument. A
+expenditure per pupil, driving up property values. 
+
+Shift-share or *Bartik* instruments have gained popularity in
+empirical work as a method of handling endogeneity issues in panel data
+[@ferri2022, @goldsmith-pinkham2020, @bartik1991]. Effectively, they
+combine time-variant yet unit-invariant changes in aggregate economic
+variables (ie., national changes in industry wage levels) with
+time-invariant yet unit-variant shares in exposure to these macro-level
+changes (ie., local shares of employment in particular industries). This
+decomposition of local-level changes via a delocalisation over space and
+time allows for a defensible 'de-endogenising' of the treatment.
+Notably, the method can also be considered to serve a further purpose,
+allowing for, by construction, the examination of a macro phenomenon's
+effect on more local units.
+
+\\footnote{Autor et al use a shift-share instrument to assess the effect
+of Chinese import competition on manufacturing employment in US
+commuting zones @autor2013 . As an extension, @feler2017 use a similar
+shift-share instrument to assess the effect of the same shock on the
+size of local government. @baccini2021 employ a shift-share instrument
+for manufacturing layoffs to tease out the effect of a decline in
+manufacturing on both economically motivated and racial identity voting
+patterns in the US.}
+
+\footnote{An additional popular indicator for modelling industrial shocks
+is *oil price* as values are often assumed to be exogenous to local and
+even national conditions @scheer2022 . Third, separate from specifically
+green transformation shocks, various indicators for measuring
+*deindustrialisation* have been proposed including the manufacturing
+share of employment, value added, and GDP [@tregenna2009,
+@tregenna2020]. These deindustrialisation metrics could be used in
+combination with a shift-share instrument. Finally, in rare instances,
+exogeneity can be secured due to *geographical, climatological, or
+geological factors*. For example, @borge2015 obtain an exogenous measure
+of local revenue by "instrumenting the variation in hydropower revenue,
+and thus total revenue, by topology, average precipitation and meters of
+river in steep terrain." Certain authors have argued that the fact that
+the location of hydrocarbon deposits is dictated by geomorphological
+processes provides a plausible argument for exogeneity [@esposito2021,
+@chen2022].}
+
+
+Therefore, we adopt an identification strategy via a shift-share or Bartik instrument. A
 shift-share instrument interacts local industry shares with national
 industry-level growth rates to attain a plausibly exogenous local shock.
 In the context of this work, we intend to create a unit-specific
@@ -909,6 +904,8 @@ X_{it} = \alpha_i + \beta\sum_{j=1}^{k}S_{\*j\*}G_{\*j} + \epsilon_{it}
 X_{it} = \alpha_i + \sum_{j=1}^{k}\beta_{j}S_{\star j \star}G_{\star jt} + \epsilon_{it}
 \end{equation}
 
+We choose to employ the first of these options, assuming that industry shares are only exogenous at a given base year/period and that national level growth rates are exogenous and therefore allowed to vary with time.
+
 ```{r, include = FALSE}
 
 # getspanel
@@ -927,25 +924,25 @@ X_{it} = \alpha_i + \sum_{j=1}^{k}\beta_{j}S_{\star j \star}G_{\star jt} + \epsi
 Using data from the US Bureau of Labor Statistics' Quarterly Census of
 Employment and Wages (QCEW) and Bureau of Economic Analysis, we
 construct two types of shift-share Bartik instruments at the commuting
-zone level. Equation \ref{bartik} demonstrates the Bartik instrument as
+zone level using local employment shares by industry and national changes in industry-specific wages and real value added. Equation \ref{bartik} demonstrates the Bartik instrument as
 outlined in @ferri2022 and @goldsmith-pinkham2020 and defined in
-@bartik1991 . $\Delta X_{t,s}$ represents national-level changes in
-wages or value added in industry $s$ in time $t$ and
-$\frac{N_{i,\tau, s}}{N_{i,\tau}}$ represents the \`\`sensitivity'' of a
+@bartik1991 . $G_{njt}$ represents national-level changes in
+wages or value added in industry $j$ in time $t$ and
+$\frac{N_{ij\tau}}{N_{i\tau}}$ represents the \`\`sensitivity'' of a
 CZ to these national shocks proxied by an initial share of local
-employment in industry $s$ in a baseline time period $\tau$. The product
+employment in industry $j$ in a baseline time period $\tau$. The product
 of these two values defines the shift-share indicator
-$\tilde{X}_{i,t,s}$. In order to construct the share portion, we compute
-the total local share of employment in a particular industry $s$. Due to
+$\tilde{Z}_{i,t,s}$. In order to construct the share portion, we compute
+the total local share of employment in a particular industry $j$. Due to
 challenges with missing data, we compute an average share across
-2001-2005 as our base year. [^9]
+2001-2005 as our 'base year'. [^9]
 
 [^9]: We explore the sensitivity of results to the choice of base period
     $\tau$ by constructing the instrument for various base periods as
-    well as a rolling window.
+    well as a rolling window. \textcolor{red}{I have done this unsystematically so far (testing 2001, 2004, and 2005) but arrived at the decision to compute an average to deal with missing data. Will include a more systematic testing of this in the appendix.}
 
 \begin{equation}
-    \tilde{X}_{i,t,s} = \Delta X_{t,s} *  \frac{N_{i,\tau, s}}{N_{i,\tau}}
+    \tilde{Z}_{ijt} = G_{njt} *  \frac{N_{ij\tau}}{N_{i\tau}}
 \label{bartik}
 \end{equation}
 
@@ -970,6 +967,34 @@ ss_shares <- compute_shares(source = "QCEW", base_year = 2004, unit_id = "cz_id"
 coverage <- ss_shares %>% select(coverage_2digit_naics, coverage_3digit_naics) %>% distinct
   
 ss_temp <- compute_ss(ss_shares)
+
+```
+
+The below table displays the 2-digit NAICS industrial categories we use to construct our shift-share instrument. The plot immediately following displays the remaining issues with data coverage indicating what proportion of tota commuting zone level employment is represented by the industry-specific data points (industry-level disaggregation requires the suppression of certain data). Given the high degree of missingness in the 3-digit categorisation we proceed with the 2-digit NAICS codes in the rest of the work. 
+
+```{r, echo = FALSE, cache = FALSE, results = 'asis'}
+
+rel_inds <- c("Agriculture, Forestry, Fishing, and Hunting" = "11",
+"Mining" = "21",
+"Construction" = "23",
+"Manufacturing" = "31_33",
+"Wholesale Trade" = "42",
+"Retail Trade" = "44_45",
+"Transportation and Warehousing" = "48_49",
+"Utilities" = "22",
+"Information" = "51",
+"Finance and Insurance" = "52",
+"Real Estate and Rental and Leasing" = "53",
+"Professional, Scientific, and Technical Services" = "54",
+"Management of Companies and Enterprises" = "55",
+"Administrative and waste management services" = "56",
+"Educational Services" = "61",
+"Health Care and Social Assistance" = "62",
+"Arts, Entertainment, and Recreation" = "71",
+"Accommodation and Food Services" = "72",
+"Other Services, except government" = "81")
+
+data.frame("NAICS Code" = unname(rel_inds), "Industry" = names(rel_inds))  %>% xtable() %>% print(include.rownames = FALSE)
 
 ```
 
@@ -1059,9 +1084,7 @@ ss_temp <- ss_temp_filled
 
 ```
 
-Fundamental to our identification strategy is the relationship between
-wages and property prices as well as real value added and property
-prices. We provide evidence of this relationship below.
+Before displaying the regression results using our shift-share instrument we discuss the plausibility of our identification strategy by exploring the relationships between wage and GDP on housing prices. We provide evidence of this relationship below.
 
 #### Industry-level Wages
 
@@ -1166,6 +1189,9 @@ feols(gr_hpi ~ l(gr_weighted_annual_avg_wkly_wage, 0:7) + diff_log_real_gdp_priv
 
 <!-- ``` -->
 
+Finally, we display the results for a 2SLS estimation using our wage-based shift-share instrument. 
+
+
 ```{r, echo = FALSE, cache = TRUE, results = 'asis'}
 
 iv_model_2d_lev_gr <- feols(as.formula("log_real_Elem_Educ_Total_Exp_pp ~ log_real_Total_IG_Revenue_pp + log_real_gdp_priv_ind_pc + log_Enrollment | unit + year | log_hpi ~ l(ss_2d,1)"),
@@ -1205,11 +1231,11 @@ etable(iv_model_2d_lev_lev_tfe, iv_model_2d_lev_gr_tfe, iv_model_2d_gr_gr_tfe, a
 
 #### Industry-level GDP
 
-The two regression tables investigate the relationship between real GDP
+The two first regression tables investigate the relationship between real GDP
 per capita in the private industry and house prices. In the log-level
 specification, real GDP (including current and lagged values up to 7
 periods) is positively and significantly associated with house prices.
-The contemporaneous coefficient (0.2411) is large and highly
+The contemporaneous coefficient is large and highly
 significant, and several lags (especially lags 1, 2, 3, and 5) are also
 positive and statistically significant, indicating a cumulative and
 persistent effect of GDP on housing values.
@@ -1217,16 +1243,15 @@ persistent effect of GDP on housing values.
 In contrast, the growth-rate specification shows a much weaker
 relationship. Most coefficients are small and not statistically
 significant, with the exception of lag 5, which shows a modest but
-significant positive association (0.0073). The R² values further support
-this contrast: the log-level model explains 96% of the variation in
-house prices (with a within R² of 0.203), while the growth-rate model
-explains only about 39% overall (and just 0.005 within variation).
+significant positive association (0.0073) though this could likely be a spurious assocation.
 
 Together, these findings suggest that levels (rather than short-run
 changes) in GDP are more systematically and substantially associated
 with house price dynamics. The stronger fit and significant lag effects
 in the log-level regression underscore the longer-term influence of
-economic fundamentals on housing markets.
+economic fundamentals on housing markets. It also indicates that wage growth is more important for house prices than the more general concept of industry-level GDP growth. This makes intuitive sense in that the link from work (wage labor) to wealth creation is mediated via wage and not necessarily the total industrial output which migth not be reflect in wages (especially given recent evidence of decoupling of wages from productivity) \textcolor{red}{Source here - OECD and FRED Data}.
+
+![Wages and Productivity](../output/FRED wage decoupling.png)
 
 ```{r, echo = FALSE, cache = TRUE, results = 'asis'}
 
@@ -1817,7 +1842,8 @@ relationship between property taxes and elementary expenditure as
 property taxes collected rise. This happens largely as a result of very
 high-income commuting zones. Therefore, I exclude any commuting zone
 that spends more than 28k per pupil to avoid any distorting effects.
-This removes 12 counties (\~2% of the sample). \textcolor{red}{This could benefit from
+This removes 12 counties (\~2% of the sample).
+\textcolor{red}{This could benefit from
 more robust outlier detection.}
 
 ```{r, echo = FALSE, cache = TRUE}
@@ -2137,27 +2163,6 @@ covs %>%
 
 ```{r, echo = FALSE, warning = FALSE, message = FALSE, fig.height = 8, fig.width = 8}
 
-rel_inds <- c("Agriculture, Forestry, Fishing, and Hunting" = "11",
-"Mining" = "21",
-"Construction" = "23",
-"Manufacturing" = "31_33",
-"Wholesale Trade" = "42",
-"Retail Trade" = "44_45",
-"Transportation and Warehousing" = "48_49",
-"Utilities" = "22",
-"Information" = "51",
-"Finance and Insurance" = "52",
-"Real Estate and Rental and Leasing" = "53",
-"Professional, Scientific, and Technical Services" = "54",
-"Management of Companies and Enterprises" = "55",
-"Administrative and waste management services" = "56",
-"Educational Services" = "61",
-"Health Care and Social Assistance" = "62",
-"Arts, Entertainment, and Recreation" = "71",
-"Accommodation and Food Services" = "72",
-"Other Services, except government" = "81")
-
-data.frame("NAICS Code" = unname(rel_inds), "Industry" = names(rel_inds))  %>%  xtable() %>% print(include.rownames = FALSE)
 
 temp_vars <- ss_temp %>% select(starts_with("lev_gdp_ss") & !contains("2d")) %>% names
 
