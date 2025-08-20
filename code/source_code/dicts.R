@@ -154,11 +154,14 @@ setFixest_dict(c(gdp_total = "GDP",
                "l(log_real_gdp_priv_ind_pc,5)" = "(l5,log) Real GDP Priv. Industry pc", 
                "l(log_real_gdp_priv_ind_pc,6)" = "(l6,log) Real GDP Priv. Industry pc", 
                "l(log_real_gdp_priv_ind_pc,7)" = "(l7,log) Real GDP Priv. Industry pc", 
-               "lev_ss_2d" = "SS (Lvl, 2d)",
-               "lev_ss_3d" = "SS (Lvl, 3d)",
-               "ss_2d" = "SS (GR,2d)",
-               "ss_3d" = "SS_(GR,3d)",
-               "l(gdp_ss_2d,1)" = "(l1) GDP_SS_2d",
+               "lev_ss_2d" = "Wage SS (lvl)",
+               "lev_gdp_ss_2d" = "GDP SS (Lvl)",
+               "l(lev_ss_2d,1)" = "Wage SS (lvl,l1)",
+               "l(lev_gdp_ss_2d,1)" = "GDP SS (lvl,l1)",
+               "ss_2d" = "Wage SS (GR)",
+               "gdp_ss_2d" = "GDP SS (GR)",
+               "l(ss_2d,1)" = "Wage SS (GR,l1)",
+               "l(gdp_ss_2d,1)" = "GDP SS (GR,l1)",
                diff_log_real_Elem_Educ_Total_Exp_pp = "(GR) Elem.Ed.Exp.pp",
                l1_diff_log_real_Elem_Educ_Total_Exp_pp = "(GR, l1) Elem.Ed.Exp.pp",
                diff_log_real_gdp_total = "(GR) GDP", 
@@ -209,8 +212,8 @@ common_theme <- theme(
   axis.text.x = element_text(size = 14),
   axis.text.y = element_text(size = 14),
   panel.background = element_rect(fill = NA),
-  panel.grid.major = element_line(color = "grey90", size = 0.5),
-  panel.grid.minor = element_line(color = "grey90", size = 0.25)
+  panel.grid.major = element_line(color = "grey90", linewidth = 0.5),
+  panel.grid.minor = element_line(color = "grey90", linewidth = 0.25)
 )              
 
 # 
