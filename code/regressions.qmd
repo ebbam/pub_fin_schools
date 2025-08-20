@@ -1407,8 +1407,8 @@ iv_model_2d_lev_lev_l1_state_fe <- feols(
     data = left_join(mines_cz, rename(ss_temp, unit = cz_id), by = c("year","unit")), panel.id = c("unit", "year"))
 
 
-etable(iv_model_2d_lev_lev, iv_model_2d_lev_lev_state_fe, iv_model_2d_lev_lev_l1, iv_model_2d_lev_lev_l1_state_fe, adjustbox = TRUE, stage = 1:2, tex = latex_tables)
-etable(iv_model_2d_lev_gr, iv_model_2d_lev_gr_state_fe, iv_model_2d_lev_gr_l1, iv_model_2d_lev_gr_l1_state_fe, adjustbox = TRUE, stage = 1:2, tex = latex_tables)
+etable(iv_model_2d_lev_lev, iv_model_2d_lev_lev_state_fe, iv_model_2d_lev_lev_l1, iv_model_2d_lev_lev_l1_state_fe, adjustbox = TRUE, stage = 1:2, tex = latex_tables, title ="GDP-based Shift-share instrument (Level-Level, varying state and CZ fixed effects and lags.")
+etable(iv_model_2d_lev_gr, iv_model_2d_lev_gr_state_fe, iv_model_2d_lev_gr_l1, iv_model_2d_lev_gr_l1_state_fe, adjustbox = TRUE, stage = 1:2, tex = latex_tables,  title ="GDP-based Shift-share instrument (Level-GR, varying state and CZ fixed effects and lags.")
 
 
 ```
@@ -1941,10 +1941,15 @@ various industries available from the Quarterly Census of Employment and
 Wages.
 \textcolor{red}{I have not figured out how to suppress the R2 and within R2 of the second-stage regressions. One should only pay attention to the IV diagnostic tests in the second-stage regression.}
 
+Result: The baseline estimate of an l-1 effect on public education expenditure is entirely dominated by declining regions. Interestingly, sample division by GDP growth rates isolates the wage-based SS instrumetn effect almost entirely indicating that wage changes in declining regions matter most. Potentially an indicator of property price spirals.
+
+
+Result: Whereas, in the case of the wage-based instrument when applied to growing and declining wage regions, the effect is more widespread across regions. 
+
 ```{r, echo = FALSE, results = 'asis'}
 
 etable(mods, tex = latex_tables, adjustbox = TRUE, headers = names(mods), title = "Wage-based Shift-Share Instrument (l1) Applied to Declining GDP vs. Growing GDP Regions") 
-etable(mods_wage, tex = latex_tables, adjustbox = TRUE, headers = names(mods), title = "Wage-based Shift-Share Instrument (l1) Applied to Declining Wage vs. Growing Wage Regions")
+etable(mods_wage, tex = latex_tables, adjustbox = TRUE, headers = names(mods_wage), title = "Wage-based Shift-Share Instrument (l1) Applied to Declining Wage vs. Growing Wage Regions")
 
 ```
 
@@ -1971,14 +1976,16 @@ for(df_wage in names(dfs_wage)){
 
 ```
 
-
+Result: In the case of the GDP-based instrument, the sub-sampling procedure indicates that GDP growth has an effect on public education expenditure in all but hyper-growing areas indicating the GDP growth translates to changes in public expenditure more directly in all but non-superstar regions. 
 
 ```{r, echo = FALSE, cache = TRUE, results = 'asis'}
 
-etable(mods_wage, tex = latex_tables, adjustbox = TRUE, title = "GDP-based Shift-Share Instrument (l1) Applied to Declining Wage vs. Growing Wage Regions", label = "tbl:wss_subsamples")
-etable(mods, tex = latex_tables, adjustbox = TRUE, title = "GDP-based Shift-Share Instrument (l1) Applied to Declining GDP vs. Growing GDP Regions") 
+etable(mods_wage, tex = latex_tables, headers = names(mods_wage), adjustbox = TRUE, title = "GDP-based Shift-Share Instrument (l1) Applied to Declining Wage vs. Growing Wage Regions", label = "tbl:wss_subsamples")
+etable(mods, tex = latex_tables, adjustbox = TRUE, headers = names(mods), title = "GDP-based Shift-Share Instrument (l1) Applied to Declining GDP vs. Growing GDP Regions") 
 
 ```
+\FloatBarrier
+
 
 ### High-income Outliers
 
@@ -1991,7 +1998,7 @@ This removes 12 CZs (\~2% of the sample).
 \textcolor{red}{This could benefit from
 more robust outlier detection.}
 
-```{r outliers, echo = FALSE, cache = TRUE}
+```{r outliers, echo = FALSE, cache = TRUE, results = 'asis'}
 
 mines_no_outliers <- mines_cz %>%
   group_by(unit) %>%
@@ -2008,8 +2015,7 @@ mines_cz %>%
   theme(title = element_text(size = 9)) +
   labs(colour = "Reliance on Local Sources")
 
-
-forms <- list("log_real_Elem_Educ_Total_Exp_pp ~ sw(log_real_gdp_priv_ind_pc + l1_log_real_gdp_priv_ind_pc + l2_log_real_gdp_priv_ind_pc, log_weighted_annual_avg_wkly_wage + l1_log_weighted_annual_avg_wkly_wage + l2_log_weighted_annual_avg_wkly_wage, log_hpi + l1_log_hpi + l2_log_hpi + l3_log_hpi + l4_log_hpi) + log_real_Total_IG_Revenue_pp | unit + year", "log_real_Elem_Educ_Total_Exp_pp ~ log_real_Total_IG_Revenue_pp + log_real_gdp_priv_ind_pc + log_Enrollment | year + state | log_hpi ~ l(lev_ss_2d)",
+forms <- list("log_real_Elem_Educ_Total_Exp_pp ~ sw(log_real_gdp_priv_ind_pc + l1_log_real_gdp_priv_ind_pc + l2_log_real_gdp_priv_ind_pc, log_weighted_annual_avg_wkly_wage + l1_log_weighted_annual_avg_wkly_wage + l2_log_weighted_annual_avg_wkly_wage, log_hpi + l1_log_hpi + l2_log_hpi + l3_log_hpi + l4_log_hpi) + log_real_Total_IG_Revenue_pp + log_Enrollment| unit + year", "log_real_Elem_Educ_Total_Exp_pp ~ log_real_Total_IG_Revenue_pp + log_real_gdp_priv_ind_pc + log_Enrollment | year + state | log_hpi ~ l(lev_ss_2d)",
 "log_real_Elem_Educ_Total_Exp_pp ~ log_real_Total_IG_Revenue_pp + log_real_gdp_priv_ind_pc + log_Enrollment | year + state | log_hpi ~ l(lev_gdp_ss_2d)")
 
 
@@ -2017,17 +2023,18 @@ baseline <- feols(as.formula(forms[[1]]), data = left_join(mines_cz, rename(ss_t
 wage_ss <- feols(as.formula(forms[[2]]), data = left_join(mines_cz, rename(ss_temp, unit = cz_id), by = c("year","unit")), panel.id = c("unit", "year"), cluster = "unit")
 gdp_ss <- feols(as.formula(forms[[3]]), data = left_join(mines_cz, rename(ss_temp, unit = cz_id), by = c("year","unit")), panel.id = c("unit", "year"), cluster = "unit")
 
-etable(baseline, wage_ss, gdp_ss, tex = latex_tables, title = "Outlier Trimming Results")
+etable(list(baseline, wage_ss, gdp_ss), headers = c("Baseline 1", "Baseline 2", "Baseline 3", "Wage-based SS", "GDP-based SS"), adjustbox = TRUE, tex = latex_tables, title = "Outlier Trimming Results")
 
 
 ```
+
+\FloatBarrier
 
 ### State-by-state estimation
 
 #### Baseline
 
-```{r, echo = FALSE, fig.height = 8, fig.width = 10}
-
+```{r, echo = FALSE, results = 'asis'}
 reg_states <- mines_cz %>%
   pull(state) %>%
   unique
@@ -2036,11 +2043,15 @@ mines_cz %>%
   group_by(state) %>%
   summarise(n_czs = n_distinct(cz_id)) %>%
   ggplot() +
-  geom_histogram(aes(x = n_czs), bins = 20, fill = "dodgerblue3", alpha = 0.7) +
+  geom_histogram(aes(x = n_czs), bins = 20, fill = "dodgerblue4") +
   common_theme +
   labs(x = "Number of commuting zones in state", y = "Number of States",
        title = "Distribution of Number of Commuting Zones per State")
+```
 
+\FloatBarrier
+
+```{r, echo = FALSE, results = 'asis', fig.height = 8, fig.width = 10}
 
 dat_temp <- left_join(mines_cz, rename(ss_temp, unit = cz_id), by = c("year","unit"))
 
@@ -2095,11 +2106,12 @@ results_df_cleaned <- results_df %>%
     variable == 'l1_log_weighted_annual_avg_wkly_wage' ~ 'l1',
     variable == 'l2_log_weighted_annual_avg_wkly_wage' ~ 'l2'
   )) %>%
-  #filter(significance != "") %>%
+  # filter(significance != "") %>%
   # Compute total estimate and max R²
   group_by(state_name) %>%
   mutate(
     total_estimate = sum(estimate, na.rm = TRUE),
+    any_significant = any(significance != ""),
     r2_within_max = max(r2_within, na.rm = TRUE)
   ) %>%
   ungroup() %>%
@@ -2126,9 +2138,13 @@ results_df_cleaned %>%
   # Plot
   ggplot(aes(x = state_label)) +
   geom_point(aes(y = estimate, alpha = significance), shape = "x", size = 3) +
+  # geom_point(
+  #   data = . %>% filter(label == "l1"),
+  #   aes(y = total_estimate, color = r2_within_max), size = 2
+  # ) +
   geom_point(
     data = . %>% filter(label == "l1"),
-    aes(y = total_estimate, color = r2_within_max), size = 2
+    aes(y = total_estimate, color = as.numeric(any_significant)), size = 2
   ) +
   geom_hline(yintercept = 0, linetype = "dashed") +
   common_theme +
@@ -2147,52 +2163,120 @@ results_df_cleaned %>%
     scale_x_discrete(labels = axis_labels) +
   scale_color_distiller(direction = 1, palette = "Purples")
 
+# 
+# covs <- mines_cz %>%
+#   select(cz_id, state, log_real_gdp_priv_ind_pc,
+#          log_real_gdp_priv_ind,
+#          log_real_Elem_Educ_Total_Exp_pp,
+#          log_Enrollment, share_state,
+#          log_weighted_annual_avg_wkly_wage,
+#         #gr_weighted_annual_avg_wkly_wage,
+#          #diff_log_real_gdp_priv_ind, diff_log_real_gdp_priv_ind_pc,
+#         log_real_Property_Tax_pp) %>%
+#   group_by(cz_id, state) %>%
+#   summarise(across(everything(), ~mean(., na.rm = TRUE))) %>%
+#   ungroup %>%
+#   pivot_longer(!c(cz_id, state), names_to = 'covariate')
+# 
+# covs$state_name <- sapply(covs$state, get_state)
+# 
+# facet_labels <- c(
+#   'log_real_gdp_priv_ind_pc' = "(log) Private Industry GDP per capita",
+#   # 'diff_log_real_gdp_priv_ind_pc' = '(GR) Private Industry GDP per capita',
+#   # 'diff_log_real_gdp_priv_ind' = '(GR) Private Industry GDP',
+#   'log_real_gdp_priv_ind' = "(log) Private Industry GDP",
+#   'log_weighted_annual_avg_wkly_wage' = '(log) Annual Avg Weekly Wage',
+#   #'gr_weighted_annual_avg_wkly_wage' = '(GR) Annual Avg Weekly Wage',
+#   'log_Enrollment' = '(log) Enrollment',
+#   'share_state' = 'Share of Exp from State IG Transfers',
+#   'log_real_Property_Tax_pp' = "(log) Property Taxes Collected per pupil"
+# )
 
-covs <- mines_cz %>%
-  select(cz_id, state, log_real_gdp_priv_ind_pc,
-         log_real_gdp_priv_ind,
-         log_real_Elem_Educ_Total_Exp_pp,
-         log_Enrollment, share_state,
-         log_weighted_annual_avg_wkly_wage,
-        #gr_weighted_annual_avg_wkly_wage,
-         #diff_log_real_gdp_priv_ind, diff_log_real_gdp_priv_ind_pc,
-        log_real_Property_Tax_pp) %>%
-  group_by(cz_id, state) %>%
-  summarise(across(everything(), ~mean(., na.rm = TRUE))) %>%
-  ungroup %>%
-  pivot_longer(!c(cz_id, state), names_to = 'covariate')
 
-covs$state_name <- sapply(covs$state, get_state)
-
-facet_labels <- c(
-  'log_real_gdp_priv_ind_pc' = "(log) Private Industry GDP per capita",
-  # 'diff_log_real_gdp_priv_ind_pc' = '(GR) Private Industry GDP per capita',
-  # 'diff_log_real_gdp_priv_ind' = '(GR) Private Industry GDP',
-  'log_real_gdp_priv_ind' = "(log) Private Industry GDP",
-  'log_weighted_annual_avg_wkly_wage' = '(log) Annual Avg Weekly Wage',
-  #'gr_weighted_annual_avg_wkly_wage' = '(GR) Annual Avg Weekly Wage',
-  'log_Enrollment' = '(log) Enrollment',
-  'share_state' = 'Share of Exp from State IG Transfers',
-  'log_real_Property_Tax_pp' = "(log) Property Taxes Collected per pupil"
-)
-
-
-covs %>%
-  # use ordering from coefficient estimate above
-  mutate(state_name = factor(state_name, levels = levels(results_df_cleaned$state_name))) %>%
-  ggplot(aes(x = state_name, y = value)) +
-  geom_violin(trim = FALSE, fill = "magenta", alpha = 0.2, color = NA) +
-  stat_summary(fun = median, geom = "point", position = position_dodge(width = 0.8),
-               shape = 21, size = 1.5, color = "black", fill = "magenta") +
-  facet_wrap(~covariate, ncol = 1, scales = "free", labeller = labeller(covariate = facet_labels)) +
-    theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
-  labs(title = "Value of Covariates in Order of State-level Coefficient Estimate",
-       subtitle = "Displays the distribution of various covariates by state.",
-       y = "Value",
-       x = "State (in order of coefficient estimate on wage level as in previous plot)")
+# covs %>%
+#   # use ordering from coefficient estimate above
+#   mutate(state_name = factor(state_name, levels = levels(results_df_cleaned$state_name))) %>%
+#   ggplot(aes(x = state_name, y = value)) +
+#   geom_violin(trim = FALSE, fill = "magenta", alpha = 0.2, color = NA) +
+#   stat_summary(fun = median, geom = "point", position = position_dodge(width = 0.8),
+#                shape = 21, size = 1.5, color = "black", fill = "magenta") +
+#   facet_wrap(~covariate, ncol = 1, scales = "free", labeller = labeller(covariate = facet_labels)) +
+#     theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+#   labs(title = "Value of Covariates in Order of State-level Coefficient Estimate",
+#        subtitle = "Displays the distribution of various covariates by state.",
+#        y = "Value",
+#        x = "State (in order of coefficient estimate on wage level as in previous plot)")
+# 
+# # --- Collapse covariates to state level (mean across CZs) ---
+# covs_state <- covs %>%
+#   group_by(state_name, covariate) %>%
+#   summarise(mean_value = mean(value, na.rm = TRUE), .groups = "drop") %>%
+#   pivot_wider(names_from = covariate, values_from = mean_value)
+# 
+# # --- Extract state-level total_estimate from regression results ---
+# estimates_state <- results_df_cleaned %>%
+#   group_by(state_name) %>%
+#   summarise(total_estimate = unique(total_estimate), .groups = "drop")
+# 
+# # --- Join estimates and covariates ---
+# state_data <- left_join(estimates_state, covs_state, by = "state_name")
+# 
+# # --- Compute correlations (with total_estimate vs each covariate) ---
+# corrs <- state_data %>%
+#   select(-state_name) %>%
+#   cor(use = "pairwise.complete.obs") %>%
+#   as.data.frame() %>%
+#   rownames_to_column("var")
+# 
+# # Filter correlations with total_estimate only
+# corrs_total <- corrs %>%
+#   filter(var != "total_estimate") %>%
+#   select(var, total_estimate) %>%
+#   arrange(desc(abs(total_estimate)))
+# 
+# # --- Plot correlation coefficients ---
+# p_corr <- ggplot(corrs_total, aes(x = reorder(var, total_estimate), y = total_estimate)) +
+#   geom_col(fill = "steelblue") +
+#   geom_hline(yintercept = 0, linetype = "dashed") +
+#   coord_flip() +
+#   labs(
+#     title = "Correlation of State-level Regression Estimates with Covariates",
+#     x = "Covariate",
+#     y = "Correlation with total_estimate"
+#   ) +
+#   theme_minimal()
+# 
+# print(p_corr)
+# 
+# # state_scatter <- state_data %>%
+# #   pivot_longer(-c(state_name, total_estimate), names_to = "covariate", values_to = "value")
+# # 
+# # ggplot(state_scatter, aes(x = value, y = total_estimate, label = state_name)) +
+# #   geom_point(color = "steelblue") +
+# #   geom_smooth(method = "lm", se = FALSE, color = "black") +
+# #   ggrepel::geom_text_repel(size = 3) +
+# #   facet_wrap(~covariate, scales = "free_x") +
+# #   labs(title = "State-level Scatterplots: Regression Estimates vs Covariates",
+# #        x = "Covariate Value", y = "Total Estimate") +
+# #   theme_minimal()
+# 
+# corr_state_cov <- covs %>%
+#   left_join(results_df_cleaned %>% select(state_name, total_estimate), by = c("state_name")) %>%
+#   group_by(state_name, covariate) %>%
+#   summarise(r = cor(value, total_estimate, use = "pairwise.complete.obs"), .groups = "drop")
+# 
+# ggplot(corr_state_cov, aes(x = covariate, y = state_name, fill = r)) +
+#   geom_tile() +
+#   scale_fill_gradient2(limits = c(-1, 1)) +
+#   labs(title = "Correlation Heatmap by State and Covariate",
+#        x = "Covariate", y = "State", fill = "Correlation") +
+#   theme_minimal() +
+#   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
 
 ```
+
+\FloatBarrier
 
 #### Shift-share
 
@@ -2266,49 +2350,49 @@ geom_point(aes(y = estimate), shape = 21, size = 4, fill = NA, color = "black", 
   )
 )
 
-
-covs <- mines_cz %>%
-  select(cz_id, state, log_real_gdp_priv_ind_pc,
-         log_real_gdp_priv_ind,
-         log_real_Elem_Educ_Total_Exp_pp,
-         log_Enrollment, share_state,
-         log_weighted_annual_avg_wkly_wage,
-        #gr_weighted_annual_avg_wkly_wage,
-         #diff_log_real_gdp_priv_ind, diff_log_real_gdp_priv_ind_pc,
-        log_real_Property_Tax_pp) %>%
-  group_by(cz_id, state) %>%
-  summarise(across(everything(), ~mean(., na.rm = TRUE))) %>%
-  ungroup %>%
-  pivot_longer(!c(cz_id, state), names_to = 'covariate')
-
-covs$state_name <- sapply(covs$state, get_state)
-
-facet_labels <- c(
-  'log_real_gdp_priv_ind_pc' = "(log) Private Industry GDP per capita",
-  # 'diff_log_real_gdp_priv_ind_pc' = '(GR) Private Industry GDP per capita',
-  # 'diff_log_real_gdp_priv_ind' = '(GR) Private Industry GDP',
-  'log_real_gdp_priv_ind' = "(log) Private Industry GDP",
-  'log_weighted_annual_avg_wkly_wage' = '(log) Annual Avg Weekly Wage',
-  #'gr_weighted_annual_avg_wkly_wage' = '(GR) Annual Avg Weekly Wage',
-  'log_Enrollment' = '(log) Enrollment',
-  'share_state' = 'Share of Exp from State IG Transfers',
-  'log_real_Property_Tax_pp' = "(log) Property Taxes Collected per pupil"
-)
-
-
-covs %>%
-  # use ordering from coefficient estimate above
-  mutate(state_name = factor(state_name, levels = levels(results_df_cleaned$state_name))) %>%
-  ggplot(aes(x = state_name, y = value)) +
-  geom_violin(trim = FALSE, fill = "magenta", alpha = 0.2, color = NA) +
-  stat_summary(fun = median, geom = "point", position = position_dodge(width = 0.8),
-               shape = 21, size = 1.5, color = "black", fill = "magenta") +
-  facet_wrap(~covariate, ncol = 1, scales = "free", labeller = labeller(covariate = facet_labels)) +
-    theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
-  labs(title = "Value of Covariates in Order of State-level Coefficient Estimate",
-       subtitle = "Displays the distribution of various covariates by state.",
-       y = "Value",
-       x = "State (in order of coefficient estimate on wage level as in previous plot)")
+# 
+# covs <- mines_cz %>%
+#   select(cz_id, state, log_real_gdp_priv_ind_pc,
+#          log_real_gdp_priv_ind,
+#          log_real_Elem_Educ_Total_Exp_pp,
+#          log_Enrollment, share_state,
+#          log_weighted_annual_avg_wkly_wage,
+#         #gr_weighted_annual_avg_wkly_wage,
+#          #diff_log_real_gdp_priv_ind, diff_log_real_gdp_priv_ind_pc,
+#         log_real_Property_Tax_pp) %>%
+#   group_by(cz_id, state) %>%
+#   summarise(across(everything(), ~mean(., na.rm = TRUE))) %>%
+#   ungroup %>%
+#   pivot_longer(!c(cz_id, state), names_to = 'covariate')
+# 
+# covs$state_name <- sapply(covs$state, get_state)
+# 
+# facet_labels <- c(
+#   'log_real_gdp_priv_ind_pc' = "(log) Private Industry GDP per capita",
+#   # 'diff_log_real_gdp_priv_ind_pc' = '(GR) Private Industry GDP per capita',
+#   # 'diff_log_real_gdp_priv_ind' = '(GR) Private Industry GDP',
+#   'log_real_gdp_priv_ind' = "(log) Private Industry GDP",
+#   'log_weighted_annual_avg_wkly_wage' = '(log) Annual Avg Weekly Wage',
+#   #'gr_weighted_annual_avg_wkly_wage' = '(GR) Annual Avg Weekly Wage',
+#   'log_Enrollment' = '(log) Enrollment',
+#   'share_state' = 'Share of Exp from State IG Transfers',
+#   'log_real_Property_Tax_pp' = "(log) Property Taxes Collected per pupil"
+# )
+# 
+# 
+# covs %>%
+#   # use ordering from coefficient estimate above
+#   mutate(state_name = factor(state_name, levels = levels(results_df_cleaned$state_name))) %>%
+#   ggplot(aes(x = state_name, y = value)) +
+#   geom_violin(trim = FALSE, fill = "magenta", alpha = 0.2, color = NA) +
+#   stat_summary(fun = median, geom = "point", position = position_dodge(width = 0.8),
+#                shape = 21, size = 1.5, color = "black", fill = "magenta") +
+#   facet_wrap(~covariate, ncol = 1, scales = "free", labeller = labeller(covariate = facet_labels)) +
+#     theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+#   labs(title = "Value of Covariates in Order of State-level Coefficient Estimate",
+#        subtitle = "Displays the distribution of various covariates by state.",
+#        y = "Value",
+#        x = "State (in order of coefficient estimate on wage level as in previous plot)")
 
 
 ```
@@ -2382,55 +2466,60 @@ geom_point(aes(y = estimate), shape = 21, size = 4, fill = NA, color = "black", 
     #""    = 25  # non-significant
   )
 )
-
-
-covs <- mines_cz %>%
-  select(cz_id, state, log_real_gdp_priv_ind_pc,
-         log_real_gdp_priv_ind,
-         log_real_Elem_Educ_Total_Exp_pp,
-         log_Enrollment, share_state,
-         log_weighted_annual_avg_wkly_wage,
-        #gr_weighted_annual_avg_wkly_wage,
-         #diff_log_real_gdp_priv_ind, diff_log_real_gdp_priv_ind_pc,
-        log_real_Property_Tax_pp) %>%
-  group_by(cz_id, state) %>%
-  summarise(across(everything(), ~mean(., na.rm = TRUE))) %>%
-  ungroup %>%
-  pivot_longer(!c(cz_id, state), names_to = 'covariate')
-
-covs$state_name <- sapply(covs$state, get_state)
-
-facet_labels <- c(
-  'log_real_gdp_priv_ind_pc' = "(log) Private Industry GDP per capita",
-  # 'diff_log_real_gdp_priv_ind_pc' = '(GR) Private Industry GDP per capita',
-  # 'diff_log_real_gdp_priv_ind' = '(GR) Private Industry GDP',
-  'log_real_gdp_priv_ind' = "(log) Private Industry GDP",
-  'log_weighted_annual_avg_wkly_wage' = '(log) Annual Avg Weekly Wage',
-  #'gr_weighted_annual_avg_wkly_wage' = '(GR) Annual Avg Weekly Wage',
-  'log_Enrollment' = '(log) Enrollment',
-  'share_state' = 'Share of Exp from State IG Transfers',
-  'log_real_Property_Tax_pp' = "(log) Property Taxes Collected per pupil"
-)
-
-
-covs %>%
-  # use ordering from coefficient estimate above
-  mutate(state_name = factor(state_name, levels = levels(results_df_cleaned$state_name))) %>%
-  ggplot(aes(x = state_name, y = value)) +
-  geom_violin(trim = FALSE, fill = "magenta", alpha = 0.2, color = NA) +
-  stat_summary(fun = median, geom = "point", position = position_dodge(width = 0.8),
-               shape = 21, size = 1.5, color = "black", fill = "magenta") +
-  facet_wrap(~covariate, ncol = 1, scales = "free", labeller = labeller(covariate = facet_labels)) +
-    theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
-  labs(title = "Value of Covariates in Order of State-level Coefficient Estimate",
-       subtitle = "Displays the distribution of various covariates by state.",
-       y = "Value",
-       x = "State (in order of coefficient estimate on wage level as in previous plot)")
+# 
+# 
+# covs <- mines_cz %>%
+#   select(cz_id, state, log_real_gdp_priv_ind_pc,
+#          log_real_gdp_priv_ind,
+#          log_real_Elem_Educ_Total_Exp_pp,
+#          log_Enrollment, share_state,
+#          log_weighted_annual_avg_wkly_wage,
+#         #gr_weighted_annual_avg_wkly_wage,
+#          #diff_log_real_gdp_priv_ind, diff_log_real_gdp_priv_ind_pc,
+#         log_real_Property_Tax_pp) %>%
+#   group_by(cz_id, state) %>%
+#   summarise(across(everything(), ~mean(., na.rm = TRUE))) %>%
+#   ungroup %>%
+#   pivot_longer(!c(cz_id, state), names_to = 'covariate')
+# 
+# covs$state_name <- sapply(covs$state, get_state)
+# 
+# facet_labels <- c(
+#   'log_real_gdp_priv_ind_pc' = "(log) Private Industry GDP per capita",
+#   # 'diff_log_real_gdp_priv_ind_pc' = '(GR) Private Industry GDP per capita',
+#   # 'diff_log_real_gdp_priv_ind' = '(GR) Private Industry GDP',
+#   'log_real_gdp_priv_ind' = "(log) Private Industry GDP",
+#   'log_weighted_annual_avg_wkly_wage' = '(log) Annual Avg Weekly Wage',
+#   #'gr_weighted_annual_avg_wkly_wage' = '(GR) Annual Avg Weekly Wage',
+#   'log_Enrollment' = '(log) Enrollment',
+#   'share_state' = 'Share of Exp from State IG Transfers',
+#   'log_real_Property_Tax_pp' = "(log) Property Taxes Collected per pupil"
+# )
+# 
+# 
+# covs %>%
+#   # use ordering from coefficient estimate above
+#   mutate(state_name = factor(state_name, levels = levels(results_df_cleaned$state_name))) %>%
+#   ggplot(aes(x = state_name, y = value)) +
+#   geom_violin(trim = FALSE, fill = "magenta", alpha = 0.2, color = NA) +
+#   stat_summary(fun = median, geom = "point", position = position_dodge(width = 0.8),
+#                shape = 21, size = 1.5, color = "black", fill = "magenta") +
+#   facet_wrap(~covariate, ncol = 1, scales = "free", labeller = labeller(covariate = facet_labels)) +
+#     theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+#   labs(title = "Value of Covariates in Order of State-level Coefficient Estimate",
+#        subtitle = "Displays the distribution of various covariates by state.",
+#        y = "Value",
+#        x = "State (in order of coefficient estimate on wage level as in previous plot)")
 
 
 ```
 
-##### Industry by Industry: GDP
+
+\FloatBarrier
+
+### Industry by Industry: 
+
+#### GDP
 
 ```{r, echo = FALSE, warning = FALSE, message = FALSE, fig.height = 8, fig.width = 8}
 
@@ -2541,6 +2630,7 @@ plot +
 
 ```
 
+#### Wage
 ```{r, echo = FALSE, warning = FALSE, message = FALSE, fig.height = 8, fig.width = 8}
 
 # WHY ARE WE MISSING MANUFACTURAING ETC HERE!
@@ -2650,6 +2740,9 @@ plot +
 
 
 ```
+
+
+
 
 ```{r, echo = FALSE, include = FALSE, eval = FALSE, results = 'asis'}
 
@@ -2954,108 +3047,113 @@ for(mod in list(pvar_model_levels, pvar_model_levels_pc)){
 
 ```
 
-# Property Prices
+<!-- # Property Prices -->
 
-```{r, echo = FALSE, results = 'asis', cache = TRUE}
+<!-- ```{r, echo = FALSE, results = 'asis', cache = TRUE} -->
 
-# is <- isatpanel(
-#       data = data.frame(mines_cz),
-#       formula = as.formula("log_hpi ~ log_weighted_annual_avg_wkly_wage + l1_log_weighted_annual_avg_wkly_wage + l2_log_weighted_annual_avg_wkly_wage"),
-#       index = c("unit", "year"),
-#       effect = "twoways",
-#       #iis = TRUE,
-#       fesis = TRUE,
-#       #ar = 1,
-#       t.pval = 0.01,
-#       max.block.size = 5
-#     )
+<!-- # is <- isatpanel( -->
+<!-- #       data = data.frame(mines_cz), -->
+<!-- #       formula = as.formula("log_hpi ~ log_weighted_annual_avg_wkly_wage + l1_log_weighted_annual_avg_wkly_wage + l2_log_weighted_annual_avg_wkly_wage"), -->
+<!-- #       index = c("unit", "year"), -->
+<!-- #       effect = "twoways", -->
+<!-- #       #iis = TRUE, -->
+<!-- #       fesis = TRUE, -->
+<!-- #       #ar = 1, -->
+<!-- #       t.pval = 0.01, -->
+<!-- #       max.block.size = 5 -->
+<!-- #     ) -->
 
-fun_list <- c(log_hpi ~ log_weighted_annual_avg_wkly_wage + l1_log_weighted_annual_avg_wkly_wage + l2_log_weighted_annual_avg_wkly_wage + log_real_gdp_priv_ind | unit + year,
+<!-- fun_list <- c(log_hpi ~ log_weighted_annual_avg_wkly_wage + l1_log_weighted_annual_avg_wkly_wage + l2_log_weighted_annual_avg_wkly_wage + log_real_gdp_priv_ind | unit + year, -->
 
-gr_hpi ~ gr_weighted_annual_avg_wkly_wage + l1_gr_weighted_annual_avg_wkly_wage + l2_gr_weighted_annual_avg_wkly_wage | unit + year,
+<!-- gr_hpi ~ gr_weighted_annual_avg_wkly_wage + l1_gr_weighted_annual_avg_wkly_wage + l2_gr_weighted_annual_avg_wkly_wage | unit + year, -->
 
-log_real_Elem_Educ_Total_Exp ~ log_weighted_annual_avg_wkly_wage + l1_log_weighted_annual_avg_wkly_wage + l2_log_weighted_annual_avg_wkly_wage + log_real_gdp_priv_ind + l1_log_real_gdp_priv_ind + l2_log_real_gdp_priv_ind | unit + year,
+<!-- log_real_Elem_Educ_Total_Exp ~ log_weighted_annual_avg_wkly_wage + l1_log_weighted_annual_avg_wkly_wage + l2_log_weighted_annual_avg_wkly_wage + log_real_gdp_priv_ind + l1_log_real_gdp_priv_ind + l2_log_real_gdp_priv_ind | unit + year, -->
 
-diff_log_real_Elem_Educ_Total_Exp ~ gr_weighted_annual_avg_wkly_wage + l1_gr_weighted_annual_avg_wkly_wage + l2_gr_weighted_annual_avg_wkly_wage + diff_log_real_gdp_priv_ind + l1_diff_log_real_gdp_priv_ind + l2_diff_log_real_gdp_priv_ind | unit + year,
+<!-- diff_log_real_Elem_Educ_Total_Exp ~ gr_weighted_annual_avg_wkly_wage + l1_gr_weighted_annual_avg_wkly_wage + l2_gr_weighted_annual_avg_wkly_wage + diff_log_real_gdp_priv_ind + l1_diff_log_real_gdp_priv_ind + l2_diff_log_real_gdp_priv_ind | unit + year, -->
 
-log_real_Elem_Educ_Total_Exp_pp ~ log_weighted_annual_avg_wkly_wage + l1_log_weighted_annual_avg_wkly_wage + l2_log_weighted_annual_avg_wkly_wage + log_real_gdp_priv_ind_pc + l1_log_real_gdp_priv_ind_pc + l2_log_real_gdp_priv_ind_pc | unit + year,
+<!-- log_real_Elem_Educ_Total_Exp_pp ~ log_weighted_annual_avg_wkly_wage + l1_log_weighted_annual_avg_wkly_wage + l2_log_weighted_annual_avg_wkly_wage + log_real_gdp_priv_ind_pc + l1_log_real_gdp_priv_ind_pc + l2_log_real_gdp_priv_ind_pc | unit + year, -->
 
-diff_log_real_Elem_Educ_Total_Exp_pp ~ gr_weighted_annual_avg_wkly_wage + l1_gr_weighted_annual_avg_wkly_wage + l2_gr_weighted_annual_avg_wkly_wage + diff_log_real_gdp_priv_ind_pc + l1_diff_log_real_gdp_priv_ind_pc + l2_diff_log_real_gdp_priv_ind_pc | unit + year)
+<!-- diff_log_real_Elem_Educ_Total_Exp_pp ~ gr_weighted_annual_avg_wkly_wage + l1_gr_weighted_annual_avg_wkly_wage + l2_gr_weighted_annual_avg_wkly_wage + diff_log_real_gdp_priv_ind_pc + l1_diff_log_real_gdp_priv_ind_pc + l2_diff_log_real_gdp_priv_ind_pc | unit + year) -->
 
-run_model(fun_list, mines_no_outliers) %>% etable(tex = latex_tables, adjustbox = TRUE)
+<!-- run_model(fun_list, mines_no_outliers) %>% etable(tex = latex_tables, adjustbox = TRUE) -->
 
-```
+<!-- ``` -->
 
-```{r, echo = FALSE, results = 'asis', cache = TRUE}
-# General-to-Specific model selection using fixest
-gets_fixest <- function(dep_var, indep_vars, data, fe = NULL, pval_cutoff = 0.1) {
-  remaining_vars <- indep_vars
+<!-- ```{r, echo = FALSE, results = 'asis', cache = TRUE} -->
+<!-- # General-to-Specific model selection using fixest -->
+<!-- gets_fixest <- function(dep_var, indep_vars, data, fe = NULL, pval_cutoff = 0.1) { -->
+<!--   remaining_vars <- indep_vars -->
 
-  repeat {
-    # Build formula
-    rhs <- paste(remaining_vars, collapse = " + ")
-    formula_str <- as.formula(paste(dep_var, "~", rhs, if (!is.null(fe)) paste("|", fe) else ""))
+<!--   repeat { -->
+<!--     # Build formula -->
+<!--     rhs <- paste(remaining_vars, collapse = " + ") -->
+<!--     formula_str <- as.formula(paste(dep_var, "~", rhs, if (!is.null(fe)) paste("|", fe) else "")) -->
 
-    # Estimate model
-    model <- feols(formula_str, data = data)
-    coefs <- summary(model)$coeftable
+<!--     # Estimate model -->
+<!--     model <- feols(formula_str, data = data) -->
+<!--     coefs <- summary(model)$coeftable -->
 
-    # Filter out only the coefficients from the explanatory variables
-    pvals <- coefs[, "Pr(>|t|)"]
-    pvals <- pvals[names(pvals) %in% remaining_vars]
+<!--     # Filter out only the coefficients from the explanatory variables -->
+<!--     pvals <- coefs[, "Pr(>|t|)"] -->
+<!--     pvals <- pvals[names(pvals) %in% remaining_vars] -->
 
-    # Stop if all variables are below the cutoff or no variables remain
-    if (length(pvals) == 0 || all(pvals < pval_cutoff)) break
+<!--     # Stop if all variables are below the cutoff or no variables remain -->
+<!--     if (length(pvals) == 0 || all(pvals < pval_cutoff)) break -->
 
-    # Remove the variable with the highest p-value
-    worst_var <- names(which.max(pvals))
-    remaining_vars <- setdiff(remaining_vars, worst_var)
-  }
+<!--     # Remove the variable with the highest p-value -->
+<!--     worst_var <- names(which.max(pvals)) -->
+<!--     remaining_vars <- setdiff(remaining_vars, worst_var) -->
+<!--   } -->
 
-  # Return the final reduced model
-  final_formula <- paste(dep_var, "~", paste(remaining_vars, collapse = " + "), if (!is.null(fe)) paste("|", fe) else "")
-  return(final_formula)
-}
+<!--   # Return the final reduced model -->
+<!--   final_formula <- paste(dep_var, "~", paste(remaining_vars, collapse = " + "), if (!is.null(fe)) paste("|", fe) else "") -->
+<!--   return(final_formula) -->
+<!-- } -->
 
-# Example usage
-# Replace 'your_data' with your actual data frame name
-final_model <- gets_fixest(
-  dep_var = "log_real_Elem_Educ_Total_Exp_pp",
-  indep_vars = c("log_weighted_annual_avg_wkly_wage",
-                 "l1_log_weighted_annual_avg_wkly_wage",
-                 "l2_log_weighted_annual_avg_wkly_wage",
-                 "log_real_gdp_priv_ind_pc",
-                 "l1_log_real_gdp_priv_ind_pc",
-                 "l2_log_real_gdp_priv_ind_pc",
-                 "log_real_Property_Tax_pp",
-                 #"log_real_Total_State_IG_Revenue_pp",
-                 #"log_real_Total_Fed_IG_Revenue_pp",
-                 "log_hpi"),  # replace with your actual variable names
-  data = mines_cz,
-  fe = "unit + year",        # optional fixed effects
-  pval_cutoff = 0.1         # significance threshold
-)
+<!-- # Example usage -->
+<!-- # Replace 'your_data' with your actual data frame name -->
+<!-- final_model <- gets_fixest( -->
+<!--   dep_var = "log_real_Elem_Educ_Total_Exp_pp", -->
+<!--   indep_vars = c("log_weighted_annual_avg_wkly_wage", -->
+<!--                  "l1_log_weighted_annual_avg_wkly_wage", -->
+<!--                  "l2_log_weighted_annual_avg_wkly_wage", -->
+<!--                  "log_real_gdp_priv_ind_pc", -->
+<!--                  "l1_log_real_gdp_priv_ind_pc", -->
+<!--                  "l2_log_real_gdp_priv_ind_pc", -->
+<!--                  "log_real_Property_Tax_pp", -->
+<!--                  #"log_real_Total_State_IG_Revenue_pp", -->
+<!--                  #"log_real_Total_Fed_IG_Revenue_pp", -->
+<!--                  "log_hpi"),  # replace with your actual variable names -->
+<!--   data = mines_cz, -->
+<!--   fe = "unit + year",        # optional fixed effects -->
+<!--   pval_cutoff = 0.1         # significance threshold -->
+<!-- ) -->
 
-# View results
-# At a 10% significance level, we retain a 2-timeperiod lag of real_gdp_pc, contemporaneous wage (not likely), property_tax_pp, state_revenue_pp, hpi
-feols(as.formula(final_model), data = mines_cz) %>% etable(adjustbox = TRUE, tex = latex_tables)
+<!-- # View results -->
+<!-- # At a 10% significance level, we retain a 2-timeperiod lag of real_gdp_pc, contemporaneous wage (not likely), property_tax_pp, state_revenue_pp, hpi -->
+<!-- feols(as.formula(final_model), data = mines_cz) %>% etable(adjustbox = TRUE, tex = latex_tables) -->
 
 
-# I want to allow the coefficient to vary on the weekly wage treatment variable
-feols(as.formula(gsub("log_weighted_annual_avg_wkly_wage", "i(share_own_discrete, log_weighted_annual_avg_wkly_wage)", final_model)), data = mines_cz) %>%
-  etable(adjustbox = TRUE, tex = latex_tables)
+<!-- # I want to allow the coefficient to vary on the weekly wage treatment variable -->
+<!-- feols(as.formula(gsub("log_weighted_annual_avg_wkly_wage", "i(share_own_discrete, log_weighted_annual_avg_wkly_wage)", final_model)), data = mines_cz) %>% -->
+<!--   etable(adjustbox = TRUE, tex = latex_tables) -->
 
-```
+<!-- ``` -->
 
-```{r, cache = TRUE}
+<!-- ```{r, cache = TRUE} -->
 
-test <- readRDS(here("output/prop_price_breaks_csis.RDS"))
+<!-- test <- readRDS(here("output/prop_price_breaks_csis.RDS")) -->
 
-```
+<!-- ``` -->
 
 # Results
 
+
+
 # Discussion
+
+
+
 
 # Conclusion
 
