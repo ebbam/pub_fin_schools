@@ -54,10 +54,10 @@ append_to_appendix <- function(title, description_lines) {
 
 # Append additional tex SI files
 append_to_appendix_tex <- function(tex_file) {
-  lines <- c(
+    lines <- c(
     "",
     "```{=latex}",
-    sprintf("\\input{%s}", tex_file),
+    paste0("\\input{", tex_file, "}"),
     "```",
     ""
   )
