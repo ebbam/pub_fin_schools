@@ -64,3 +64,11 @@ data/raw/BEA_county_econ_stats/**/*.csv
 /code/regressions_files
 /code/old_versions
 data/raw/TheGovernmentFinanceDatabase_SchoolDistrictData/2006_classification_manual.pdf
+_extensions/tarleb/parse-latex/_extension.yml
+_extensions/tarleb/parse-latex/parse-latex.lua
+/code/appendix_generated_files
+code/images/clipboard-1905322044.png
+code/tmp-pdfcrop-13810.tex
+code/tmp-pdfcrop-13849.tex
+/code/ss_cache_manual
+code/tmp-pdfcrop-13825.tex
