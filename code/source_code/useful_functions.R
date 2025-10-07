@@ -1,4 +1,20 @@
 ##############################################################
+
+# Add labels to plots with commuting zones
+add_labels <- function(plot, df, var, ns){ # plot,
+  tmp <- df %>% 
+    left_join(cz_labels, by = "unit") %>% 
+    arrange(get(var)) %>% 
+    slice(c(1:ns, (n() - (ns-1)):n()))
+  
+  plot +
+    geom_text_repel(data = tmp, aes(label = msa), direction = "y",
+                    nudge_y = 0.02, size = 3, segment.color = "grey60",
+                    max.overlaps = Inf)
+  
+}
+
+
 library(tidycensus)
 get_state <- function(st){
   fips_codes %>% filter(state_code == st) %>% pull(state) %>% unique %>% return(.)
