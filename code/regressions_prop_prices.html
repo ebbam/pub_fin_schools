@@ -1,0 +1,1113 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.6.42">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>regressions_prop_prices</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+</style>
+
+
+<script src="regressions_prop_prices_files/libs/clipboard/clipboard.min.js"></script>
+<script src="regressions_prop_prices_files/libs/quarto-html/quarto.js"></script>
+<script src="regressions_prop_prices_files/libs/quarto-html/popper.min.js"></script>
+<script src="regressions_prop_prices_files/libs/quarto-html/tippy.umd.min.js"></script>
+<script src="regressions_prop_prices_files/libs/quarto-html/anchor.min.js"></script>
+<link href="regressions_prop_prices_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="regressions_prop_prices_files/libs/quarto-html/quarto-syntax-highlighting-2f5df379a58b258e96c21c0638c20c03.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="regressions_prop_prices_files/libs/bootstrap/bootstrap.min.js"></script>
+<link href="regressions_prop_prices_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="regressions_prop_prices_files/libs/bootstrap/bootstrap-c0367b04c37547644fece4185067e4a7.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN") {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+</head>
+
+<body class="fullcontent">
+
+<div id="quarto-content" class="page-columns page-rows-contents page-layout-article">
+
+<main class="content" id="quarto-document-content">
+
+
+
+
+<section id="property-prices-analysis" class="level1 unnumbered">
+<h1 class="unnumbered">Property Prices Analysis</h1>
+<div class="cell">
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] "Running analysis on CZs (cz_id)."</code></pre>
+</div>
+</div>
+<section id="approaching-causal-identification" class="level2">
+<h2 class="anchored" data-anchor-id="approaching-causal-identification">Approaching Causal Identification</h2>
+<p>Though the descriptive relationship between various economic variables and public education expenditure provides convincing evidence of the reliance of local education expenditure on economic conditions in both levels and growth rates, this relationship has no causal interpretation.</p>
+<p>Indeed, there is a significant endogeneity concern in using wages or property prices as a treatment variable given the likely attracting factor of high levels of education expenditure for higher-income families. However, the structure of public financing (described in further detail in Section <span class="math inline">\(\ref{si_section:Challenges}\)</span> of the Supplementary Materials) provides an avenue for a causal identification strategy. In brief, revenue for public education comes from a combination of intergovernmental and local sources. Revenue generated from local sources comes almost entirely from property taxes. Given this, we can isolate the channel through which our treatment (industry-specific wage growth) will affect our outcome variable using an instrumental variable approach. We outline the underlying path diagram of this econometric specification in Figure <span class="math inline">\(\ref{fig:iv-approach}\)</span>.</p>
+<p>As seen in Figure <span class="math inline">\(\ref{fig:iv-approach}\)</span>, we hypothesize that property values have an effect on education expenditure. However, there is significant concern of a reverse causal effect as higher income families likely gravitate towards school districts with higher levels of expenditure per pupil, driving up property values .</p>
+<p>Therefore, we adopt an identification strategy via a shift-share or Bartik instrument. A shift-share instrument interacts local industry shares with national industry-level growth rates to attain a plausibly exogenous local shock. In the context of this work, we construct the instrument by interacting a constant industrial employment share variable with a national industry-level wage.</p>
+<p>We choose to employ the first of these options, assuming that industry shares are only exogenous at a given base period and that national level growth rates are exogenous and therefore allowed to vary with time.</p>
+<p>Using data from the US Bureau of Labor Statistics’ Quarterly Census of Employment and Wages (QCEW) and Bureau of Economic Analysis, we construct two types of shift-share Bartik instruments at the commuting zone level using local employment shares by industry and national changes in industry-specific wages and real value added. Equation <a href="#eq-bartik" class="quarto-xref">Equation&nbsp;1</a> demonstrates the Bartik instrument as outlined in <span class="citation" data-cites="ferri2022">@ferri2022</span> and <span class="citation" data-cites="goldsmith-pinkham2020">@goldsmith-pinkham2020</span> and defined in <span class="citation" data-cites="bartik1991">@bartik1991</span> . <span class="math inline">\(G_{njt}\)</span> represents national-level changes in wages or value added in industry <span class="math inline">\(j\)</span> in time <span class="math inline">\(t\)</span> and <span class="math inline">\(\frac{N_{ij\tau}}{N_{i\tau}}\)</span> represents the ‘sensitivity’ of a CZ to these national shocks proxied by an initial share of local employment in industry <span class="math inline">\(j\)</span> in a baseline time period <span class="math inline">\(\tau\)</span>. The product of these two values defines the shift-share indicator <span class="math inline">\(\tilde{Z}_{i,t,s}\)</span>. In order to construct the share portion, we compute the total local share of employment in a particular industry <span class="math inline">\(j\)</span>. Due to challenges with missing data, we compute an average share across 2001-2005 as our ‘base year’.</p>
+<p></p>
+<p><span id="eq-bartik"><span class="math display">\[
+    \tilde{Z}_{ijt} = G_{njt} *  \frac{N_{ij\tau}}{N_{i\tau}}
+\tag{1}\]</span></span></p>
+<!-- ![Coal Shift-share -->
+<!-- Instruments](../output/bartik_graphs.jpg){#fig-bartik_graph} -->
+<p>We compute the two relevant shift-share instruments across 19 two-digit NAICS industrial categories listed in Table below. Given industry-level disaggregation of local employment and wage data requires data suppression for anonymity reasons, the plot immediately following displays the data coverage of our commuting zone level shift-share instruments. Given the high degree of missingness in the 3-digit categorisation we proceed with the 2-digit NAICS codes in the rest of the work. </p>
+% latex table generated in R 4.5.0 by xtable 1.8-4 package % Wed Oct 8 09:24:16 2025
+<p>Before displaying the regression results using our shift-share instrument we discuss the plausibility of our identification strategy by exploring the relationships between wage and GDP on housing prices. We provide evidence of this relationship below.</p>
+<section id="industry-level-wages" class="level3">
+<h3 class="anchored" data-anchor-id="industry-level-wages">Industry-level Wages</h3>
+<p>The two regression models show that wage levels and wage growth both play important roles in influencing house prices, but in different ways. The log-level model indicates that increases in average wages have a strong and persistent effect on the level of house prices, with significant positive effects extending up to four years. In contrast, the growth rate model suggests that house price growth responds primarily to contemporaneous wage growth, with little evidence of lagged effects. Together, these findings imply that while higher wages steadily raise housing values over time, short-term changes in wage growth do not affect the growth rate of house prices over time. Together, they suggest that housing markets are more responsive to trends than to transitory shocks in wages. </p>
+<!-- ```{r appendix_ss_plots, include = FALSE, echo = FALSE, results = 'asis'} -->
+<!-- append_to_appendix("## Shift-Share Instrument Graphs", -->
+<!-- "The below displays graphically the various shift-share instruments.") -->
+<!-- ss_temp %>% -->
+<!--   ggplot(aes(x = year, y = ss_2d, group = cz_id)) + -->
+<!--   geom_line() + -->
+<!--   labs(title = "Wage-based Shift-Share Instrument: 2-digit NAICS", -->
+<!--        x = "SS Instrument: Local Employment Share x National Industry-Specific Wage Growth", -->
+<!--        y = "Year") -->
+<!-- # ss_temp %>% -->
+<!-- #   ggplot(aes(x = year, y = ss_3d, group = cz_id)) + -->
+<!-- #   geom_line() + -->
+<!-- #   labs(title = "Wage-based Shift-Share Instrument: 3-digit NAICS", -->
+<!-- #        x = "SS Instrument: Local Employment Share * National Industry-Specific Wage Growth", -->
+<!-- #        y = "Year") -->
+<!-- ss_temp %>% -->
+<!--   ggplot(aes(x = year, y = lev_ss_2d, group = cz_id)) + -->
+<!--   geom_line() + -->
+<!--   labs(title = "Wage-based Shift-Share Instrument: 2-digit NAICS", -->
+<!--        x = "SS Instrument: Local Employment Share x National Industry-Specific Wage Level", -->
+<!--        y = "Year") -->
+<!-- # ss_temp %>% -->
+<!-- #   ggplot(aes(x = year, y = lev_ss_3d, group = cz_id)) + -->
+<!-- #   geom_line() + -->
+<!-- #   labs(title = "Wage-based Shift-Share Instrument: 3-digit NAICS", -->
+<!-- #        x = "SS Instrument: Local Employment Share * National Industry-Specific Wage Level", -->
+<!-- #        y = "Year") -->
+<!-- ss_temp %>% -->
+<!--   ggplot(aes(x = year, y = gdp_ss_2d, group = cz_id)) + -->
+<!--   geom_line() + -->
+<!--   labs(title = "Value Added Shift-Share Instrument: 2-digit NAICS", -->
+<!--        x = "SS Instrument: Local Employment Share x National Industry-Specific VA Growth", -->
+<!--        y = "Year") -->
+<!-- ss_temp %>% -->
+<!--   ggplot(aes(x = year, y = lev_ss_3d, group = cz_id)) + -->
+<!--   geom_line() + -->
+<!--   labs(title = "Value Added Shift-Share Instrument: 2-digit NAICS", -->
+<!--        x = "SS Instrument: Local Employment Share x National Industry-Specific VA Level", -->
+<!--        y = "Year") -->
+<!-- ``` -->
+<p>Finally, we display the results for a 2SLS estimation using our wage-based shift-share instrument.</p>
+<p>The instrumental variable estimates provide evidence of a robust causal relationship between national wage and GDP fluctuations and public education expenditure. Utilising our wage-based shift-share instrument we see highly significant and relevant first-stage relationships when the shift-share instrument is imposed both in levels and growth rates. Though the growth rate specification is only relevant with at least a 1-year lag and using state- instead of commuting zone-level fixed effects.</p>
+<p>In each case in the first table, the first-stage regression yields a statistically significant and economically large coefficient. Varying the time-lag and inclusion of state or commuting zone fixed effects, we see that a 1% increase in the shift-share measure (which can be interpreted as a natural logarithm) is associated with a 0.05-0.5% increase in the local House Price Index (p &lt; 0.01), with an F-statistic between 47-140 (all well above conventional weak instrument thresholds) confirming instrument relevance. The second-stage results are significant in all cases except the growth rate shocks with commuting zone level fixed effects.</p>
+<p>In the level shift-share regressions, the instrumental variables estimates suggest that increases in house prices have a strong and statistically significant effect on education expenditure per pupil. Across specifications (columns 2, 4, 6, and 8), the estimated elasticity is close to one, implying that a 1% increase in house prices translates into nearly a 1% increase in elementary education spending. The instruments (intergovernmental revenue per capita and state wages) are highly relevant, as indicated by the very large first-stage F-statistics (well above the conventional threshold of 10), alleviating concerns about weak instruments. The Wu-Hausman tests reject the null of exogeneity, confirming that OLS estimates are biased and IV estimation is appropriate. Wald tests of joint significance further support the strength of the instruments. Taken together, these results provide robust evidence that higher property values causally increase local education spending, consistent with a mechanism in which rising property wealth expands the fiscal capacity of local governments. Furthermore, given the dependent variable measures per pupil expenditure, this result implies direct effects in experience per student.</p>
+<p>Using wage shocks in levels yields strong instruments, high first-stage F-statistics, and stable second-stage estimates: higher house prices robustly increase education spending. In contrast, when shocks are measured in growth rates, the instruments lose predictive power (first-stage F-statistics ~1–2), resulting in weak identification. The second-stage coefficients become unstable and often insignificant, while Hausman tests fail to reject exogeneity. This suggests that the growth-rate specification is poorly identified and cannot provide reliable causal inference, whereas the level specification produces credible and consistent results.</p>
+<p>The specification that uses wage shocks in levels provides the most credible identification strategy. The instruments are strong, as indicated by very large first-stage F-statistics well above conventional thresholds, and the second-stage results are both large and robust across specifications. The Wu–Hausman tests reject exogeneity, reinforcing the necessity of IV estimation over OLS. By contrast, when wage shocks are expressed in growth rates, the identifying variation is substantially reduced, resulting in weak first stages and unstable second-stage estimates. Since levels capture the cross-sectional fiscal variation that drives differences in property values and school spending, the level specification is more consistent with the economic mechanisms of interest and delivers more reliable causal estimates.</p>
+<p>At the same time, the weakness of the growth-rate specification does raise concerns about the robustness of the results. If the relationship between wages, house prices, and education expenditure is driven by common non-stationary trends, then regressions in levels risk spurious correlation. In this sense, the fact that the IV design loses power when variables are differenced into growth rates may suggest that part of the strong level results reflect long-run trends rather than short-run causal shocks. While the large first-stage F-statistics and Hausman tests in the level specification support its validity, the weak performance of the growth-rate version cautions that the results could be sensitive to issues of persistence and trending in the data.</p>
+<p>Taken together, these results suggest that while the level specification provides strong identification and compelling evidence of a positive causal effect of house prices on education spending, the weak performance of the growth-rate specification highlights the need for caution, as the strength of the findings may partly reflect long-run trending relationships rather than purely exogenous shocks.</p>
+<p>However, examining the structure of the growth rate shock, the instability of the variable in growth rate is likely causing the poor identification in the growth rate regressions.</p>
+</section>
+<section id="industry-level-gdp" class="level3">
+<h3 class="anchored" data-anchor-id="industry-level-gdp">Industry-level GDP</h3>
+<p>We perform a similar combined baseline and causal IV estimation using the GDP-based shift-share instrument.</p>
+<p>The estimates indicate that house prices are strongly correlated with local economic conditions. In the levels specification, both GDP per capita and population are positively associated with higher house prices, although the inclusion of state fixed effects alters the sign of lagged GDP coefficients, suggesting long-run mean reversion or heterogeneity across states. In the growth specification, contemporaneous GDP growth and short-run lags exert a positive effect on house price growth, while population growth also contributes significantly. Overall, these results imply that both the size and short-run dynamics of the local economy play a central role in shaping housing markets.</p>
+<p>Overall, compared to wages, the relatively more sensitive stability of the relationship between GDP per capita and house prices indicates a weaker, and potentially more spurious link between real GDP and house prices. This conclusion logically aligns with the fact that the channel through which local economic activity links to house prices is through wages. Wages offer a more direct way of measuring the effect of local economic health on house prices than does real GDP. Nonetheless, the relationship still indicates a positive association between local economic health an dhousing prices, enough to warrant an investigation of our real value added shift-share instrument.</p>
+<p>Moving on to investigate the GDP-based shift-share instrument, we find a similar effect as with wages when estimating level shift-share shocks. The first-stage relationship between GDP shocks and house prices ranges from 0.1-0.7% increase in response to a 1% increase in the shift-share instrument (interpreted as wage levels) with an F-statistic between 100-400. These results hold after controlling for local revenues, GDP per capita, and enrollment, and the Wu-Hausman tests reject OLS in favor of IV, suggesting that naive estimates are biased. Overall, the evidence supports a causal channel from rising local housing wealth to increased investment in public education. However, we see an even weaker relationship when imposing the shift-share instrument as a growth rate shock where the first-stage relationship are spurious and statistically insignificant.</p>
+<p>Together, these findings suggest that levels (rather than short-run changes) in GDP are more systematically and substantially associated with house price dynamics. The stronger fit and significant lag effects in the level regression underscore the longer-term influence of economic fundamentals on housing markets. It also indicates that wage growth is more important for house prices than the more general presence of industry-level GDP growth. This makes intuitive sense in that the link from industrial success (labour) to personal and community wealth creation is mediated via wage and not necessarily the total industrial output which might not be reflected in wages (especially given recent evidence of decoupling of wages from productivity) .</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="../output/FRED%20wage%20decoupling.png" class="img-fluid figure-img"></p>
+<figcaption>Wages and Productivity</figcaption>
+</figure>
+</div>
+</section>
+</section>
+<section id="accounting-for-heterogeneity" class="level2">
+<h2 class="anchored" data-anchor-id="accounting-for-heterogeneity">Accounting for Heterogeneity</h2>
+<p>In order to make meaningful policy-related insights, we need to unmask the substantial heterogeneity obscured by the national-level average treatment effects described above. Barring design and data issues with our shift-share instrument, these national-level estimates are unlikley to apply uniformly across states and commuting zones. Therefore, this next section is dedicated to unpacking this heterogeneity. Below, we explore various metrics of local economic growth and decline to (1) partition our sample according to metrics of economic health, employ (2) industry-by-industry and (2) state-by-state uestimations sing our baseline descriptive models, wage- and GDP-based shift-share instruments.</p>
+<section id="declining-vs.-growing-regions" class="level3">
+<h3 class="anchored" data-anchor-id="declining-vs.-growing-regions">Declining vs.&nbsp;Growing Regions</h3>
+<p>First, we identify declining and growing regions by estimating commuting-zone growth rates conditional on state and national level growth rates and partition our sample across this distribution.</p>
+<p>In order to identify declining and growing commuting zones, we separate time series models by commuting zone:</p>
+<p><span class="math display">\[
+\Delta \log GDPpc^{CZ}_{t}
+= \alpha_{cz}
++ \beta_{n} \, \Delta \log GDPpc^{nat}_{t}
++ \beta_{s} \, \widehat{\Delta \log GDPpc}^{state}_{t}
++ \varepsilon_{t}
+\]</span></p>
+<p><span class="math display">\[
+\widehat{\Delta \log GDPpc}^{state}_{t}
+= \Delta \log GDPpc^{state}_{t}
+- \hat{\gamma}\, \Delta \log GDPpc^{nat}_{t}
+\]</span></p>
+<p>Where each GDP term represents the private industry GDP at the CZ, state, or national level, denoted by superscript. Effectively, we estimate the commuting zone level growth rate controlling for state and national trends. We then classify commuting zones by the value of <span class="math inline">\(\alpha\)</span> which represents their deviation from state- and national-level GDP growth rates. We estimate this trend deviation in both gross and per capita values of private industry GDP. Figure X demonstrates the considerable variability in GDP-level growth rates across commuting zones in the US between 2001-2021. Visualising the per capita growth rate deviations by state and region demonstrates heterogeneity in this variability across states and regions. For example, Texas, Montana, Illinois, and Colorado have outstanding positive outliers in the distribution . Whereas, South Dakota, Nebraska, Montana, Louisiana, and Kentucky contain some of the outstanding declining areas </p>
+<div class="cell">
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="regressions_prop_prices_files/figure-html/unnamed-chunk-12-1.png" class="img-fluid figure-img" width="960"></p>
+</figure>
+</div>
+</div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="regressions_prop_prices_files/figure-html/unnamed-chunk-12-2.png" class="img-fluid figure-img" width="960"></p>
+</figure>
+</div>
+</div>
+</div>
+<div class="cell">
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="regressions_prop_prices_files/figure-html/unnamed-chunk-13-1.png" class="img-fluid figure-img" width="960"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>We perform the same trend deviation calculation for wages where each wage variable represents the commuting zone, state, and national level growth rate in the weekly average wage as reported in QCEW. </p>
+<!-- $$\Delta (log) Wage^{CZ}_{t} = \alpha + \Delta (log) Wage^{state}_{t} + \Delta (log) Wage^{national}_{t} + \epsilon_t$$ -->
+<!-- New implementation:  -->
+<!-- % --- Original specification --- -->
+<!-- $$ -->
+<!-- \Delta \log Wage^{CZ}_{t}  -->
+<!-- = \alpha  -->
+<!-- + \beta_{s} \, \Delta \log Wage^{state}_{t}  -->
+<!-- + \beta_{n} \, \Delta \log Wage^{nat}_{t}  -->
+<!-- + \varepsilon_{t} -->
+<!-- $$ -->
+<p><span class="math display">\[
+\Delta \log Wage^{CZ}_{t}
+= \alpha_{cz}
++ \beta_{n} \, \Delta \log Wage^{nat}_{t}
++ \varepsilon_{t}
+\]</span></p>
+<p>In Figure X, we see that there is similar variability though the patterns do not consistently indicate the same high- and low-performing outliers across states indicating that GDP and wage growth are not consistently correlated across regions. We demonstrate this fact in Figure X (scatterplot with pink regression linear fit) where, although there is a positive correlation between commuting zone GDP and wage trend deviations, the wage trend deviation represents a nearly inelastic relationship to GDP growth. </p>
+<div class="cell">
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="regressions_prop_prices_files/figure-html/unnamed-chunk-15-1.png" class="img-fluid figure-img" width="960"></p>
+</figure>
+</div>
+</div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="regressions_prop_prices_files/figure-html/unnamed-chunk-15-2.png" class="img-fluid figure-img" width="960"></p>
+</figure>
+</div>
+</div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="regressions_prop_prices_files/figure-html/unnamed-chunk-15-3.png" class="img-fluid figure-img" width="960"></p>
+</figure>
+</div>
+</div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="regressions_prop_prices_files/figure-html/unnamed-chunk-15-4.png" class="img-fluid figure-img" width="960"></p>
+</figure>
+</div>
+</div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="regressions_prop_prices_files/figure-html/unnamed-chunk-15-5.png" class="img-fluid figure-img" width="960"></p>
+</figure>
+</div>
+</div>
+</div>
+<div class="cell">
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="regressions_prop_prices_files/figure-html/unnamed-chunk-16-1.png" class="img-fluid figure-img" width="960"></p>
+</figure>
+</div>
+</div>
+</div>
+<div class="cell">
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="regressions_prop_prices_files/figure-html/unnamed-chunk-17-1.png" class="img-fluid figure-img" width="960"></p>
+</figure>
+</div>
+</div>
+</div>
+<div class="cell">
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="regressions_prop_prices_files/figure-html/unnamed-chunk-18-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="regressions_prop_prices_files/figure-html/unnamed-chunk-18-2.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="baseline-models" class="level3">
+<h3 class="anchored" data-anchor-id="baseline-models">Baseline Models</h3>
+
+</section>
+<section id="iv-models" class="level3">
+<h3 class="anchored" data-anchor-id="iv-models">IV Models</h3>
+<p>The following implements an employment based Bartik instrument for various industries available from the Quarterly Census of Employment and Wages.</p>
+<section id="wage-ss-instrument" class="level4">
+<h4 class="anchored" data-anchor-id="wage-ss-instrument">Wage SS Instrument</h4>
+<p>Result: The baseline estimate of an l-1 effect on public education expenditure is entirely dominated by declining regions. Interestingly, sample division by GDP growth rates isolates the wage-based SS instrument effect almost entirely indicating that wage changes in declining regions matter most. Potentially an indicator of property price spirals.</p>
+<p>Result: Whereas, in the case of the wage-based instrument when applied to growing and declining wage regions, the effect is more widespread across regions.</p>
+</section>
+<section id="gdp-ss-instrument" class="level4">
+<h4 class="anchored" data-anchor-id="gdp-ss-instrument">GDP SS Instrument</h4>
+<p>Result: In the case of the GDP-based instrument, the sub-sampling procedure indicates that GDP growth has an effect on public education expenditure in all but hyper-growing areas (as defined in both GDP and wage subsampling) indicating that GDP growth translates to changes in public expenditure more directly in all but non-superstar regions. </p>
+</section>
+</section>
+<section id="state-by-state-estimation" class="level3">
+<h3 class="anchored" data-anchor-id="state-by-state-estimation">State-by-state estimation</h3>
+<section id="baseline" class="level4">
+<h4 class="anchored" data-anchor-id="baseline">Baseline</h4>
+<p><img src="regressions_prop_prices_files/figure-html/unnamed-chunk-26-1.png" class="img-fluid" width="672"></p>
+</section>
+</section>
+<section id="industry-by-industry" class="level3">
+<h3 class="anchored" data-anchor-id="industry-by-industry">Industry by Industry</h3>
+<section id="gdp" class="level4">
+<h4 class="anchored" data-anchor-id="gdp">GDP</h4>
+<div class="cell">
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="regressions_prop_prices_files/figure-html/unnamed-chunk-27-1.png" class="img-fluid figure-img" width="768"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="wage" class="level4">
+<h4 class="anchored" data-anchor-id="wage">Wage</h4>
+<div class="cell">
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="regressions_prop_prices_files/figure-html/unnamed-chunk-28-1.png" class="img-fluid figure-img" width="768"></p>
+</figure>
+</div>
+</div>
+</div>
+<p><img src="regressions_prop_prices_files/figure-html/unnamed-chunk-29-1.png" class="img-fluid" width="960"></p>
+</section>
+<section id="shift-share" class="level4">
+<h4 class="anchored" data-anchor-id="shift-share">Shift-share</h4>
+<div class="cell">
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="regressions_prop_prices_files/figure-html/unnamed-chunk-30-1.png" class="img-fluid figure-img" width="960"></p>
+</figure>
+</div>
+</div>
+</div>
+<div class="cell">
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="regressions_prop_prices_files/figure-html/unnamed-chunk-31-1.png" class="img-fluid figure-img" width="960"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+</section>
+<section id="quantile-regression" class="level3">
+<h3 class="anchored" data-anchor-id="quantile-regression">Quantile Regression</h3>
+<div class="cell">
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="regressions_prop_prices_files/figure-html/unnamed-chunk-33-1.png" class="img-fluid figure-img" width="960"></p>
+</figure>
+</div>
+</div>
+</div>
+<!-- ```{r appendix_pvar, include = FALSE, echo = FALSE, results = 'asis'} -->
+<!-- panel_lines <- c( -->
+<!--   "$$", -->
+<!--   "Y_{it} = \\alpha_i +  \\sum_{k = 1}^{4} \\gamma_{k}A_{i,t-k} + \\beta X_{it} + \\varepsilon_{it}", -->
+<!--   "$$", -->
+<!--   "", -->
+<!--   "Where we approach a level and per capita value expression of the", -->
+<!--   "relationship between total education expenditure, intergovernmental", -->
+<!--   "revenue, house prices conditioned on GDP and wage levels.", -->
+<!--   "", -->
+<!--   "$$", -->
+<!--   "Y_{it} =", -->
+<!--   "\\begin{bmatrix}", -->
+<!--   "\\log(\\text{real Total Educ. Exp.})_{it} \\\\", -->
+<!--   "\\log(\\text{real Total IG Revenue})_{it} \\\\", -->
+<!--   "\\log(\\text{HPI})_{it}", -->
+<!--   "\\end{bmatrix},", -->
+<!--   "\\quad", -->
+<!--   "X_{it} =", -->
+<!--   "\\begin{bmatrix}", -->
+<!--   "\\log(\\text{real GDP})_{it} \\\\", -->
+<!--   "\\log(\\text{wage})_{it}", -->
+<!--   "\\end{bmatrix}", -->
+<!--   "$$", -->
+<!--   "", -->
+<!--   "- $A_1, A_2, A_3, A_4$ are $3 \\times 3$ coefficient matrices", -->
+<!--   "- $\\beta$ is a $3 \\times 2$ matrix of coefficients on the exogenous variables", -->
+<!--   "- $\\alpha_i$ is a vector of unit fixed effects", -->
+<!--   "- $\\varepsilon_{it}$ is the error term", -->
+<!--   "", -->
+<!--   "Where", -->
+<!--   "", -->
+<!--   "$$", -->
+<!--   "Y_{it} =", -->
+<!--   "\\begin{bmatrix}", -->
+<!--   "\\log(\\text{real Own Source Rev. per person})_{it} \\\\", -->
+<!--   "\\log(\\text{real IG Revenue per person})_{it} \\\\", -->
+<!--   "\\log(\\text{wage})_{it} \\\\", -->
+<!--   "\\log(\\text{HPI})_{it}", -->
+<!--   "\\end{bmatrix},", -->
+<!--   "\\quad", -->
+<!--   "X_{it} =", -->
+<!--   "\\begin{bmatrix}", -->
+<!--   "\\log(\\text{real GDP per capita})_{it}", -->
+<!--   "\\end{bmatrix}", -->
+<!--   "$$", -->
+<!--   "", -->
+<!--   "- $A_1, A_2, A_3, A_4$ are $4 \\times 4$ coefficient matrices", -->
+<!--   "- $B$ is a $4 \\times 1$ coefficient matrix", -->
+<!--   "- $\\alpha_i$ unit fixed effects", -->
+<!--   "- $\\varepsilon_{it}$ error term" -->
+<!-- ) -->
+<!-- append_to_appendix("## Panel VAR Specification", panel_lines) -->
+<!-- pvar_data <- mines_cz %>% -->
+<!--   #select(unit, year, contains("real_Total_Educ_Total_Exp"), contains("real_gdp_total")) %>% -->
+<!--   drop_na() %>% -->
+<!--   data.frame() -->
+<!-- # Estimate PVAR with 1 lag -->
+<!-- pvar_model_levels <- pvarfeols( -->
+<!--   dependent_vars = c("log_real_Total_Educ_Total_Exp", -->
+<!--                      #"log_real_Total_Rev_Own_Sources", -->
+<!--                      #"log_real_gdp_priv_ind", -->
+<!--                      #"log_real_Property_Tax", -->
+<!--                      "log_real_Total_IG_Revenue", #"log_real_Total_Fed_IG_Revenue_pp", -->
+<!--                      #"log_weighted_annual_avg_wkly_wage", -->
+<!--                      "log_hpi"), -->
+<!--   exog_vars = c("log_real_gdp_priv_ind", "log_weighted_annual_avg_wkly_wage"), #"share_own", -->
+<!--   lags = 4, -->
+<!--   #transformation = "demean",   # alternative: "firstdiff" -->
+<!--   data = pvar_data, -->
+<!--   panel_identifier = c("unit", "year") -->
+<!-- ) -->
+<!-- pvar_model_levels_pc <- pvarfeols( -->
+<!--   dependent_vars = c(#"log_real_Total_Educ_Total_Exp_pp", #"log_real_gdp_priv_ind_pc", -->
+<!--                      "log_real_Total_Rev_Own_Sources_pp", -->
+<!--                      #"log_real_Property_Tax_pp", -->
+<!--                      "log_real_Total_IG_Revenue_pp", -->
+<!--                      "log_weighted_annual_avg_wkly_wage", #"log_real_Total_State_IG_Revenue_pp", "log_real_Total_Fed_IG_Revenue_pp", -->
+<!--                      "log_hpi"), -->
+<!--   exog_vars = c("log_real_gdp_priv_ind_pc"), #"share_own", -->
+<!--   lags = 4, -->
+<!--   #transformation = "demean",   # alternative: "firstdiff" -->
+<!--   data = pvar_data, -->
+<!--   panel_identifier = c("unit", "year") -->
+<!-- ) -->
+<!-- for(mod in list(pvar_model_levels, pvar_model_levels_pc)){ -->
+<!--   #summary(mod) %>% print -->
+<!--   # Impulse response function -->
+<!--   irf_result <- mod %>% girf(n.ahead = 10, ma_approx_steps= 10) -->
+<!--   # irf_result_bootstrapped <- bootstrap_irf(mod, typeof_irf = c("GIRF"), -->
+<!--   #           n.ahead = 10, -->
+<!--   #           nof_Nstar_draws = 3, -->
+<!--   #           confidence.band = 0.95, -->
+<!--   #           mc.cores = 5) -->
+<!--   # Plot IRFs -->
+<!--   plot(irf_result, scales = "free") %>% print() -->
+<!--   cat("    \n") -->
+<!--   cat("    \n") -->
+<!--   cat("    \n") -->
+<!--   cat("    \n") -->
+<!-- } -->
+<!-- # # Get shock variables (names of shock sources) -->
+<!-- # shock_vars <- names(irf_result) -->
+<!-- # irf_df <- map_dfr(shock_vars, function(shock) { -->
+<!-- #   lower_matrix <- irf_result_bootstrapped$Lower[[shock]] -->
+<!-- #   upper_matrix <- irf_result_bootstrapped$Upper[[shock]] -->
+<!-- # -->
+<!-- #   # Calculate mean pointwise IRF from bootstrap draws -->
+<!-- #   mean_matrix <- (lower_matrix + upper_matrix) / 2 -->
+<!-- # -->
+<!-- #   expand.grid( -->
+<!-- #     horizon = seq_len(nrow(mean_matrix)), -->
+<!-- #     response = colnames(mean_matrix) -->
+<!-- #   ) %>% -->
+<!-- #     mutate( -->
+<!-- #       shock = shock, -->
+<!-- #       irf = as.vector(mean_matrix), -->
+<!-- #       lower = as.vector(lower_matrix), -->
+<!-- #       upper = as.vector(upper_matrix) -->
+<!-- #     ) -->
+<!-- # }) -->
+<!-- # ggplot(irf_df, aes(x = horizon, y = irf)) + -->
+<!-- #   geom_line(color = "steelblue") + -->
+<!-- #   geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 0.2, fill = "steelblue") + -->
+<!-- #   facet_grid(response ~ shock, scales = "free_y") + -->
+<!-- #   labs( -->
+<!-- #     title = "Impulse Response Functions with 95% Confidence Intervals", -->
+<!-- #     x = "Horizon", -->
+<!-- #     y = "Response" -->
+<!-- #   ) + -->
+<!-- #   theme_minimal() -->
+<!-- ``` -->
+<!-- <!-- # Property Prices -->
+<p>–&gt;</p>
+<!-- ```{r, echo = FALSE, results = 'asis', cache = TRUE} -->
+<!-- # is <- isatpanel( -->
+<!-- #       data = data.frame(mines_cz), -->
+<!-- #       formula = as.formula("log_hpi ~ log_weighted_annual_avg_wkly_wage + l1_log_weighted_annual_avg_wkly_wage + l2_log_weighted_annual_avg_wkly_wage"), -->
+<!-- #       index = c("unit", "year"), -->
+<!-- #       effect = "twoways", -->
+<!-- #       #iis = TRUE, -->
+<!-- #       fesis = TRUE, -->
+<!-- #       #ar = 1, -->
+<!-- #       t.pval = 0.01, -->
+<!-- #       max.block.size = 5 -->
+<!-- #     ) -->
+<!-- fun_list <- c(log_hpi ~ log_weighted_annual_avg_wkly_wage + l1_log_weighted_annual_avg_wkly_wage + l2_log_weighted_annual_avg_wkly_wage + log_real_gdp_priv_ind | unit + year, -->
+<!-- gr_hpi ~ gr_weighted_annual_avg_wkly_wage + l1_gr_weighted_annual_avg_wkly_wage + l2_gr_weighted_annual_avg_wkly_wage | unit + year, -->
+<!-- log_real_Elem_Educ_Total_Exp ~ log_weighted_annual_avg_wkly_wage + l1_log_weighted_annual_avg_wkly_wage + l2_log_weighted_annual_avg_wkly_wage + log_real_gdp_priv_ind + l1_log_real_gdp_priv_ind + l2_log_real_gdp_priv_ind | unit + year, -->
+<!-- diff_log_real_Elem_Educ_Total_Exp ~ gr_weighted_annual_avg_wkly_wage + l1_gr_weighted_annual_avg_wkly_wage + l2_gr_weighted_annual_avg_wkly_wage + diff_log_real_gdp_priv_ind + l1_diff_log_real_gdp_priv_ind + l2_diff_log_real_gdp_priv_ind | unit + year, -->
+<!-- log_real_Elem_Educ_Total_Exp_pp ~ log_weighted_annual_avg_wkly_wage + l1_log_weighted_annual_avg_wkly_wage + l2_log_weighted_annual_avg_wkly_wage + log_real_gdp_priv_ind_pc + l1_log_real_gdp_priv_ind_pc + l2_log_real_gdp_priv_ind_pc | unit + year, -->
+<!-- diff_log_real_Elem_Educ_Total_Exp_pp ~ gr_weighted_annual_avg_wkly_wage + l1_gr_weighted_annual_avg_wkly_wage + l2_gr_weighted_annual_avg_wkly_wage + diff_log_real_gdp_priv_ind_pc + l1_diff_log_real_gdp_priv_ind_pc + l2_diff_log_real_gdp_priv_ind_pc | unit + year) -->
+<!-- run_model(fun_list, mines_no_outliers) %>% etable(tex = latex_tables, adjustbox = TRUE) -->
+<!-- ``` -->
+<!-- ```{r, echo = FALSE, results = 'asis', cache = TRUE} -->
+<!-- # General-to-Specific model selection using fixest -->
+<!-- gets_fixest <- function(dep_var, indep_vars, data, fe = NULL, pval_cutoff = 0.1) { -->
+<!--   remaining_vars <- indep_vars -->
+<!--   repeat { -->
+<!--     # Build formula -->
+<!--     rhs <- paste(remaining_vars, collapse = " + ") -->
+<!--     formula_str <- as.formula(paste(dep_var, "~", rhs, if (!is.null(fe)) paste("|", fe) else "")) -->
+<!--     # Estimate model -->
+<!--     model <- feols(formula_str, data = data) -->
+<!--     coefs <- summary(model)$coeftable -->
+<!--     # Filter out only the coefficients from the explanatory variables -->
+<!--     pvals <- coefs[, "Pr(>|t|)"] -->
+<!--     pvals <- pvals[names(pvals) %in% remaining_vars] -->
+<!--     # Stop if all variables are below the cutoff or no variables remain -->
+<!--     if (length(pvals) == 0 || all(pvals < pval_cutoff)) break -->
+<!--     # Remove the variable with the highest p-value -->
+<!--     worst_var <- names(which.max(pvals)) -->
+<!--     remaining_vars <- setdiff(remaining_vars, worst_var) -->
+<!--   } -->
+<!--   # Return the final reduced model -->
+<!--   final_formula <- paste(dep_var, "~", paste(remaining_vars, collapse = " + "), if (!is.null(fe)) paste("|", fe) else "") -->
+<!--   return(final_formula) -->
+<!-- } -->
+<!-- # Example usage -->
+<!-- # Replace 'your_data' with your actual data frame name -->
+<!-- final_model <- gets_fixest( -->
+<!--   dep_var = "log_real_Elem_Educ_Total_Exp_pp", -->
+<!--   indep_vars = c("log_weighted_annual_avg_wkly_wage", -->
+<!--                  "l1_log_weighted_annual_avg_wkly_wage", -->
+<!--                  "l2_log_weighted_annual_avg_wkly_wage", -->
+<!--                  "log_real_gdp_priv_ind_pc", -->
+<!--                  "l1_log_real_gdp_priv_ind_pc", -->
+<!--                  "l2_log_real_gdp_priv_ind_pc", -->
+<!--                  "log_real_Property_Tax_pp", -->
+<!--                  #"log_real_Total_State_IG_Revenue_pp", -->
+<!--                  #"log_real_Total_Fed_IG_Revenue_pp", -->
+<!--                  "log_hpi"),  # replace with your actual variable names -->
+<!--   data = mines_cz, -->
+<!--   fe = "unit + year",        # optional fixed effects -->
+<!--   pval_cutoff = 0.1         # significance threshold -->
+<!-- ) -->
+<!-- # View results -->
+<!-- # At a 10% significance level, we retain a 2-timeperiod lag of real_gdp_pc, contemporaneous wage (not likely), property_tax_pp, state_revenue_pp, hpi -->
+<!-- feols(as.formula(final_model), data = mines_cz) %>% etable(adjustbox = TRUE, tex = latex_tables) -->
+<!-- # I want to allow the coefficient to vary on the weekly wage treatment variable -->
+<!-- feols(as.formula(gsub("log_weighted_annual_avg_wkly_wage", "i(share_own_discrete, log_weighted_annual_avg_wkly_wage)", final_model)), data = mines_cz) %>% -->
+<!--   etable(adjustbox = TRUE, tex = latex_tables) -->
+<!-- ``` -->
+<!-- ```{r, cache = TRUE} -->
+<!-- test <- readRDS(here("output/prop_price_breaks_csis.RDS")) -->
+<!-- ``` -->
+</section>
+</section>
+</section>
+<section id="sec-results" class="level1">
+<h1>Results</h1>
+</section>
+<section id="sec-discussion" class="level1">
+<h1>Discussion</h1>
+</section>
+<section id="sec-conclusion" class="level1">
+<h1>Conclusion</h1>
+<p>The determinants of inequality in public education delivery in the US are multiple and complex. Significant evidence exists of the role of historically discriminatory policies related to congressional districting, under-investment in low-income areas of color. Though this work does not directly inform this debate, further work could explore the extent to which wage growth interacts with such structural policies.</p>
+</section>
+<section id="appendices" class="level1 unnumbered">
+<h1 class="unnumbered">Appendices</h1>
+
+</section>
+<section id="descriptive-regression-results" class="level1">
+<h1>Descriptive Regression Results</h1>
+<p>In the following set of results, I report descriptive regressions to establish relationships between property taxes, education expenditure, GDP (total, private industry, O&amp;G&amp;mining), etc. All regression models that follow include TWFE (CZ- and year- fixed effects) and standard errors clustered by commuting zone. All functional forms in the feols() functions below are of the form Y ~ X In the cases in which multiple estimations are included via sw(Xa, Xb, Xc + Xd), the function will return results for Y~Xa, Y~Xb, Y ~ Xc + Xd.</p>
+<section id="property-tax-gdp" class="level2">
+<h2 class="anchored" data-anchor-id="property-tax-gdp">Property Tax ~ GDP</h2>
+<p>GDP has a highly relevant relationship to property taxes. A 1% increase in GDP (per capita) leads to a 0.38% (0.32%) increase in property taxes collected (per capita).</p>
+</section>
+<section id="education-expenditure-revenue-sources" class="level2">
+<h2 class="anchored" data-anchor-id="education-expenditure-revenue-sources">Education Expenditure ~ Revenue Sources</h2>
+<p>The below regressions are included to establish the relationship between education expenditure and its component parts. These regressions simply corroborate what is displayed in the section on Key Relationships in <a href="https://ebbam.github.io/pub_fin_schools/code/cz_results.html">LINK</a> (ie. that the largest form of IG revenue is state funding and Own Source revenue is largely sourced from Property Taxes).</p>
+</section>
+<section id="education-expenditure-gdp" class="level2">
+<h2 class="anchored" data-anchor-id="education-expenditure-gdp">Education Expenditure ~ GDP</h2>
+<p>A 1% increase in GDP pc is associated with a 0.19% increase in education expenditure per pupil, dominated by the effect of GDP from private industry (0.16%). I include here also the GDP generated from the oil, gas, mining, and quarrying sector. The effect is small and statistically insignificant.</p>
+</section>
+</section>
+<section id="key-relationships-between-economic-variables" class="level1">
+<h1>Key Relationships between Economic Variables</h1>
+<p>Below we display key relationships between several of the economic variables in our study.</p>
+<section id="baseline-regressions-with-state-fixed-effects" class="level2">
+<h2 class="anchored" data-anchor-id="baseline-regressions-with-state-fixed-effects">Baseline Regressions with State Fixed Effects</h2>
+<p>Regressions establishing baseline relationships between local economic variables and elementary education expenditure using state-fixed effects rather than commuting-zone level effects.</p>
+</section>
+<section id="ss-construction" class="level2">
+<h2 class="anchored" data-anchor-id="ss-construction">SS Construction</h2>
+<p>Plots of the data inputs to the shift-share instrument.</p>
+</section>
+<section id="panel-var-specification" class="level2">
+<h2 class="anchored" data-anchor-id="panel-var-specification">Panel VAR Specification</h2>
+<p><span class="math display">\[
+Y_{it} = \alpha_i +  \sum_{k = 1}^{4} \gamma_{k}A_{i,t-k} + \beta X_{it} + \varepsilon_{it}
+\]</span></p>
+<p>Where we approach a level and per capita value expression of the relationship between total education expenditure, intergovernmental revenue, house prices conditioned on GDP and wage levels.</p>
+<p><span class="math display">\[
+Y_{it} =
+\begin{bmatrix}
+\log(\text{real Total Educ. Exp.})_{it} \\
+\log(\text{real Total IG Revenue})_{it} \\
+\log(\text{HPI})_{it}
+\end{bmatrix},
+\quad
+X_{it} =
+\begin{bmatrix}
+\log(\text{real GDP})_{it} \\
+\log(\text{wage})_{it}
+\end{bmatrix}
+\]</span></p>
+<ul>
+<li><span class="math inline">\(A_1, A_2, A_3, A_4\)</span> are <span class="math inline">\(3 \times 3\)</span> coefficient matrices</li>
+<li><span class="math inline">\(\beta\)</span> is a <span class="math inline">\(3 \times 2\)</span> matrix of coefficients on the exogenous variables</li>
+<li><span class="math inline">\(\alpha_i\)</span> is a vector of unit fixed effects</li>
+<li><span class="math inline">\(\varepsilon_{it}\)</span> is the error term</li>
+</ul>
+<p>Where</p>
+<p><span class="math display">\[
+Y_{it} =
+\begin{bmatrix}
+\log(\text{real Own Source Rev. per person})_{it} \\
+\log(\text{real IG Revenue per person})_{it} \\
+\log(\text{wage})_{it} \\
+\log(\text{HPI})_{it}
+\end{bmatrix},
+\quad
+X_{it} =
+\begin{bmatrix}
+\log(\text{real GDP per capita})_{it}
+\end{bmatrix}
+\]</span></p>
+<ul>
+<li><span class="math inline">\(A_1, A_2, A_3, A_4\)</span> are <span class="math inline">\(4 \times 4\)</span> coefficient matrices</li>
+<li><span class="math inline">\(B\)</span> is a <span class="math inline">\(4 \times 1\)</span> coefficient matrix</li>
+<li><span class="math inline">\(\alpha_i\)</span> unit fixed effects</li>
+<li><span class="math inline">\(\varepsilon_{it}\)</span> error term</li>
+</ul>
+</section>
+</section>
+
+</main>
+<!-- /main column -->
+<script id="quarto-html-after-body" type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (event) {
+  const toggleBodyColorMode = (bsSheetEl) => {
+    const mode = bsSheetEl.getAttribute("data-mode");
+    const bodyEl = window.document.querySelector("body");
+    if (mode === "dark") {
+      bodyEl.classList.add("quarto-dark");
+      bodyEl.classList.remove("quarto-light");
+    } else {
+      bodyEl.classList.add("quarto-light");
+      bodyEl.classList.remove("quarto-dark");
+    }
+  }
+  const toggleBodyColorPrimary = () => {
+    const bsSheetEl = window.document.querySelector("link#quarto-bootstrap");
+    if (bsSheetEl) {
+      toggleBodyColorMode(bsSheetEl);
+    }
+  }
+  toggleBodyColorPrimary();  
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
+  const isCodeAnnotation = (el) => {
+    for (const clz of el.classList) {
+      if (clz.startsWith('code-annotation-')) {                     
+        return true;
+      }
+    }
+    return false;
+  }
+  const onCopySuccess = function(e) {
+    // button target
+    const button = e.trigger;
+    // don't keep focus
+    button.blur();
+    // flash "checked"
+    button.classList.add('code-copy-button-checked');
+    var currentTitle = button.getAttribute("title");
+    button.setAttribute("title", "Copied!");
+    let tooltip;
+    if (window.bootstrap) {
+      button.setAttribute("data-bs-toggle", "tooltip");
+      button.setAttribute("data-bs-placement", "left");
+      button.setAttribute("data-bs-title", "Copied!");
+      tooltip = new bootstrap.Tooltip(button, 
+        { trigger: "manual", 
+          customClass: "code-copy-button-tooltip",
+          offset: [0, -8]});
+      tooltip.show();    
+    }
+    setTimeout(function() {
+      if (tooltip) {
+        tooltip.hide();
+        button.removeAttribute("data-bs-title");
+        button.removeAttribute("data-bs-toggle");
+        button.removeAttribute("data-bs-placement");
+      }
+      button.setAttribute("title", currentTitle);
+      button.classList.remove('code-copy-button-checked');
+    }, 1000);
+    // clear code selection
+    e.clearSelection();
+  }
+  const getTextToCopy = function(trigger) {
+      const codeEl = trigger.previousElementSibling.cloneNode(true);
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+  }
+  const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+    text: getTextToCopy
+  });
+  clipboard.on('success', onCopySuccess);
+  if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+    const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+      text: getTextToCopy,
+      container: window.document.getElementById('quarto-embedded-source-code-modal')
+    });
+    clipboardModal.on('success', onCopySuccess);
+  }
+    var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+    var mailtoRegex = new RegExp(/^mailto:/);
+      var filterRegex = new RegExp('/' + window.location.host + '/');
+    var isInternal = (href) => {
+        return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+    }
+    // Inspect non-navigation links and adorn them if external
+ 	var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+    for (var i=0; i<links.length; i++) {
+      const link = links[i];
+      if (!isInternal(link.href)) {
+        // undo the damage that might have been done by quarto-nav.js in the case of
+        // links that we want to consider external
+        if (link.dataset.originalHref !== undefined) {
+          link.href = link.dataset.originalHref;
+        }
+      }
+    }
+  function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+    const config = {
+      allowHTML: true,
+      maxWidth: 500,
+      delay: 100,
+      arrow: false,
+      appendTo: function(el) {
+          return el.parentElement;
+      },
+      interactive: true,
+      interactiveBorder: 10,
+      theme: 'quarto',
+      placement: 'bottom-start',
+    };
+    if (contentFn) {
+      config.content = contentFn;
+    }
+    if (onTriggerFn) {
+      config.onTrigger = onTriggerFn;
+    }
+    if (onUntriggerFn) {
+      config.onUntrigger = onUntriggerFn;
+    }
+    window.tippy(el, config); 
+  }
+  const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+  for (var i=0; i<noterefs.length; i++) {
+    const ref = noterefs[i];
+    tippyHover(ref, function() {
+      // use id or data attribute instead here
+      let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+      try { href = new URL(href).hash; } catch {}
+      const id = href.replace(/^#\/?/, "");
+      const note = window.document.getElementById(id);
+      if (note) {
+        return note.innerHTML;
+      } else {
+        return "";
+      }
+    });
+  }
+  const xrefs = window.document.querySelectorAll('a.quarto-xref');
+  const processXRef = (id, note) => {
+    // Strip column container classes
+    const stripColumnClz = (el) => {
+      el.classList.remove("page-full", "page-columns");
+      if (el.children) {
+        for (const child of el.children) {
+          stripColumnClz(child);
+        }
+      }
+    }
+    stripColumnClz(note)
+    if (id === null || id.startsWith('sec-')) {
+      // Special case sections, only their first couple elements
+      const container = document.createElement("div");
+      if (note.children && note.children.length > 2) {
+        container.appendChild(note.children[0].cloneNode(true));
+        for (let i = 1; i < note.children.length; i++) {
+          const child = note.children[i];
+          if (child.tagName === "P" && child.innerText === "") {
+            continue;
+          } else {
+            container.appendChild(child.cloneNode(true));
+            break;
+          }
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(container);
+        }
+        return container.innerHTML
+      } else {
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        return note.innerHTML;
+      }
+    } else {
+      // Remove any anchor links if they are present
+      const anchorLink = note.querySelector('a.anchorjs-link');
+      if (anchorLink) {
+        anchorLink.remove();
+      }
+      if (window.Quarto?.typesetMath) {
+        window.Quarto.typesetMath(note);
+      }
+      if (note.classList.contains("callout")) {
+        return note.outerHTML;
+      } else {
+        return note.innerHTML;
+      }
+    }
+  }
+  for (var i=0; i<xrefs.length; i++) {
+    const xref = xrefs[i];
+    tippyHover(xref, undefined, function(instance) {
+      instance.disable();
+      let url = xref.getAttribute('href');
+      let hash = undefined; 
+      if (url.startsWith('#')) {
+        hash = url;
+      } else {
+        try { hash = new URL(url).hash; } catch {}
+      }
+      if (hash) {
+        const id = hash.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note !== null) {
+          try {
+            const html = processXRef(id, note.cloneNode(true));
+            instance.setContent(html);
+          } finally {
+            instance.enable();
+            instance.show();
+          }
+        } else {
+          // See if we can fetch this
+          fetch(url.split('#')[0])
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.getElementById(id);
+            if (note !== null) {
+              const html = processXRef(id, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      } else {
+        // See if we can fetch a full url (with no hash to target)
+        // This is a special case and we should probably do some content thinning / targeting
+        fetch(url)
+        .then(res => res.text())
+        .then(html => {
+          const parser = new DOMParser();
+          const htmlDoc = parser.parseFromString(html, "text/html");
+          const note = htmlDoc.querySelector('main.content');
+          if (note !== null) {
+            // This should only happen for chapter cross references
+            // (since there is no id in the URL)
+            // remove the first header
+            if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+              note.children[0].remove();
+            }
+            const html = processXRef(null, note);
+            instance.setContent(html);
+          } 
+        }).finally(() => {
+          instance.enable();
+          instance.show();
+        });
+      }
+    }, function(instance) {
+    });
+  }
+      let selectedAnnoteEl;
+      const selectorForAnnotation = ( cell, annotation) => {
+        let cellAttr = 'data-code-cell="' + cell + '"';
+        let lineAttr = 'data-code-annotation="' +  annotation + '"';
+        const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+        return selector;
+      }
+      const selectCodeLines = (annoteEl) => {
+        const doc = window.document;
+        const targetCell = annoteEl.getAttribute("data-target-cell");
+        const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+        const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+        const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+        const lineIds = lines.map((line) => {
+          return targetCell + "-" + line;
+        })
+        let top = null;
+        let height = null;
+        let parent = null;
+        if (lineIds.length > 0) {
+            //compute the position of the single el (top and bottom and make a div)
+            const el = window.document.getElementById(lineIds[0]);
+            top = el.offsetTop;
+            height = el.offsetHeight;
+            parent = el.parentElement.parentElement;
+          if (lineIds.length > 1) {
+            const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+            const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+            height = bottom - top;
+          }
+          if (top !== null && height !== null && parent !== null) {
+            // cook up a div (if necessary) and position it 
+            let div = window.document.getElementById("code-annotation-line-highlight");
+            if (div === null) {
+              div = window.document.createElement("div");
+              div.setAttribute("id", "code-annotation-line-highlight");
+              div.style.position = 'absolute';
+              parent.appendChild(div);
+            }
+            div.style.top = top - 2 + "px";
+            div.style.height = height + 4 + "px";
+            div.style.left = 0;
+            let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+            if (gutterDiv === null) {
+              gutterDiv = window.document.createElement("div");
+              gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+              gutterDiv.style.position = 'absolute';
+              const codeCell = window.document.getElementById(targetCell);
+              const gutter = codeCell.querySelector('.code-annotation-gutter');
+              gutter.appendChild(gutterDiv);
+            }
+            gutterDiv.style.top = top - 2 + "px";
+            gutterDiv.style.height = height + 4 + "px";
+          }
+          selectedAnnoteEl = annoteEl;
+        }
+      };
+      const unselectCodeLines = () => {
+        const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+        elementsIds.forEach((elId) => {
+          const div = window.document.getElementById(elId);
+          if (div) {
+            div.remove();
+          }
+        });
+        selectedAnnoteEl = undefined;
+      };
+        // Handle positioning of the toggle
+    window.addEventListener(
+      "resize",
+      throttle(() => {
+        elRect = undefined;
+        if (selectedAnnoteEl) {
+          selectCodeLines(selectedAnnoteEl);
+        }
+      }, 10)
+    );
+    function throttle(fn, ms) {
+    let throttle = false;
+    let timer;
+      return (...args) => {
+        if(!throttle) { // first call gets through
+            fn.apply(this, args);
+            throttle = true;
+        } else { // all the others get throttled
+            if(timer) clearTimeout(timer); // cancel #2
+            timer = setTimeout(() => {
+              fn.apply(this, args);
+              timer = throttle = false;
+            }, ms);
+        }
+      };
+    }
+      // Attach click handler to the DT
+      const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+      for (const annoteDlNode of annoteDls) {
+        annoteDlNode.addEventListener('click', (event) => {
+          const clickedEl = event.target;
+          if (clickedEl !== selectedAnnoteEl) {
+            unselectCodeLines();
+            const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+            if (activeEl) {
+              activeEl.classList.remove('code-annotation-active');
+            }
+            selectCodeLines(clickedEl);
+            clickedEl.classList.add('code-annotation-active');
+          } else {
+            // Unselect the line
+            unselectCodeLines();
+            clickedEl.classList.remove('code-annotation-active');
+          }
+        });
+      }
+  const findCites = (el) => {
+    const parentEl = el.parentElement;
+    if (parentEl) {
+      const cites = parentEl.dataset.cites;
+      if (cites) {
+        return {
+          el,
+          cites: cites.split(' ')
+        };
+      } else {
+        return findCites(el.parentElement)
+      }
+    } else {
+      return undefined;
+    }
+  };
+  var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+  for (var i=0; i<bibliorefs.length; i++) {
+    const ref = bibliorefs[i];
+    const citeInfo = findCites(ref);
+    if (citeInfo) {
+      tippyHover(citeInfo.el, function() {
+        var popup = window.document.createElement('div');
+        citeInfo.cites.forEach(function(cite) {
+          var citeDiv = window.document.createElement('div');
+          citeDiv.classList.add('hanging-indent');
+          citeDiv.classList.add('csl-entry');
+          var biblioDiv = window.document.getElementById('ref-' + cite);
+          if (biblioDiv) {
+            citeDiv.innerHTML = biblioDiv.innerHTML;
+          }
+          popup.appendChild(citeDiv);
+        });
+        return popup.innerHTML;
+      });
+    }
+  }
+});
+</script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>
