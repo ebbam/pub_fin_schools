@@ -973,21 +973,22 @@ across 2001-2005 as our 'base year'.
     
     
 $$
-    \tilde{Z}_{ijt} = G_{njt} *  \frac{N_{ij\tau}}{N_{i\tau}}
+    \tilde{Z}_{it} = \sum_{j=1}^{k}G_{njt} *  \frac{N_{ij\tau}}{N_{i\tau}} 
 $${#eq-bartik}
 
 
-    
+
 This yields a 2SLS model defined by the first- and second-stage regressions represented in Equations @eq-first-stage and @eq-second-stage and instrument $\tilde{Z}_{ijt}$ is represented in Equation @eq-bartik.
 
 
 $$ 
-\text{First stage:} X_{it} = \pi_0 + \pi_1 \tilde{Z}_{ijt} + \pi_2 \text{Enrollment}_{it} + \pi_3 \text{IGR}_{it} + \alpha_i + \eta_i + \gamma_t + u_{it}
+\text{First stage:} X_{it} = \pi_0 + \pi_1 \tilde{Z}_{it} + \pi_2 \text{Enrollment}_{it} + \pi_3 \text{IGR}_{it} + \alpha_i + \eta_i + \gamma_t + u_{it}
 $${#eq-first-stage}
 
               
 $$\text{Second stage:} \quad Y_{it} = \beta_0 + \beta_x \hat{X}_{it} + \delta_1 \text{Enrollment}_{it} + \delta_2 \text{IGR}_{it} + \alpha_i + \eta_i + \gamma_t + \varepsilon_{it}
 $${#eq-second-stage}
+
 
 
 <!-- ![Coal Shift-share -->
@@ -2286,7 +2287,13 @@ Given the substantial heterogeneity in state-level economic makeup and public fi
 
 First, states vary in the number of commuting zones they contain. Figure 15 demonstrates that states contain anywhere from 2 (Delaware) - 58 (Texas) commuting zones. This allows us to estimate panel-style regressions within each state to net out between-state variation that might be confounding our current treatment estimates (of course, these should be interpreted with caution in those states that contain very few commuting zones). 
 
-Second, given our shift-share instruments are the composite effect of shifts in industry-level wages and real value added, we can decompose this instrument into industry-specific shocks wage and real value added shocks. This decomposition allows us to examine the effect of industry-specific changes across states in a more explicit manner. 
+Second, given our shift-share instruments are the composite effect of shifts in industry-level wages and real value added, we can decompose this instrument into industry-specific shocks wage and real value added shocks. This decomposition allows us to examine the effect of industry-specific changes across states in a more explicit manner. In other words, our instrument is...
+
+$$
+    \tilde{Z}_{ijt} = G_{njt} *  \frac{N_{ij\tau}}{N_{i\tau}}
+$${#eq-bartik-decomposed}
+
+...rather than the sum of all industry-level shocks. 
 
 ```{r, echo = FALSE, results = 'asis', fig.cap = "Histogram: Commuting Zones by State"}
 reg_states <- mines_cz %>%
@@ -2471,7 +2478,6 @@ plot +
   scale_x_discrete(limits = order_levels,
                    labels = function(x) stringr::str_wrap(x, width = 14)) +
   coord_cartesian(ylim = c(-1, 1)) +
-
   scale_x_discrete(
     limits = order_levels,
     labels = function(x) stringr::str_wrap(x, width = 14)
@@ -2482,6 +2488,28 @@ plot +
     axis.text.x  = element_text(size = 8, vjust = 1, hjust = 1, angle = 35),
     plot.margin  = margin(t = 10, r = 10, b = 70, l = 10),
     legend.position = "top"
+  ) +
+  scale_fill_distiller(direction = 1, palette = "Greens") +
+  guides(
+    fill = guide_colorbar(
+      title = "Within R² (All model)",
+      title.position = "top",
+      title.hjust = 0.5,
+      barwidth = unit(6, "cm"),     # wider bar for cleaner labels
+      barheight = unit(0.6, "cm"),
+      label.position = "bottom"     # moves tick labels below the bar
+    )
+  ) +
+  theme(
+    legend.position = "top",              # places legend above plot
+    legend.direction = "horizontal",      # ensures horizontal bar
+    legend.key.width = unit(2.5, "cm"),   # sets consistent spacing for color keys
+    legend.key.height = unit(0.5, "cm"),
+    legend.title = element_text(size = 10, face = "bold"),
+    legend.text = element_text(size = 9),
+    legend.spacing.x = unit(0.2, "cm"),   # adds horizontal padding
+    legend.box.margin = margin(t = 0, r = 0, b = 0, l = 0),
+    legend.box.spacing = unit(3, "mm")    # space between legend & plot
   )
 
 ```
@@ -2650,7 +2678,7 @@ Across both, we find consistently positive effects when using shift-share shocks
 
 However, for other industries we find opposite effects depending on the instrument shock chosen. 
 
-\textcolor{Red}{Jennie: Again, interpretation of the relationship between the instrument and the outcome is shady here...might it be worth applying this outside of an IV framework, arguing that the shift-share instrumetn is in itself exogenous.}
+\textcolor{Red}{Jennie: Again, interpretation of the relationship between the instrument and the outcome is shady here...might it be worth applying this outside of an IV framework, arguing that the shift-share instrument is in itself exogenous.}
 
 Next, we turn to state-by-state estimation, the regression coefficients of which are reported in Figure 18. First, we re-employ our baseline regression in which we regress our outcome variable on wage levels at time $t-h$ where $h = [t-0,t-2]$. The plot below displays the cumulative effect of a 1% increase in wage levels on education expenditure per pupil in purple. The X marks represent the individual betas on each time lag (ie. the linearly combined coefficients that form the total dynamic effect). Majority of states see positive elasticities in relation to wage changes in this descriptive specification, but some (Kansas, Wyoming, Missouri, Washington) see negative elasticities. \textcolor{red}{I think we should have a commuting zone N sample size exclusion restriciton here. The results for Maine, New Jersey, and Delaware, for example are based on only 2-3 units.}
 
