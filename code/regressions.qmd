@@ -1622,7 +1622,7 @@ scatter_betas / (hist_nat + hist_state)
 ```
 
  
-We perform the same trend deviation calculation for wages where each wage variable represents the commuting zone, state, and national level growth rate in the weekly average wage as reported in QCEW. \textcolor{red}{We only have national level wage growth data..I have not yet implemented state-level wage growth data. So for now we only use the CZ trend, netting out the national trend. This also explains the missing sections in Figure 13 of the relevant betas.}
+We perform the same trend deviation calculation for wages where each wage variable represents the commuting zone, state, and national level growth rate in the weekly average wage as reported in QCEW. \textcolor{red}{We only have national level wage growth data. I have not yet implemented state-level wage growth data. So for now we only use the CZ trend, netting out the national trend. This also explains the missing sections in Figure 13 of the relevant betas.}
 
 <!-- $$\Delta (log) Wage^{CZ}_{t} = \alpha + \Delta (log) Wage^{state}_{t} + \Delta (log) Wage^{national}_{t} + \epsilon_t$$ -->
 
@@ -2146,19 +2146,17 @@ Tables 10 and 11 examine how the relationship between local economic conditions 
 | Hyper-Growing | $\alpha_{w} > P_{75}(\alpha_{w})$ | $\alpha_{g} > P_{75}(\alpha_{g})$ |
 
 
-Zones with negative (positive) values of $\alpha_{w}$ or $\alpha_g$ are designated as declining (growing), while those in the bottom and top quartiles are labelled hyper-declining and hyper-growing, respectively. This stratification enables comparison of fiscal responsiveness across local economies with different long-run growth trajectories.
+Zones with negative (positive) values of $\alpha_{w}$ or $\alpha_g$ are designated as declining (growing), while those in the bottom (P25) and top (P75) quartiles are labelled hyper-declining and hyper-growing, respectively. This stratification enables comparison of fiscal responsiveness across local economies with different long-run growth trajectories.
 
-Table 10 partitions CZs by long-run GDP per capita trends. Enrollment is consistently negative, confirming that scaling effects apply across all commuting zones, regradless of long-run trends. However, the responsiveness of education spending to local GDP differs sharply across regimes.
-In declining and hyper-declining areas, GDP coefficients are small and statistically insignificant, suggesting that output growth in these regions does not translate into higher fiscal capacity or local public investment.
+Table 10 partitions CZs by long-run GDP per capita trends. Enrollment is consistently negative, confirming that scaling effects apply across all commuting zones, regardless of long-run trends. However, the responsiveness of education spending to local GDP differs slightly across regimes.
+In declining and hyper-declining areas, GDP coefficients are small and statistically insignificant (except l3), suggesting that output growth in these regions does not translate into higher fiscal capacity or local public investment.
 By contrast, in growing and hyper-growing CZs, GDP effects become positive and significant—typically 0.07-0.14, indicating that structurally expanding economies reinvest local income gains into education.
-Lagged wage effects are also stronger in these dynamic regions, implying that education budgets adjust upward with rising labor costs or income-driven demand for schooling. \textcolor{red}{Interpret house price elasticities and l3 of real GDP and Wage growth in declining and hyper-declining regions}.
+Lagged wage effects are also stronger in these dynamic regions, implying that education budgets adjust upward with rising labor costs or income-driven demand for schooling. \textcolor{red}{Interpret house price elasticities and l3 of real GDP and Wage growth in declining and hyper-declining regions. The positive effects in growing regions could also indicate more expensive education provision (ie. teacher salaries rise, etc.) which is worth noting as an alternative interpretation that does not serve our narrative}.
 
-Table 5 partitions Czs by \alpha_w. The broad patterns are similar, but an important distinction emerges wherein the elasticity of education spending with respect to wages is remarkably consistent across all regional regimes. In both declining and growing CZs, a 1 percent increase in local wages is associated with roughly a 0.18–0.25 percent increase in per-pupil expenditure, and these coefficients are uniformly significant. This suggests that local wage changes influence education budgets through a consistent channel across local economies, not just in dynamic regions. \textcolor{red}{Hypothesise why this might be.}
+Table 11 partitions CZs by $\alpha_w$. The broad patterns are similar, but an important distinction emerges wherein the elasticity of education spending with respect to wages is remarkably consistent across all regional regimes. In both declining and growing CZs, a 1% increase in local wages is associated with roughly a 0.18–0.25 percent increase in per-pupil expenditure, and these coefficients are uniformly significant. This suggests that local wage changes influence education budgets through a consistent channel across local economies, not just in dynamic regions. \textcolor{red}{Hypothesise why this might be...?}
 
-\textcolor{violet}{Potential interpretation: This asymmetry implies that while the wage–spending elasticity is pervasive, the sources of fiscal responsiveness differ: in expanding regions, wage growth coincides with broader income and asset growth, amplifying local revenues; in declining regions, wage changes affect spending primarily through higher labor costs rather than expanded fiscal capacity. Overall, the comparison between the GDP- and wage-based partitions reveals two complementary insights.
-First, local fiscal systems everywhere are sensitive to wage movements.
-Second, the degree to which broader economic variables (GDP, property values, and transfers) translate into education spending depends on structural growth performance: prosperous regions exhibit stronger links between economic activity and public investment, whereas struggling regions rely more heavily on intergovernmental support.
-These results highlight that the uniform wage effect coexists with substantial heterogeneity in other fiscal transmission channels, reinforcing the idea that local fiscal sensitivity is shaped by both macroeconomic structure and long-run growth potential.}
+\textcolor{violet}{Potential interpretation: This asymmetry implies that while the wage–spending elasticity is pervasive, the sources of fiscal responsiveness differ: in expanding regions, wage growth coincdies with broader income and asset growth, amplifying local revenues; in declining regions, wage changes affect spending primarily through higher labor costs rather than expanded fiscal capacity. Overall, the comparison between the GDP- and wage-based partitions reveals two complementary insights.
+First, local fiscal systems everywhere are sensitive to wage movements. Second, the degree to which broader economic variables (GDP, property values, and transfers) translate into education spending depends on structural growth performance: prosperous regions exhibit stronger links between economic activity and public investment, whereas struggling regions rely more heavily on intergovernmental support. These results highlight that the uniform wage effect coexists with substantial heterogeneity in other transmision channels, reinforcing the idea that local fiscal sensitivity is shaped by both macroeconomic structure and long-run growth potential.}
 
 ```{r, echo = FALSE, results = 'asis', cache = TRUE}
 
@@ -2238,7 +2236,7 @@ for(df_wage in names(dfs_wage)){
 
 ### IV Models
 
-When applying our instrumental variable design we find that majority of our relevant signal is picked up in declining GDP but growing wage regions. \textcolor{red}{Not yet sure how to interpret.}
+When applying our instrumental variable design we find that majority of our relevant signal is picked up in regions across both trend metrics. Though the effects are more consistent across wage-trending sub-samples \textcolor{red}{Not yet sure how to interpret.}
 
 ```{r, echo = FALSE, results = 'asis'}
 
@@ -2272,7 +2270,7 @@ for(df_wage in names(dfs_wage)){
 
 ```
 
-Our real value added shift-share instrument remains uninteresting for local education expenditure. The sub-sampling procedure indicates that wage changes in declining GDP, but growing wage regions have a causal effect on public education expenditure. This could likely indicate a degree of inequality within a particular commuting zone, wherein a commuting zone's GDP might be relatively declining but wage growth remains high due to presence of high-earning communities that skew the wage metrics.
+The sub-sampling procedure indicates the link between public education expenditure and wages is present in hyper-growing GDP regions only. However, \textcolor{red}{and I am unsure how to interpret this}, the wage effect when using the GDP-based shift-share instrument has different signs depending on rate of wage growth. 
 
 ```{r, echo = FALSE, results='asis'}
 
