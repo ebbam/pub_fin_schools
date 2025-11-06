@@ -85,6 +85,7 @@ latex_tables = TRUE
 source(here("code/source_code/pull_data.R"))
 
 ```
+
 The structure of public financing (described in
 further detail in Section \ref{si_section:Challenges} of the
 Supplementary Materials) provides an avenue for
@@ -94,7 +95,6 @@ Given this, we can isolate the channel through which our treatment
 (industry-specific wage growth) will affect our outcome variable using
 an instrumental variable approach. We outline the underlying path
 diagram of this econometric specification in Figure \ref{fig:iv-approach_props}.
-
 
 As seen in Figure \ref{fig:iv-approach_props}, we hypothesize that property values
 have an effect on education expenditure. However, there is significant
@@ -319,11 +319,11 @@ trends than to transitory shocks in wages. \textcolor{red}{I am unsure about thi
 
 ```{r, echo = FALSE, cache = TRUE, results = 'asis'}
 
-t1 <- feols(log_hpi ~ l(log_weighted_annual_avg_wkly_wage, 0:7) + log_real_gdp_priv_ind_pc + log_pop_total | unit + year, panel.id = c('year', 'unit'), mines_cz)
-t1_state_fe <- feols(log_hpi ~ l(log_weighted_annual_avg_wkly_wage, 0:7) + log_real_gdp_priv_ind_pc + log_pop_total | state + year, panel.id = c('year', 'unit'), mines_cz)
+t1 <- feols(log_hpi ~ l(log_weighted_annual_avg_wkly_wage, 0:7) + log_real_gdp_priv_ind_pc + log_pop_total | unit + year, panel.id = c('year', 'unit'), mines_cz, cluster = "unit")
+t1_state_fe <- feols(log_hpi ~ l(log_weighted_annual_avg_wkly_wage, 0:7) + log_real_gdp_priv_ind_pc + log_pop_total | state + year, panel.id = c('year', 'unit'), mines_cz, cluster = "unit")
 
-t2 <- feols(gr_hpi ~ l(gr_weighted_annual_avg_wkly_wage, 0:7) + diff_log_real_gdp_priv_ind_pc + diff_log_pop_total| unit + year, panel.id = c('year', 'unit'), mines_cz)
-t2_state_fe <- feols(gr_hpi ~ l(gr_weighted_annual_avg_wkly_wage, 0:7) + diff_log_real_gdp_priv_ind_pc + diff_log_pop_total| state + year, panel.id = c('year', 'unit'), mines_cz)
+t2 <- feols(gr_hpi ~ l(gr_weighted_annual_avg_wkly_wage, 0:7) + diff_log_real_gdp_priv_ind_pc + diff_log_pop_total| unit + year, panel.id = c('year', 'unit'), mines_cz, cluster = "unit")
+t2_state_fe <- feols(gr_hpi ~ l(gr_weighted_annual_avg_wkly_wage, 0:7) + diff_log_real_gdp_priv_ind_pc + diff_log_pop_total| state + year, panel.id = c('year', 'unit'), mines_cz, cluster = "unit")
 
 etable(list(t1, t1_state_fe, t2, t2_state_fe), tex = latex_tables)
 
@@ -439,32 +439,32 @@ However, examining the structure of the growth rate shock, the instability of th
 ```{r, echo = FALSE, results = 'asis', cache = TRUE}
 
 iv_model_2d_lev_gr <- feols(as.formula("log_real_Elem_Educ_Total_Exp_pp ~ log_real_Total_IG_Revenue_pp + log_real_gdp_priv_ind_pc + log_Enrollment | unit + year | log_hpi ~ ss_2d"),
-    data = left_join(mines_cz, rename(ss_temp, unit = cz_id), by = c("year","unit")), panel.id = c("unit", "year"))
+    data = left_join(mines_cz, rename(ss_temp, unit = cz_id), by = c("year","unit")), panel.id = c("unit", "year"), cluster = "unit")
 
 iv_model_2d_lev_lev <- feols(
     as.formula("log_real_Elem_Educ_Total_Exp_pp ~ log_real_Total_IG_Revenue_pp + log_real_gdp_priv_ind_pc + log_Enrollment | unit + year | log_hpi ~ lev_ss_2d"),
-    data = left_join(mines_cz, rename(ss_temp, unit = cz_id), by = c("year","unit")), panel.id = c("unit", "year"))
+    data = left_join(mines_cz, rename(ss_temp, unit = cz_id), by = c("year","unit")), panel.id = c("unit", "year"), cluster = "unit")
 
 iv_model_2d_lev_gr_l1 <- feols(as.formula("log_real_Elem_Educ_Total_Exp_pp ~ log_real_Total_IG_Revenue_pp + log_real_gdp_priv_ind_pc + log_Enrollment | unit + year | log_hpi ~ l(ss_2d,1)"),
-    data = left_join(mines_cz, rename(ss_temp, unit = cz_id), by = c("year","unit")), panel.id = c("unit", "year"))
+    data = left_join(mines_cz, rename(ss_temp, unit = cz_id), by = c("year","unit")), panel.id = c("unit", "year"), cluster = "unit")
 
 iv_model_2d_lev_lev_l1 <- feols(
     as.formula("log_real_Elem_Educ_Total_Exp_pp ~ log_real_Total_IG_Revenue_pp + log_real_gdp_priv_ind_pc + log_Enrollment | unit + year | log_hpi ~ l(lev_ss_2d,1)"),
-    data = left_join(mines_cz, rename(ss_temp, unit = cz_id), by = c("year","unit")), panel.id = c("unit", "year"))
+    data = left_join(mines_cz, rename(ss_temp, unit = cz_id), by = c("year","unit")), panel.id = c("unit", "year"), cluster = "unit")
 
 iv_model_2d_lev_gr_state_fe <- feols(as.formula("log_real_Elem_Educ_Total_Exp_pp ~ log_real_Total_IG_Revenue_pp + log_real_gdp_priv_ind_pc + log_Enrollment | state + year | log_hpi ~ ss_2d"),
-    data = left_join(mines_cz, rename(ss_temp, unit = cz_id), by = c("year","unit")), panel.id = c("unit", "year"))
+    data = left_join(mines_cz, rename(ss_temp, unit = cz_id), by = c("year","unit")), panel.id = c("unit", "year"), cluster = "unit")
 
 iv_model_2d_lev_lev_state_fe <- feols(
     as.formula("log_real_Elem_Educ_Total_Exp_pp ~ log_real_Total_IG_Revenue_pp + log_real_gdp_priv_ind_pc + log_Enrollment | state + year | log_hpi ~ lev_ss_2d"),
-    data = left_join(mines_cz, rename(ss_temp, unit = cz_id), by = c("year","unit")), panel.id = c("unit", "year"))
+    data = left_join(mines_cz, rename(ss_temp, unit = cz_id), by = c("year","unit")), panel.id = c("unit", "year"), cluster = "unit")
 
 iv_model_2d_lev_gr_l1_state_fe <- feols(as.formula("log_real_Elem_Educ_Total_Exp_pp ~ log_real_Total_IG_Revenue_pp + log_real_gdp_priv_ind_pc + log_Enrollment | state + year | log_hpi ~ l(ss_2d,1)"),
-    data = left_join(mines_cz, rename(ss_temp, unit = cz_id), by = c("year","unit")), panel.id = c("unit", "year"))
+    data = left_join(mines_cz, rename(ss_temp, unit = cz_id), by = c("year","unit")), panel.id = c("unit", "year"), cluster = "unit")
 
 iv_model_2d_lev_lev_l1_state_fe <- feols(
     as.formula("log_real_Elem_Educ_Total_Exp_pp ~ log_real_Total_IG_Revenue_pp + log_real_gdp_priv_ind_pc + log_Enrollment | state + year | log_hpi ~ l(lev_ss_2d,1)"),
-    data = left_join(mines_cz, rename(ss_temp, unit = cz_id), by = c("year","unit")), panel.id = c("unit", "year"))
+    data = left_join(mines_cz, rename(ss_temp, unit = cz_id), by = c("year","unit")), panel.id = c("unit", "year"), cluster = "unit")
 
 # iv_model_2d_lev_gr_tfe <- feols(as.formula("log_real_Elem_Educ_Total_Exp_pp ~ log_real_Total_IG_Revenue_pp + log_real_gdp_priv_ind_pc + log_Enrollment | year + state | log_hpi ~ l(ss_2d,1)"),
 #     data = left_join(mines_cz, rename(ss_temp, unit = cz_id), by = c("year","unit")), panel.id = c("unit", "year"))
@@ -499,11 +499,11 @@ Overall, compared to wages, the relatively more sensitive stability of the relat
 
 ```{r, echo = FALSE, cache = TRUE, results = 'asis'}
 
-t1 <- feols(log_hpi ~ l(log_real_gdp_priv_ind_pc, 0:7) + log_pop_total | unit + year, panel.id = c('year', 'unit'), mines_cz)
-t1_state_fe <- feols(log_hpi ~ l(log_real_gdp_priv_ind_pc, 0:7) + log_pop_total | state + year, panel.id = c('year', 'unit'), mines_cz)
+t1 <- feols(log_hpi ~ l(log_real_gdp_priv_ind_pc, 0:7) + log_pop_total | unit + year, panel.id = c('year', 'unit'), mines_cz, cluster = "unit")
+t1_state_fe <- feols(log_hpi ~ l(log_real_gdp_priv_ind_pc, 0:7) + log_pop_total | state + year, panel.id = c('year', 'unit'), mines_cz, cluster = "unit")
 
-t2 <- feols(gr_hpi ~ l(diff_log_real_gdp_priv_ind_pc, 0:7) +  diff_log_pop_total| unit + year, panel.id = c('year', 'unit'), mines_cz)
-t2_state_fe <- feols(gr_hpi ~ l(diff_log_real_gdp_priv_ind_pc, 0:7) +  diff_log_pop_total| state + year, panel.id = c('year', 'unit'), mines_cz)
+t2 <- feols(gr_hpi ~ l(diff_log_real_gdp_priv_ind_pc, 0:7) +  diff_log_pop_total| unit + year, panel.id = c('year', 'unit'), mines_cz, cluster = "unit")
+t2_state_fe <- feols(gr_hpi ~ l(diff_log_real_gdp_priv_ind_pc, 0:7) +  diff_log_pop_total| state + year, panel.id = c('year', 'unit'), mines_cz, cluster = "unit")
 
 
 etable(list(t1, t1_state_fe, t2, t2_state_fe), tex = latex_tables)
@@ -531,32 +531,32 @@ productivity).
 ```{r, echo = FALSE, results = 'asis', cache = TRUE}
 
 iv_model_2d_lev_gr <- feols(as.formula("log_real_Elem_Educ_Total_Exp_pp ~ log_real_Total_IG_Revenue_pp + log_real_gdp_priv_ind_pc + log_Enrollment | unit + year | log_hpi ~ gdp_ss_2d"),
-    data = left_join(mines_cz, rename(ss_temp, unit = cz_id), by = c("year","unit")), panel.id = c("unit", "year"))
+    data = left_join(mines_cz, rename(ss_temp, unit = cz_id), by = c("year","unit")), panel.id = c("unit", "year"), cluster = "unit")
 
 iv_model_2d_lev_lev <- feols(
     as.formula("log_real_Elem_Educ_Total_Exp_pp ~ log_real_Total_IG_Revenue_pp + log_real_gdp_priv_ind_pc + log_Enrollment | unit + year | log_hpi ~ lev_gdp_ss_2d"),
-    data = left_join(mines_cz, rename(ss_temp, unit = cz_id), by = c("year","unit")), panel.id = c("unit", "year"))
+    data = left_join(mines_cz, rename(ss_temp, unit = cz_id), by = c("year","unit")), panel.id = c("unit", "year"), cluster = "unit")
 
 iv_model_2d_lev_gr_l1 <- feols(as.formula("log_real_Elem_Educ_Total_Exp_pp ~ log_real_Total_IG_Revenue_pp + log_real_gdp_priv_ind_pc + log_Enrollment | unit + year | log_hpi ~ l(gdp_ss_2d,1)"),
-    data = left_join(mines_cz, rename(ss_temp, unit = cz_id), by = c("year","unit")), panel.id = c("unit", "year"))
+    data = left_join(mines_cz, rename(ss_temp, unit = cz_id), by = c("year","unit")), panel.id = c("unit", "year"), cluster = "unit")
 
 iv_model_2d_lev_lev_l1 <- feols(
     as.formula("log_real_Elem_Educ_Total_Exp_pp ~ log_real_Total_IG_Revenue_pp + log_real_gdp_priv_ind_pc + log_Enrollment | unit + year | log_hpi ~ l(lev_gdp_ss_2d,1)"),
-    data = left_join(mines_cz, rename(ss_temp, unit = cz_id), by = c("year","unit")), panel.id = c("unit", "year"))
+    data = left_join(mines_cz, rename(ss_temp, unit = cz_id), by = c("year","unit")), panel.id = c("unit", "year"), cluster = "unit")
 
 iv_model_2d_lev_gr_state_fe <- feols(as.formula("log_real_Elem_Educ_Total_Exp_pp ~ log_real_Total_IG_Revenue_pp + log_real_gdp_priv_ind_pc + log_Enrollment | state + year | log_hpi ~ gdp_ss_2d"),
-    data = left_join(mines_cz, rename(ss_temp, unit = cz_id), by = c("year","unit")), panel.id = c("unit", "year"))
+    data = left_join(mines_cz, rename(ss_temp, unit = cz_id), by = c("year","unit")), panel.id = c("unit", "year"), cluster = "unit")
 
 iv_model_2d_lev_lev_state_fe <- feols(
     as.formula("log_real_Elem_Educ_Total_Exp_pp ~ log_real_Total_IG_Revenue_pp + log_real_gdp_priv_ind_pc + log_Enrollment | state + year | log_hpi ~ lev_gdp_ss_2d"),
-    data = left_join(mines_cz, rename(ss_temp, unit = cz_id), by = c("year","unit")), panel.id = c("unit", "year"))
+    data = left_join(mines_cz, rename(ss_temp, unit = cz_id), by = c("year","unit")), panel.id = c("unit", "year"), cluster = "unit")
 
 iv_model_2d_lev_gr_l1_state_fe <- feols(as.formula("log_real_Elem_Educ_Total_Exp_pp ~ log_real_Total_IG_Revenue_pp + log_real_gdp_priv_ind_pc + log_Enrollment | state + year | log_hpi ~ l(gdp_ss_2d,1)"),
-    data = left_join(mines_cz, rename(ss_temp, unit = cz_id), by = c("year","unit")), panel.id = c("unit", "year"))
+    data = left_join(mines_cz, rename(ss_temp, unit = cz_id), by = c("year","unit")), panel.id = c("unit", "year"), cluster = "unit")
 
 iv_model_2d_lev_lev_l1_state_fe <- feols(
     as.formula("log_real_Elem_Educ_Total_Exp_pp ~ log_real_Total_IG_Revenue_pp + log_real_gdp_priv_ind_pc + log_Enrollment | state + year | log_hpi ~ l(lev_gdp_ss_2d,1)"),
-    data = left_join(mines_cz, rename(ss_temp, unit = cz_id), by = c("year","unit")), panel.id = c("unit", "year"))
+    data = left_join(mines_cz, rename(ss_temp, unit = cz_id), by = c("year","unit")), panel.id = c("unit", "year"), cluster = "unit")
 
 
 etable(iv_model_2d_lev_lev, iv_model_2d_lev_lev_state_fe, iv_model_2d_lev_lev_l1, iv_model_2d_lev_lev_l1_state_fe, adjustbox = TRUE, stage = 1:2,fitstat = iv_fitstats, tex = latex_tables, title ="GDP-based Shift-share instrument (Level-Level, varying state and CZ fixed effects and lags.")
@@ -652,7 +652,7 @@ growth_rates <- mines_cz %>%
 <!-- Where each GDP term represents the private industry GDP at the CZ, state, or national level, denoted by superscript. Effectively, we estimate the commuting zone level growth rate controlling for state and national trends. We then classify commuting zones by the value of $\alpha$ which represents their deviation from state- and national-level GDP growth rates. We estimate this trend deviation in both gross and per capita values of private industry GDP. Figure X demonstrates the considerable variability in GDP-level growth rates across commuting zones in the US between 2001-2021. Visualising the per capita growth rate deviations by state and region demonstrates heterogeneity in this variability across states and regions. For example, Texas, Montana, Illinois, and Colorado have outstanding positive outliers in the distribution \textcolor{red}{(check which CZ these are: likely Dallas, Chicago, Denver. Montana's outlier is potentially an oil-rich area (indeed the map confirms this))}. Whereas, South Dakota, Nebraska, Montana, Louisiana, and Kentucky contain some of the outstanding declining areas \textcolor{red}{(SD, Louisiana, and Kentucky make intuitive sense which is great! Just confirm which these commuting zones are. Might be useful to highlight some examples in the graph itself.)} -->
 
 
-```{r, echo = FALSE, fig.height = 10, fig.width = 10, warning = FALSE, cache = FALSE}
+```{r, echo = FALSE, fig.height = 10, include = FALSE, fig.width = 10, warning = FALSE, cache = FALSE}
 
 
 ## ---------------------------------------------------------
@@ -850,7 +850,7 @@ cz_regions <- cz_trends_plot %>%
 
 ```
 
-```{r, echo = FALSE, fig.height = 10, fig.width = 10, warning = FALSE, cache = FALSE}
+```{r, echo = FALSE, include = FALSE, fig.height = 10, fig.width = 10, warning = FALSE, cache = FALSE}
 
 
 ## ---------------------------------------------------------
@@ -928,7 +928,7 @@ hist_state <- cz_trends_plot %>%
 In Figure X, we see that there is similar variability though the patterns do not consistently indicate the same high- and low-performing outliers across states indicating that GDP and wage growth are not consistently correlated across regions. We demonstrate this fact in Figure X (scatterplot with pink regression linear fit) where, although there is a positive correlation between commuting zone GDP and wage trend deviations, the wage trend deviation represents a nearly inelastic relationship to GDP growth.
 
 
-```{r, echo = FALSE, fig.height = 10, fig.width = 10, warning = FALSE, cache = FALSE}
+```{r, echo = FALSE, fig.height = 10, fig.width = 10,  include = FALSE, warning = FALSE, cache = FALSE}
 
 # 0. Prepare CZ-level wage growth + national series (you already did this earlier)
 wage_growth_rates <- mines_cz %>%
@@ -1171,7 +1171,7 @@ map_lev_wage <- gen_czs_years(map_data) %>%
 ```
 
 
-```{r, echo = FALSE, fig.height = 10, fig.width = 10, warning = FALSE, cache = FALSE}
+```{r, echo = FALSE, fig.height = 10, fig.width = 10,  include = FALSE, warning = FALSE, cache = FALSE}
 
 # # Find high and low outliers
 # outliers <- cz_wage_trends_plot %>%
@@ -1212,7 +1212,7 @@ temp <-  cz_wage_trends_plot %>%
 ```
 
 
-```{r, echo = FALSE, fig.height = 10, fig.width = 10, warning = FALSE, cache = FALSE}
+```{r, echo = FALSE, fig.height = 10, fig.width = 10,  include = FALSE, warning = FALSE, cache = FALSE}
 
 # -Creating a safe plotting function until state wage growth rates are incorporated
 safe_plot <- function(expr, fail_label = "Plot failed", text_size = 4) {
@@ -1276,7 +1276,7 @@ hist_state <- safe_plot({cz_wage_trends_plot %>%
 
 ```
 
-```{r, echo = FALSE}
+```{r, echo = FALSE,  include = FALSE}
 
 # 1) compute unit-level correlations (if you already have this, skip this block)
 unit_corr <- mines_cz %>%
@@ -1585,9 +1585,9 @@ for (k in temp_vars) {
     as.formula(paste0(
       "log_real_Elem_Educ_Total_Exp_pp ~ ",
       "log_real_Total_IG_Revenue_pp + log_real_gdp_priv_ind_pc + log_Enrollment ",
-      "| state + year | log_hpi ~ l(", k, ")"
+      "| unit + year | log_hpi ~ l(", k, ")"
     )),
-    data = dat_temp, panel.id = c("unit", "year")
+    data = dat_temp, panel.id = c("unit", "year"), cluster = "unit"
   ) %>% extract_coef_info(state_name = "All")
 
   # State-by-state models
@@ -1608,7 +1608,7 @@ for (k in temp_vars) {
             "log_real_Total_IG_Revenue_pp + log_real_gdp_priv_ind_pc + log_Enrollment ",
             "| unit + year | log_hpi ~ l(", k, ")"
           )),
-          data = ., panel.id = c("unit", "year")
+          data = ., panel.id = c("unit", "year"), cluster = "unit"
         )
       state_mods_ind[[s]] <- mod
     }
@@ -1716,9 +1716,9 @@ for (k in temp_vars) {
     as.formula(paste0(
       "log_real_Elem_Educ_Total_Exp_pp ~ ",
       "log_real_Total_IG_Revenue_pp + log_real_gdp_priv_ind_pc + log_Enrollment ",
-      "| state + year | log_hpi ~ l(", k, ")"
+      "| unit + year | log_hpi ~ l(", k, ")"
     )),
-    data = dat_temp, panel.id = c("unit", "year")
+    data = dat_temp, panel.id = c("unit", "year"), cluster = "unit"
   ) %>% extract_coef_info(state_name = "All")
 
   # State-by-state models
@@ -1739,7 +1739,7 @@ for (k in temp_vars) {
             "log_real_Total_IG_Revenue_pp + log_real_gdp_priv_ind_pc + log_Enrollment ",
             "| unit + year | log_hpi ~ l(", k, ")"
           )),
-          data = ., panel.id = c("unit", "year")
+          data = ., panel.id = c("unit", "year"), cluster = "unit"
         )
       state_mods_ind[[s]] <- mod
     }
@@ -1864,7 +1864,7 @@ for(k in reg_states){
   mod <- dat_temp %>%
     filter(state == k) %>%
     feols(as.formula("log_real_Elem_Educ_Total_Exp_pp ~ log_weighted_annual_avg_wkly_wage + l1_log_weighted_annual_avg_wkly_wage + l2_log_weighted_annual_avg_wkly_wage + log_real_Total_IG_Revenue_pp + log_real_gdp_priv_ind_pc + log_Enrollment | unit + year"),
-    data = ., panel.id = c("unit", "year"))
+    data = ., panel.id = c("unit", "year"), cluster = "unit")
   state_mods[[as.character(k)]] <- mod
 }
 
@@ -2089,7 +2089,7 @@ for(k in reg_states){
   mod <- dat_temp %>%
     filter(state == k) %>%
     feols(as.formula("log_real_Elem_Educ_Total_Exp_pp ~ log_real_Total_IG_Revenue_pp + log_real_gdp_priv_ind_pc + log_Enrollment | unit + year | log_hpi ~ l(gdp_ss_2d,1)"),
-    data = ., panel.id = c("unit", "year"))
+    data = ., panel.id = c("unit", "year"), cluster = "unit")
   state_mods_ss[[as.character(k)]] <- mod
 }
 
@@ -2206,7 +2206,7 @@ for(k in reg_states){
   mod <- dat_temp %>%
     filter(state == k) %>%
     feols(as.formula("log_real_Elem_Educ_Total_Exp_pp ~ log_real_Total_IG_Revenue_pp + log_real_gdp_priv_ind_pc + log_Enrollment | unit + year | log_hpi ~ l(ss_2d,1)"),
-    data = ., panel.id = c("unit", "year"))
+    data = ., panel.id = c("unit", "year"), cluster = "unit")
   state_mods_ss[[as.character(k)]] <- mod
 }
 
