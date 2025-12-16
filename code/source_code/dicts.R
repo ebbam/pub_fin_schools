@@ -213,22 +213,29 @@ setFixest_dict(c(gdp_total = "GDP",
                diff_log_Enrollment = "(GR) Enrollment",
                state_share = "Funding Share_{state}",
                log_pop_total = "(log) Population",
-               diff_log_pop_total = "(GR) Population")
+               diff_log_pop_total = "(GR) Population",
+               "pct_black" = "% Black",
+               "pct_hispanic" = "% Hispanic")
                 
 
 common_theme <- theme(
+  text = ggplot2::element_text(
+    family = "Latin Modern Roman"),
   #text = element_text(family = "CMU Serif"),
-  plot.title = element_text(size = 12),
+  plot.title = element_text(family = "LMRoman10-Bold",  # Use the exact bold font name
+                            size = 14, 
+                            face = "bold"),  # Changed from weight to face),
   legend.text = element_text(size = 10),
   legend.title = element_text(size = 10),
-  axis.title.x = element_text(size = 10),
-  axis.title.y = element_text(size = 10),
+  axis.title.x = element_text(size = 12),
+  axis.title.y = element_text(size = 12),
   axis.text.x = element_text(size = 10),
   axis.text.y = element_text(size = 10),
   panel.background = element_rect(fill = NA),
   panel.grid.major = element_line(color = "grey90", linewidth = 0.5),
   panel.grid.minor = element_line(color = "grey90", linewidth = 0.25)
-)              
+
+)
 
 # 
 # plot_dict = c("f(mines_diff,3)" = "-3", "f(mines_diff,2)" = "-2", "f(mines_diff, 1)" = "-1", 

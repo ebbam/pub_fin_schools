@@ -1,3 +1,19 @@
+---
+title: "Appendix: Property Prices"
+format:
+  pdf:
+    documentclass: article
+    toc: true
+    number-sections: true
+    fontsize: 10pt
+    pdf-engine: xelatex
+    include-in-header: header.tex
+editor: 
+  markdown: 
+    wrap: 72
+bibliography: pub_fin_md.bib
+---
+
 
 ```{r, echo = FALSE, include = FALSE, message = FALSE, cache = FALSE}
 
@@ -438,39 +454,55 @@ However, examining the structure of the growth rate shock, the instability of th
 
 ```{r, echo = FALSE, results = 'asis', cache = TRUE}
 
-iv_model_2d_lev_gr <- feols(as.formula("log_real_Elem_Educ_Total_Exp_pp ~ log_real_Total_IG_Revenue_pp + log_real_gdp_priv_ind_pc + log_Enrollment | unit + year | log_hpi ~ ss_2d"),
+iv_lev_form <- iv_lev_form <- "log_real_Elem_Educ_Total_Exp_pp ~  l1_log_real_Elem_Educ_Total_Exp_pp + log_real_Total_IG_Revenue_pp + log_real_gdp_priv_ind_pc + log_Enrollment + pct_black + pct_hispanic"
+
+df_ivs <- left_join(mines_cz, rename(ss_temp, unit = cz_id), by = c("year","unit")) %>% 
+    group_by(unit) %>% 
+    arrange(year) %>% 
+    mutate(l1_lev_ss_2d = lag(lev_ss_2d, 1),
+           l2_lev_ss_2d = lag(lev_ss_2d, 2),
+           l1_ss_2d = lag(ss_2d, 1),
+           l2_ss_2d = lag(ss_2d, 2),
+           l1_gdp_ss_2d = lag(gdp_ss_2d,1),
+           l2_gdp_ss_2d = lag(gdp_ss_2d, 2),
+           l1_lev_gdp_ss_2d = lag(lev_gdp_ss_2d, 1),
+           l2_lev_gdp_ss_2d = lag(lev_gdp_ss_2d, 2)) %>% 
+  ungroup
+
+
+iv_model_2d_lev_gr <- feols(as.formula(paste0(iv_lev_form, " | unit + year | log_hpi ~ ss_2d")),
     data = left_join(mines_cz, rename(ss_temp, unit = cz_id), by = c("year","unit")), panel.id = c("unit", "year"), cluster = "unit")
 
 iv_model_2d_lev_lev <- feols(
-    as.formula("log_real_Elem_Educ_Total_Exp_pp ~ log_real_Total_IG_Revenue_pp + log_real_gdp_priv_ind_pc + log_Enrollment | unit + year | log_hpi ~ lev_ss_2d"),
+    as.formula(paste0(iv_lev_form, " | unit + year | log_hpi ~ lev_ss_2d")),
     data = left_join(mines_cz, rename(ss_temp, unit = cz_id), by = c("year","unit")), panel.id = c("unit", "year"), cluster = "unit")
 
-iv_model_2d_lev_gr_l1 <- feols(as.formula("log_real_Elem_Educ_Total_Exp_pp ~ log_real_Total_IG_Revenue_pp + log_real_gdp_priv_ind_pc + log_Enrollment | unit + year | log_hpi ~ l(ss_2d,1)"),
+iv_model_2d_lev_gr_l1 <- feols(as.formula(paste0(iv_lev_form, " | unit + year | log_hpi ~ l(ss_2d,1)")),
     data = left_join(mines_cz, rename(ss_temp, unit = cz_id), by = c("year","unit")), panel.id = c("unit", "year"), cluster = "unit")
 
 iv_model_2d_lev_lev_l1 <- feols(
-    as.formula("log_real_Elem_Educ_Total_Exp_pp ~ log_real_Total_IG_Revenue_pp + log_real_gdp_priv_ind_pc + log_Enrollment | unit + year | log_hpi ~ l(lev_ss_2d,1)"),
+    as.formula(paste0(iv_lev_form, " | unit + year | log_hpi ~ l(lev_ss_2d,1)")),
     data = left_join(mines_cz, rename(ss_temp, unit = cz_id), by = c("year","unit")), panel.id = c("unit", "year"), cluster = "unit")
 
-iv_model_2d_lev_gr_state_fe <- feols(as.formula("log_real_Elem_Educ_Total_Exp_pp ~ log_real_Total_IG_Revenue_pp + log_real_gdp_priv_ind_pc + log_Enrollment | state + year | log_hpi ~ ss_2d"),
+iv_model_2d_lev_gr_state_fe <- feols(as.formula(paste0(iv_lev_form, " | state + year | log_hpi ~ ss_2d")),
     data = left_join(mines_cz, rename(ss_temp, unit = cz_id), by = c("year","unit")), panel.id = c("unit", "year"), cluster = "unit")
 
 iv_model_2d_lev_lev_state_fe <- feols(
-    as.formula("log_real_Elem_Educ_Total_Exp_pp ~ log_real_Total_IG_Revenue_pp + log_real_gdp_priv_ind_pc + log_Enrollment | state + year | log_hpi ~ lev_ss_2d"),
+    as.formula(paste0(iv_lev_form, " | state + year | log_hpi ~ lev_ss_2d")),
     data = left_join(mines_cz, rename(ss_temp, unit = cz_id), by = c("year","unit")), panel.id = c("unit", "year"), cluster = "unit")
 
-iv_model_2d_lev_gr_l1_state_fe <- feols(as.formula("log_real_Elem_Educ_Total_Exp_pp ~ log_real_Total_IG_Revenue_pp + log_real_gdp_priv_ind_pc + log_Enrollment | state + year | log_hpi ~ l(ss_2d,1)"),
+iv_model_2d_lev_gr_l1_state_fe <- feols(as.formula(paste0(iv_lev_form, " | state + year | log_hpi ~ l(ss_2d,1)")),
     data = left_join(mines_cz, rename(ss_temp, unit = cz_id), by = c("year","unit")), panel.id = c("unit", "year"), cluster = "unit")
 
 iv_model_2d_lev_lev_l1_state_fe <- feols(
-    as.formula("log_real_Elem_Educ_Total_Exp_pp ~ log_real_Total_IG_Revenue_pp + log_real_gdp_priv_ind_pc + log_Enrollment | state + year | log_hpi ~ l(lev_ss_2d,1)"),
+    as.formula(paste0(iv_lev_form, " | state + year | log_hpi ~ l(lev_ss_2d,1)")),
     data = left_join(mines_cz, rename(ss_temp, unit = cz_id), by = c("year","unit")), panel.id = c("unit", "year"), cluster = "unit")
 
-# iv_model_2d_lev_gr_tfe <- feols(as.formula("log_real_Elem_Educ_Total_Exp_pp ~ log_real_Total_IG_Revenue_pp + log_real_gdp_priv_ind_pc + log_Enrollment | year + state | log_hpi ~ l(ss_2d,1)"),
+# iv_model_2d_lev_gr_tfe <- feols(as.formula(paste0(iv_lev_form, " | year + state | log_hpi ~ l(ss_2d,1)"),
 #     data = left_join(mines_cz, rename(ss_temp, unit = cz_id), by = c("year","unit")), panel.id = c("unit", "year"))
 # 
 # iv_model_2d_lev_lev_tfe <- feols(
-#     as.formula("log_real_Elem_Educ_Total_Exp_pp ~ log_real_Total_IG_Revenue_pp + log_real_gdp_priv_ind_pc + log_Enrollment | year + state | log_hpi ~ l(lev_ss_2d,1)"),
+#     as.formula(paste0(iv_lev_form, " | year + state | log_hpi ~ l(lev_ss_2d,1)"),
 #     data = left_join(mines_cz, rename(ss_temp, unit = cz_id), by = c("year","unit")), panel.id = c("unit", "year"))
 
 # iv_model_2d_share <- feols(
@@ -530,32 +562,32 @@ productivity).
 
 ```{r, echo = FALSE, results = 'asis', cache = TRUE}
 
-iv_model_2d_lev_gr <- feols(as.formula("log_real_Elem_Educ_Total_Exp_pp ~ log_real_Total_IG_Revenue_pp + log_real_gdp_priv_ind_pc + log_Enrollment | unit + year | log_hpi ~ gdp_ss_2d"),
+iv_model_2d_lev_gr <- feols(as.formula(paste0(iv_lev_form, " | unit + year | log_hpi ~ gdp_ss_2d")),
     data = left_join(mines_cz, rename(ss_temp, unit = cz_id), by = c("year","unit")), panel.id = c("unit", "year"), cluster = "unit")
 
 iv_model_2d_lev_lev <- feols(
-    as.formula("log_real_Elem_Educ_Total_Exp_pp ~ log_real_Total_IG_Revenue_pp + log_real_gdp_priv_ind_pc + log_Enrollment | unit + year | log_hpi ~ lev_gdp_ss_2d"),
+    as.formula(paste0(iv_lev_form, " | unit + year | log_hpi ~ lev_gdp_ss_2d")),
     data = left_join(mines_cz, rename(ss_temp, unit = cz_id), by = c("year","unit")), panel.id = c("unit", "year"), cluster = "unit")
 
-iv_model_2d_lev_gr_l1 <- feols(as.formula("log_real_Elem_Educ_Total_Exp_pp ~ log_real_Total_IG_Revenue_pp + log_real_gdp_priv_ind_pc + log_Enrollment | unit + year | log_hpi ~ l(gdp_ss_2d,1)"),
+iv_model_2d_lev_gr_l1 <- feols(as.formula(paste0(iv_lev_form, " | unit + year | log_hpi ~ l(gdp_ss_2d,1)")),
     data = left_join(mines_cz, rename(ss_temp, unit = cz_id), by = c("year","unit")), panel.id = c("unit", "year"), cluster = "unit")
 
 iv_model_2d_lev_lev_l1 <- feols(
-    as.formula("log_real_Elem_Educ_Total_Exp_pp ~ log_real_Total_IG_Revenue_pp + log_real_gdp_priv_ind_pc + log_Enrollment | unit + year | log_hpi ~ l(lev_gdp_ss_2d,1)"),
+    as.formula(paste0(iv_lev_form, " | unit + year | log_hpi ~ l(lev_gdp_ss_2d,1)")),
     data = left_join(mines_cz, rename(ss_temp, unit = cz_id), by = c("year","unit")), panel.id = c("unit", "year"), cluster = "unit")
 
-iv_model_2d_lev_gr_state_fe <- feols(as.formula("log_real_Elem_Educ_Total_Exp_pp ~ log_real_Total_IG_Revenue_pp + log_real_gdp_priv_ind_pc + log_Enrollment | state + year | log_hpi ~ gdp_ss_2d"),
+iv_model_2d_lev_gr_state_fe <- feols(as.formula(paste0(iv_lev_form, " | state + year | log_hpi ~ gdp_ss_2d")),
     data = left_join(mines_cz, rename(ss_temp, unit = cz_id), by = c("year","unit")), panel.id = c("unit", "year"), cluster = "unit")
 
 iv_model_2d_lev_lev_state_fe <- feols(
-    as.formula("log_real_Elem_Educ_Total_Exp_pp ~ log_real_Total_IG_Revenue_pp + log_real_gdp_priv_ind_pc + log_Enrollment | state + year | log_hpi ~ lev_gdp_ss_2d"),
+    as.formula(paste0(iv_lev_form, " | state + year | log_hpi ~ lev_gdp_ss_2d")),
     data = left_join(mines_cz, rename(ss_temp, unit = cz_id), by = c("year","unit")), panel.id = c("unit", "year"), cluster = "unit")
 
-iv_model_2d_lev_gr_l1_state_fe <- feols(as.formula("log_real_Elem_Educ_Total_Exp_pp ~ log_real_Total_IG_Revenue_pp + log_real_gdp_priv_ind_pc + log_Enrollment | state + year | log_hpi ~ l(gdp_ss_2d,1)"),
+iv_model_2d_lev_gr_l1_state_fe <- feols(as.formula(paste0(iv_lev_form, " | state + year | log_hpi ~ l(gdp_ss_2d,1)")),
     data = left_join(mines_cz, rename(ss_temp, unit = cz_id), by = c("year","unit")), panel.id = c("unit", "year"), cluster = "unit")
 
 iv_model_2d_lev_lev_l1_state_fe <- feols(
-    as.formula("log_real_Elem_Educ_Total_Exp_pp ~ log_real_Total_IG_Revenue_pp + log_real_gdp_priv_ind_pc + log_Enrollment | state + year | log_hpi ~ l(lev_gdp_ss_2d,1)"),
+    as.formula(paste0(iv_lev_form, " | state + year | log_hpi ~ l(lev_gdp_ss_2d,1)")),
     data = left_join(mines_cz, rename(ss_temp, unit = cz_id), by = c("year","unit")), panel.id = c("unit", "year"), cluster = "unit")
 
 
@@ -2088,7 +2120,7 @@ state_mods_ss <- list()
 for(k in reg_states){
   mod <- dat_temp %>%
     filter(state == k) %>%
-    feols(as.formula("log_real_Elem_Educ_Total_Exp_pp ~ log_real_Total_IG_Revenue_pp + log_real_gdp_priv_ind_pc + log_Enrollment | unit + year | log_hpi ~ l(gdp_ss_2d,1)"),
+    feols(as.formula(paste0(iv_lev_form, " | unit + year | log_hpi ~ l(gdp_ss_2d,1)")),
     data = ., panel.id = c("unit", "year"), cluster = "unit")
   state_mods_ss[[as.character(k)]] <- mod
 }
@@ -2205,7 +2237,7 @@ state_mods_ss <- list()
 for(k in reg_states){
   mod <- dat_temp %>%
     filter(state == k) %>%
-    feols(as.formula("log_real_Elem_Educ_Total_Exp_pp ~ log_real_Total_IG_Revenue_pp + log_real_gdp_priv_ind_pc + log_Enrollment | unit + year | log_hpi ~ l(ss_2d,1)"),
+    feols(as.formula(paste0(iv_lev_form, " | unit + year | log_hpi ~ l(ss_2d,1)")),
     data = ., panel.id = c("unit", "year"), cluster = "unit")
   state_mods_ss[[as.character(k)]] <- mod
 }

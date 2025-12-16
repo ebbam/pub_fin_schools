@@ -1,0 +1,233 @@
+---
+title: "Introduction"
+format: html
+editor: visual
+bibliography: references.bib
+---
+
+## Quarto
+
+# References with Links
+
+@rubin2015 find that wealth is more sensitive to economic growth than labour income. "Wealth derived income is more sensitive to growth than labor income. Labor income of top groups is more sensitive to growth than that of low groups. Positive changes in growth are associated with increases in income inequality." Between 1953-2008. Could justify that growth impacts already higher-wage areas than lower-wage areas. Might imply something about experimental design.
+
+## Wage Growth and Inequality
+
+### Key Papers
+
+1.  **Autor, D. H. (2014).** "Skills, education, and the rise of earnings inequality among the 'other 99 percent.'" *Science*, 344, 843-851.
+    -   <https://www.science.org/doi/10.1126/science.1251868> @autor2014
+2.  **Bauluz, L., Bukowski, P., Fransham, M., Lee, A., López Forero, M., Novokmet, F., Breau, S., Lee, N., Malgouyres, C., Schularick, M., & Verdugo, G. (2023).** "Spatial wage inequality in North America and Western Europe: changes between and within local labour markets 1975-2019." CEPR Discussion Paper No. 18381.
+    -   @wilmers2018 - find that increased exposure to buyer power can lead to decreased wages - ie. competition effects.
+    -   @deb2022 - find that less competitive market structure lowers wage levels and raises skill premiums.
+    -   @yeh2022 - find that manufacturing employers exhibit strong monopsony power where they can markdown wages significantly. this power has only been sharply increasing since the early 2000s. @azar2022 - find a similar result where increased labour market conentration causes a decline in posted wages.
+    -   @autor - demonstrate a polarisation of the US labour market
+3.  @egger2019 - Find that the higher income earners were taxed more prior to 1994 whereas after 1994, globalisation increased the income tax burden of the middle class while the top 1% of workers faced a reduction in their income tax burden.
+4.  @katz1992 **- early exploration of the source of wage inequality between 1963-1987. find that it relates largely to a skills premium and greater labour force participation by women. @kopczuk2010 - similarly find that earnings inequality increased following 1970 with dramatic earnings concentration at the top of the income distribution.**
+5.  @lee1999 - an early study in the late 1990s finds that wage inequality was largely attributed to rising dispersion without consideration of the subsequent decline (and rollback) of minimum wage regulations. Find that minimum wage can account for much of the rise in dispersion in the lower tail of the wage distributions.
+6.  **Mishel, L., & Bivens, J.** "Identifying the policy levers generating wage suppression and wage inequality." Economic Policy Institute @mishel2021 Though many authors argue that this wage divergence is the result of power and policy that favors capital over labour, rather than "apolitical market forces." @barkai2020 - find that the declining labour share has not been replaced by capital share. rather rents and profit are being extracted instead.
+7.  **Piketty, T., & Saez, E. (2003).** "Income Inequality in the United States, 1913-1998." *Quarterly Journal of Economics*, 118(1), 1-39.
+    -   <https://academic.oup.com/qje/article-abstract/118/1/1/1917000>
+8.  **Wilmers, N. (2018).** "Wage Stagnation and Buyer Power: How Buyer-Supplier Relations Affect U.S. Workers' Wages, 1978 to 2014." *American Sociological Review*, 83(2), 213-242.
+    -   <https://journals.sagepub.com/doi/full/10.1177/0003122418762441>
+
+### Additional Important Papers
+
+9.  **Autor, D. H., Dorn, D., & Hanson, G. H. (2013).** "The China Syndrome: Local Labor Market Effects of Import Competition in the United States." *American Economic Review*, 103(6), 2121-2168.
+    -   <https://www.aeaweb.org/articles?id=10.1257/aer.103.6.2121>
+10. **Autor, D. H., Manning, A., & Smith, C. L. (2016).** "The contribution of the minimum wage to US wage inequality over three decades: A reassessment." *American Economic Journal: Applied Economics*, 8, 58-99. @autor2016 - find that minimum wages decrease inequality at the lower tail of the wage distribution.
+11. **Card, D. (2001).** "The Effect of Unions on Wage Inequality in the U.S. Labor Market." *Industrial and Labor Relations Review*, 54(2), 296-315. @card2001 - find that declining union density has an adverse effect on wage inequality. Additionally, unionisation substantially slowed wage inequality in the public sector between 1973-1993.
+
+<!-- -->
+
+12. **Hoffmann, F., Lee, D. S., & Lemieux, T. (2020).** "Growing income inequality in the United States and other advanced economies." *Journal of Economic Perspectives*, 34, 52-78. @hoffmann2020 finds that income inequality growth in the US is largely attributable to growth in labour earnings inequality since the 1970s.
+
+-   <https://www.aeaweb.org/articles?id=10.1257/jep.34.4.52>
+
+13. **Moretti, E. (2013).** "Real wage inequality." *American Economic Journal: Applied Economics*, 5(1), 65-103.
+
+-   <https://www.aeaweb.org/articles?id=10.1257/app.5.1.65>
+
+14. **Slichter, D., Hobijn, B., Hoff, F., & McInerney, M. (2022).** "Rapid wage growth at the bottom has offset rising US inequality." *PNAS*, 119(42).
+
+-   <https://www.pnas.org/doi/10.1073/pnas.2204305119>
+
+------------------------------------------------------------------------
+
+## Inequality in Public Goods and Public Expenditure
+
+### Key Papers
+
+15. **Boustan, L. P., Ferreira, F., Winkler, H., & Zolt, E. (2013).** "The Effect of Rising Income Inequality on Taxation and Public Expenditures: Evidence from US Municipalities and School Districts, 1970-2000." *Review of Economics and Statistics*, 95(4), 1291-1302.
+
+-   <https://direct.mit.edu/rest/article-abstract/95/4/1291/58237/The-Effect-of-Rising-Income-Inequality-on-Taxation>
+-   NBER Working Paper: <https://www.nber.org/papers/w16299>
+
+16. **An, B., Levy, M., & Hero, R. (2018).** "It's Not Just Welfare: Racial Inequality and the Local Provision of Public Goods in the United States." *Sage Urban Affairs Review*, 54(6), 1033-1071.
+
+-   <https://journals.sagepub.com/doi/10.1177/1078087417752476>
+
+17. **Kim, D., et al. (2016).** "The Associations between US State and Local Social Spending, Income Inequality, and Individual All-Cause and Cause-Specific Mortality: The National Longitudinal Mortality Study." *American Journal of Public Health*, 106(3), 496-502.
+
+-   <https://pmc.ncbi.nlm.nih.gov/articles/PMC5766344/>
+
+18. **Manduca, R., Highsmith, B., & Waggoner, J. (2025).** "Tax base fragmentation as a dimension of metropolitan inequality." *Socio-Economic Review*, mwaf055. @manduca2025
+
+-   <https://academic.oup.com/ser/advance-article/doi/10.1093/ser/mwaf055/8286993>
+
+19. **Trounstine, J. (2016).** "Segregation and Inequality in Public Goods." *American Journal of Political Science*, 60(3), 709-725. @trounstine2021
+
+-   <https://onlinelibrary.wiley.com/doi/abs/10.1111/ajps.12227>
+
+### Additional Important Papers
+
+20. **Alesina, A., Baqir, R., & Easterly, W. (1999).** "Public Goods and Ethnic Divisions." *Quarterly Journal of Economics*, 114(4), 1243-1284.
+
+-   <https://academic.oup.com/qje/article-abstract/114/4/1243/1848519>
+
+21. **Meltzer, A. H., & Richard, S. F. (1981).** "A Rational Theory of the Size of Government." *Journal of Political Economy*, 89(5), 914-927.
+
+-   <https://www.journals.uchicago.edu/doi/10.1086/261013>
+
+------------------------------------------------------------------------
+
+## Education Expenditure and Local Economies
+
+### Key Papers
+
+22. **Jackson, C. K., Johnson, R. C., & Persico, C. (2016).** "The Effects of School Spending on Educational and Economic Outcomes: Evidence from School Finance Reforms." *Quarterly Journal of Economics*, 131(1), 157-218.
+
+-   <https://academic.oup.com/qje/article-abstract/131/1/157/2461148>
+-   NBER Working Paper: <https://www.nber.org/papers/w20847>
+-   Full text: <https://gsppi.berkeley.edu/~ruckerj/QJE_resubmit_final_version.pdf>
+
+23. **Card, D., & Payne, A. A. (2002).** "School Finance Reform, the Distribution of School Spending, and the Distribution of Student Test Scores." *Journal of Public Economics*, 83(1), 49-82.
+
+-   <https://www.sciencedirect.com/science/article/abs/pii/S0047272700001778>
+
+24. **Hoxby, C. M. (2001).** "All School Finance Equalizations Are Not Created Equal." *Quarterly Journal of Economics*, 116(4), 1189-1231.
+
+-   <https://academic.oup.com/qje/article-abstract/116/4/1189/1903609>
+-   NBER Working Paper: <https://www.nber.org/papers/w6792>
+
+25. **Lafortune, J., Rothstein, J., & Schanzenbach, D. W. (2018).** "School Finance Reform and the Distribution of Student Achievement." *American Economic Journal: Applied Economics*, 10(2), 1-26.
+
+-   <https://www.aeaweb.org/articles?id=10.1257/app.20160567>
+
+26. **Marchand, J., & Weber, J. G. (2020).** "How Local Economic Conditions Affect School Finances, Teacher Quality, and Student Achievement: Evidence from the Texas Shale Boom." *Journal of Policy Analysis and Management*, 39(1), 36-63.
+
+-   <https://onlinelibrary.wiley.com/doi/abs/10.1002/pam.22171>
+
+27. **Naven, M. J., & Bozick, R. (2018).** "Preparing for Local Labor: Curricular Stratification across Local Economies in the United States." *Sociology of Education*, 91(1), 1-22.
+
+-   <https://pmc.ncbi.nlm.nih.gov/articles/PMC5844274/>
+
+### Additional Important Papers
+
+28. **Baron, E. J., Kemptner, D., Kolbe, J., Schanzenbach, D. W., & Tozaj, M. (2020).** "School district operational spending and student outcomes: Evidence from tax elections in seven states." *Journal of Public Economics*, 183, Article 104143.
+
+-   <https://www.sciencedirect.com/science/article/abs/pii/S0047272720300062>
+
+29. **Black, D., McKinnish, T., & Sanders, S. (2005).** "Tight labor markets and the demand for education: Evidence from the coal boom and bust." *Industrial and Labor Relations Review*, 59, 3-16.
+
+-   <https://journals.sagepub.com/doi/10.1177/001979390505900101>
+
+30. **Hanushek, E. A., Ruhose, J., & Woessmann, L. (2017).** "Economic Gains from Educational Reform by US States." *Journal of Human Capital*, 11(4), 447-486.
+
+-   <https://hanushek.stanford.edu/sites/default/files/Hanushek+Ruhose+Woessmann%202017%20JHC%2011(4).pdf>
+
+31. **Hyman, J. (2017).** "Does Money Matter in the Long Run? Effects of School Spending on Educational Attainment." *American Economic Journal: Economic Policy*, 9(4), 256-280.
+
+-   <https://www.aeaweb.org/articles?id=10.1257/pol.20150249>
+
+32. **Murray, S. E., Evans, W. N., & Schwab, R. M. (1998).** "Education-Finance Reform and the Distribution of Education Resources." *American Economic Review*, 88, 789-812.
+
+-   <https://www.aeaweb.org/articles?id=10.1257/aer.88.4.789>
+
+33. **Papke, L. E. (2005).** "The effects of spending on test pass rates: Evidence from Michigan." *Journal of Public Economics*, 89(5-6), 821-839.
+
+-   <https://www.sciencedirect.com/science/article/abs/pii/S0047272704000520>
+
+34. **Sun, M., Candelaria, C. A., Knight, D., LeClair, Z., Kabourek, S. E., & Chang, K. (2025).** "The Effects and Local Implementation of School Finance Reforms on Teacher Salary, Hiring, and Turnover." *Educational Evaluation and Policy Analysis*.
+
+-   <https://journals.sagepub.com/doi/abs/10.3102/01623737231213880>
+
+------------------------------------------------------------------------
+
+## School Finance and Property Tax
+
+35. **Kenyon, D., Paquin, B., & Munteanu, S. (2022).** "Public Schools and the Property Tax: A Comparison of Education Funding Models in Three U.S. States." Lincoln Institute of Land Policy.
+
+-   <https://www.lincolninst.edu/publications/articles/2022-04-public-schools-property-tax-comparison-education-models>
+
+36. **Kenyon, D. (2007).** "The Property Tax-School Funding Dilemma." Lincoln Institute of Land Policy Focus Report.
+
+-   <https://www.lincolninst.edu/app/uploads/legacy-files/pubfiles/the-property-tax-school-funding-dilemma-full_0.pdf>
+
+37. **Baker, B., Di Carlo, M., Reist, K., & Weber, M. (2024).** "The Adequacy and Fairness of State School Finance Systems 2024." Albert Shanker Institute.
+
+-   <https://www.schoolfinancedata.org/the-adequacy-and-fairness-of-state-school-finance-systems-2024/>
+
+------------------------------------------------------------------------
+
+## Local Labor Markets and Spatial Economics
+
+38. **Baum-Snow, N., & Pavan, R. (2013).** "Inequality and City Size." *Review of Economics and Statistics*, 95(5), 1535-1548.
+
+-   <https://direct.mit.edu/rest/article-abstract/95/5/1535/58259/Inequality-and-City-Size>
+
+39. **Black, D., Kolesnikova, N., & Taylor, L. J. (2009).** "Earnings Functions When Wages and Prices Vary by Location." *Journal of Labor Economics*, 27(1), 21-47.
+
+-   <https://www.journals.uchicago.edu/doi/10.1086/599626>
+
+40. **Gibbons, S., Overman, H. G., & Pelkonen, P. (2014).** "Area Disparities in Britain: Understanding the Contribution of People vs. Place Through Variance Decompositions." *Oxford Bulletin of Economics and Statistics*, 76(5), 745-763.
+
+-   <https://onlinelibrary.wiley.com/doi/abs/10.1111/obes.12043>
+
+41. **Moretti, E. (2012).** *The New Geography of Jobs.* Houghton Mifflin Harcourt.
+
+-   <https://www.econtalk.org/enrico-moretti-on-the-new-geography-of-jobs/>
+
+------------------------------------------------------------------------
+
+## Additional Resources and Working Papers
+
+### Economic Policy Institute Reports
+
+42. **Bivens, J., & Mishel, L. (2015).** "Understanding the Historic Divergence Between Productivity and a Typical Worker's Pay." Economic Policy Institute.
+
+-   <https://www.epi.org/publication/understanding-the-historic-divergence-between-productivity-and-a-typical-workers-pay-why-it-matters-and-why-its-real/>
+
+43. **Gould, E. (2019).** "State of Working America Wages 2018." Economic Policy Institute.
+
+-   <https://www.epi.org/publication/state-of-american-wages-2018/>
+
+### Federal Reserve Research
+
+44. **Chakrabarti, R., et al. (2025).** "The College Economy: Educational Differences in Labor Market Outcomes." Liberty Street Economics.
+
+-   <https://libertystreeteconomics.newyorkfed.org/2025/05/the-college-economy-educational-differences-in-labor-market-outcomes/>
+
+45. **Abel, J., & Deitz, R.** "The Labor Market for Recent College Graduates." Federal Reserve Bank of New York.
+
+-   <https://www.newyorkfed.org/research/college-labor-market>
+
+### NBER Working Papers
+
+46. **Chetty, R., Friedman, J. N., & Rockoff, J. E. (2014).** "Measuring the Impacts of Teachers II: Teacher Value-Added and Student Outcomes in Adulthood." *American Economic Review*, 104(9), 2633-2679.
+
+-   <https://www.aeaweb.org/articles?id=10.1257/aer.104.9.2633>
+-   NBER: <https://www.nber.org/papers/w19424>
+
+47. **Johnson, R. C., & Jackson, C. K. (2019).** "Reducing Inequality through Dynamic Complementarity: Evidence from Head Start and Public School Spending." *American Economic Journal: Economic Policy*, 11(4), 310-349.
+
+-   <https://www.aeaweb.org/articles?id=10.1257/pol.20180510>
+
+------------------------------------------------------------------------
+
+## Notes on Accessing Papers
+
+-   **Open Access**: Papers from EPI, Federal Reserve Banks, and NBER working papers are freely available
+-   **Journal Access**: Papers from Quarterly Journal of Economics, American Economic Review, and other top journals may require institutional access or individual purchase
+-   **Working Paper Versions**: Many published papers have free working paper versions available through NBER, SSRN, or author websites
+-   **Google Scholar**: Search for paper titles on Google Scholar to often find free PDF versions from author websites or repositories
