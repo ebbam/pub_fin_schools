@@ -16,9 +16,12 @@ testing = FALSE
 new_flat = FALSE
 
 # Source: https://www.bls.gov/cew/downloadable-data-files.htm.  - CSVs Single Files: Annual Averages
+#source(here("data/raw/QCEW/industry_shares_cleaning.R"))
 
 # Industry codes provided by QCEW BLS: https://www.bls.gov/cew/classifications/industry/industry-titles.htm
 ind_codes <- read_excel(here("data/raw/QCEW/industry-titles.xlsx"))
+#source(here("data/raw/QCEW/industry_shares_cleaning.R"))
+
 source(here("code/source_code/cz_cleaning.R"))
 
 # df_list_natl <- list()
@@ -99,7 +102,7 @@ df_natl_va <- readRDS(here("data/raw/bea_va/va_for_ss.rds")) %>%
   mutate(ind_code = gsub("-", "_", ind_code)) %>% 
   rename(gr_real_VA = diff_log_real_VA) %>% 
   pivot_wider(id_cols = year, names_from = c(ind_code), values_from = c(log_real_VA, gr_real_VA)) 
-  
+
 # National rates
 natl_rates_plot_short <- df_list_natl %>% 
   filter(!(industry_code %in% c("99", "999"))) %>% 
@@ -191,7 +194,7 @@ plot_data <- natl_rates_plot %>%
   ) %>%
   ungroup() %>% 
   left_join(., ind_codes, by = 'industry_code')
-  
+
 p3 <- plot_data %>% 
   filter(classification != "A. Overall") %>% 
   ggplot(., aes(x = classification, y = value, fill = classification)) +
@@ -211,10 +214,14 @@ p3 <- plot_data %>%
   theme_minimal() +
   theme(legend.position = "none") 
 
-print(p1)
-print(p2)
-print(p3)
-  
+
+# 
+# p1
+# 
+# p2
+# 
+# p3
+
 #saveRDS(natl_rates, here("data/temp/natl_rates.RDS"))
 
 ################################################################################
@@ -229,7 +236,6 @@ compute_shares <- function(source = NULL, base_year, industry_codes, unit_id = "
     # Format for QCEW files
     temp_test <- read.csv(here(paste0("data/raw/QCEW/", base_year, ".annual.singlefile.csv"))) %>%
       tibble
-    print(paste0("Downloaded QCEW data for ", base_year, "."))
   }
   
   # This section cleans the base_file
@@ -316,8 +322,7 @@ compute_shares <- function(source = NULL, base_year, industry_codes, unit_id = "
   
   rm(temp_test)
   
-  print("Cleaned temp file.")
-  
+
   shift_share <- temp %>% 
     # left_join(natl_rates, by = "year") %>% 
     pivot_wider(id_cols = c(unit, year), names_from = industry_code, values_from = c(annual_avg_emplvl), names_glue = "annual_avg_emplvl_{industry_code}") %>%
@@ -350,8 +355,6 @@ compute_shares <- function(source = NULL, base_year, industry_codes, unit_id = "
       fill(everything(), .direction = "updown") %>% 
       ungroup
     
-    print("Created employment share values.")
-    
     assert_that(nrow(shift_share) == n_distinct(shift_share$unit) * n_distinct(shift_share$year))
     
     # Creates a shift-share measure with a baseline of 2001 (first time period in series), 2006 (local peak prior to global peak in national employment), 2011 (peak national employment)
@@ -361,7 +364,6 @@ compute_shares <- function(source = NULL, base_year, industry_codes, unit_id = "
       rename(!!unit_id := unit) %>% 
       select(-ends_with("10"))
     
-    print("Appended national shock variables.")
     return(full)
   }else{
     return(shift_share_flat)
@@ -462,11 +464,11 @@ compute_ss <- function(dat, change = "gr"){
   return(dat)
 }
 
+
 # Create "Flat shares" meaning a specific emplevel for each year
 if(new_flat){
   shares_flat <- tibble() 
   for(yr in 1995:2022){
-    print(yr)
     shares_flat <- compute_shares(source = "QCEW", base_year = yr, unit_id = "fips", flat = TRUE) %>% 
       bind_rows(shares_flat)
     gc()
@@ -483,7 +485,6 @@ if(new_flat){
     select(unit, year, annual_avg_emplvl_10)
   
   for(k in d2_cats){
-    print(k)
     shares_flat2 <- shares_flat %>% 
       select(unit, year, starts_with(k)) %>% 
       rowwise() %>% mutate(emp_fill = sum(c_across(!c(unit, year, eval(k))), na.rm = TRUE)) %>%
@@ -528,6 +529,7 @@ if(new_flat){
  coverage <- readRDS(here("data/raw/QCEW/NAICS_share_coverage.RDS"))
 }
 
+
 ################################################################################
 ################################################################################
 ################# Shift Shares Transformation Function #########################
@@ -540,7 +542,6 @@ compute_ss_old <- function(source = NULL, base_year, industry_codes, unit_id = "
     # Format for QCEW files
     temp_test <- read.csv(here(paste0("data/raw/QCEW/", base_year, ".annual.singlefile.csv"))) %>%
       tibble
-    print(paste0("Downloaded QCEW data for ", base_year, "."))
   }
   
   # This section cleans the base_file
@@ -597,8 +598,7 @@ compute_ss_old <- function(source = NULL, base_year, industry_codes, unit_id = "
   
   rm(temp_test)
   
-  print("Cleaned temp file.")
-  
+
   shift_share <- temp %>% 
    # left_join(natl_rates, by = "year") %>% 
     pivot_wider(id_cols = c(unit, year), names_from = industry_code, values_from = c(annual_avg_emplvl, total_annual_wages)) %>%
@@ -628,7 +628,6 @@ compute_ss_old <- function(source = NULL, base_year, industry_codes, unit_id = "
     fill(everything(), .direction = "updown") %>% 
     ungroup
   
-  print("Created employment share values.")
 
   assert_that(nrow(shift_share) == n_distinct(shift_share$unit) * n_distinct(shift_share$year))
   
@@ -637,10 +636,10 @@ compute_ss_old <- function(source = NULL, base_year, industry_codes, unit_id = "
     left_join(., natl_rates, by = "year", relationship = "many-to-one") %>% 
     rename(!!unit_id := unit)
   
-  print("Appended national shock variables.")
-  
+
   return(full)
 }
+
 
 ################################################################################
 ################### PLOTTING FUNCTION ##########################################
@@ -672,10 +671,10 @@ plot_ss_old <- function(dat, code, shock_var, unit_id, ind_codes = NULL){
     labs(title = industry_name, subtitle = paste0("Unit: ", toupper(gsub("_id", "", unit_id))), x = "Year", y= "Industry-Specific Shift-Share Value") + 
     theme_minimal() + theme(legend.position = "none")
   
-  print(dat_plot)
   return(dat)
   
 }
+
 
 ################################################################################
 ################### FIPS #######################################################
@@ -696,3 +695,28 @@ plot_ss(full_cz, "51", "gr_natl_annual_avg_wkly_wage_", "cz_id", ind_codes)
 
 ################################################################################
 }
+
+rm(df_list_natl)
+rm(df_natl_va)
+rm(natl_rates_plot_short)
+rm(natl_rates_plot)
+rm(inds_missing)
+rm(plot_data)
+
+# 
+# ################################################################################
+# ################### STATE RATES ################################################
+# ################################################################################
+# state_df <- tibble()
+# for(yr in 1990:2022){
+#   print(yr)
+#   temp_state <- read.csv(here(paste0("data/raw/QCEW/", yr, ".annual.singlefile.csv"))) %>%
+#     tibble %>% 
+#     filter(own_code == 0)
+#   
+#   state_df <- bind_rows(state_df, temp_state)
+# }
+##################
+##################
+##################
+

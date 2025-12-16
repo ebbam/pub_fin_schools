@@ -16,6 +16,8 @@ source(here("code/source_code/useful_functions.R"))
 
 source(here("code/source_code/cz_cleaning.R"))
 
+new_data = FALSE
+
 ################################################################################
 ################################################################################
 ###################### Wage Statistics #########################################
@@ -54,8 +56,10 @@ fips_stats <- fips_stats %>%
 ################################# FIPS #########################################
 ################################################################################
 ################################################################################
-saveRDS(fips_stats, here("data/raw/QCEW/QCEW_wage_stats_fips.RDS"))
-print("saved county fips file.")
+if(new_data){
+  saveRDS(fips_stats, here("data/raw/QCEW/QCEW_wage_stats_fips.RDS"))
+  print("saved county fips file.")
+}
 ################################################################################
 ################################################################################
 ################################# CZ ###########################################
@@ -88,6 +92,61 @@ cz_stats <-  fips_stats %>%
               across(c(annual_avg_wkly_wage, avg_annual_pay), ~weighted.mean(., weight, na.rm = TRUE), .names = "weighted_{.col}")) %>% ungroup %>% 
   rename(cz_id = unit)
 
-saveRDS(cz_stats, here("data/raw/QCEW/QCEW_wage_stats_cz.RDS"))
 
-print("saved CZ file.")
+if(new_data){
+  saveRDS(cz_stats, here("data/raw/QCEW/QCEW_wage_stats_cz.RDS"))
+  print("saved CZ file.")
+}
+
+################################################################################
+################################################################################
+###################### STATE AND NATIONAL ######################################
+################################################################################
+################################################################################
+
+state_stats <- tibble()
+for(yr in 1990:2022){
+  print(yr)
+  temp_test <- read.csv(here(paste0("data/raw/QCEW/", yr, ".annual.singlefile.csv"))) %>%
+    tibble %>% 
+    filter(substr(area_fips, 3,7) == "000" & own_code == 0) %>% 
+    select(area_fips, year, annual_avg_estabs, annual_avg_emplvl, total_annual_wages, taxable_annual_wages, annual_avg_wkly_wage, avg_annual_pay)
+  
+  assert_that(nrow(temp_test) == n_groups(group_by(temp_test, area_fips)))
+  
+  state_stats <- rbind(state_stats, temp_test)
+}
+
+state_stats <- state_stats %>% 
+  select(-taxable_annual_wages) %>% 
+  mutate(state = substr(area_fips, 1, 2),
+         across(!c(state, year, area_fips), ~log(.), .names = "log_{.col}")) %>% 
+  select(-area_fips) %>% 
+  group_by(state) %>% 
+  arrange(state, year) %>% 
+  mutate(across(contains("log"), ~. - lag(., 1), .names = gsub("log","", "gr_{.col}")),
+         across(!c(year), list(l1 = ~dplyr::lag(., 1), l2 = ~dplyr::lag(., 2)), .names = "{.fn}_{.col}")) %>% 
+  rename_with(~ str_replace(., "gr_log_", "gr_"), contains("gr_log_")) %>% 
+  ungroup 
+
+state_stats_us <- state_stats %>% 
+  filter(state == "US") %>% 
+  select(-state) %>% 
+  rename_with(~paste0("natl_", .), !c("year"))
+
+stopifnot(nrow(state_stats_us) == n_groups(group_by(state_stats_us, year)))
+
+state_stats_df <- state_stats %>% 
+  filter(state != "US") %>% 
+  rename_with(~paste0("state_", .), !c("year", "state"))
+
+stopifnot(nrow(state_stats_df) == n_groups(group_by(state_stats_df, state, year)))
+
+state_stats_df_full <- left_join(state_stats_df, state_stats_us, by = 'year') %>% 
+  relocate(year, state)
+
+stopifnot(nrow(state_stats_df_full) == n_groups(group_by(state_stats_df_full, state, year)))
+
+state_stats_df_full %>% saveRDS(here("data/raw/QCEW/wage_growth_rate_data_state_natl.RDS"))
+
+
