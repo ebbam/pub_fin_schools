@@ -4,8 +4,6 @@ subtitle: "The Case of US Public Education"
 author:
   - name: Ebba Mark
     affiliation: University of Oxford
-abstract: |
-  Over recent decades, the United States has experienced increasingly divergent patterns of economic and wage growth. Wage growth is a key driver of local wealth accumulation, enabling greater household and community investment in public goods. Regions whose wages track productivity gains likely benefit from broader economic growth, accumulating wealth that sustains local public services, while lagging regions risk weaker savings rates and eroding fiscal capacities. We estimate how divergent wage growth across U.S. regions affects public education expenditure using a shift-share instrumental variable design. Accounting for state-level heterogeneity in tax regimes, income, and economic growth, we find substantial variation in the elasticity of education spending to wages: the magnitude and statistical significance differ markedly across states. This heterogeneity explains the majority of spending responses and reflects both uneven economic fundamentals and diverse fiscal institutions that generate inequality in public goods provision. Our results demonstrate that average treatment effects in panel studies can obscure critical policy-relevant variation. The findings suggest that federal and local policies assuming uniform wage-spending relationships may fail to address or even exacerbate pervasive spatial inequality in educational investment. 
 format:
   pdf:
     documentclass: article
@@ -15,12 +13,19 @@ format:
     fontsize: 10pt
     pdf-engine: xelatex
     include-in-header: header.tex
+    include-before-body:
+    - text: |
+        \begin{abstract}
+        \input{abstract.tex}
+        \end{abstract}
+    cite-method: natbib 
+    biblio-style: unsrt     
 editor: 
   markdown: 
     wrap: 72
 bibliography: pub_fin_md.bib
 editor_options: 
-  chunk_output_type: inline
+  chunk_output_type: console
 ---
 
 ```{r setup-appendix-writer, include=FALSE}
@@ -107,47 +112,13 @@ append_to_appendix_tex(here("code/si_tex_docs/si.tex"))
 
 # Introduction
 
-**Since the 1970s, a persistent divergence between productivity growth
-and wage growth has emerged in the United States ( @hoffmann2020,
-@stansbury, @economicpolicyinstitute).** While labour productivity has
-continued to rise, the earnings of typical workers have increased far
-more slowly, leading to a substantial decoupling between the two trends.
-Economists cite various contributors to this phenomenon from human
-capital (@autor2014, @katz1992) to competition (@stansbury, @deb2022,
-@yeh2022, @azar2022, @autor2013a , @wilmers2018) to institutional and
-policy forces (@egger2019, @lee1999, @mishel2021, @barkai2020,
-@autor2016, @card2001).[^1] Though its causes are hotly debated, the
-fact itself is well-documented, especially for lower- and middle-income
-workers. [^2]
+**Since the 1970s, a persistent divergence between productivity growth and wage growth has emerged in the United States @hoffmann2020, @stansbury, @economicpolicyinstitute, @elsby2013.** While labour productivity has continued to rise, the earnings of typical workers have increased far more slowly, leading to a substantial decoupling between the two trends. Economists cite various contributors to this phenomenon from human capital @autor2014, @katz1992, @acemoglu2012, @autor2011 to competition @stansbury, @deb2022, @yeh2022, @azar2022, @wilmers2018 to institutional and policy forces @egger2019, @lee1999, @mishel2021, @barkai2020, @autor2016, @card2001, @bivens2013, @stansbury2020 .[^1] Though its causes are hotly debated, the fact itself is well-documented, especially for lower- and middle-income workers, contributing to what is often termed the "hollowing of the middle class" @komlos2018. [^2]
 
-[^1]: Summers and Stansbury (2018) argue that productivity growth still
-    exerts a positive influence on wages overall, but that institutional
-    and structural changes have weakened the link for large segments of
-    the workforce. They point to declining union density, erosion of the
-    minimum wage, globalization, and increased market concentration as
-    key factors that have shifted bargaining power away from workers and
-    reduced labour’s share of national income @autor2014. Furthermore,
-    additional evidence finds that this decoupling is far from a
-    universal phenomenon. Rather, decoupling applies almost strictly to
-    lower- and medium-wage earners, while already higher wages manage to
-    keep up (relatively) with productivity growth rates.
+[^1]: Summers & Stansbury 2018 argue that productivity growth still exerts a positive influence on wages overall, but that institutional and structural changes have weakened the link for large segments of the workforce (@summers2018 @stansbury). They point to declining union density, erosion of the minimum wage, globalization, and increased market concentration as key factors that have shifted bargaining power away from workers and reduced labour’s share of national income @autor2014. Furthermore, additional evidence finds that this decoupling is far from a universal phenomenon. Rather, decoupling applies almost strictly to lower- and medium-wage earners, while already higher wages manage to keep up (relatively) with productivity growth rates.
 
-[^2]: Though authors find that wage inequality growth has stagnated in
-    the last decade this is not a result of a "catch-up" effect of
-    lower- or middle-income earners with top income earners, but rather
-    wage growth at the bottom of the wage distribution @aeppli2022.
+[^2]: Though authors find that wage inequality growth has stagnated in the last decade this is not a result of a "catch-up" effect of lower- or middle-income earners with top income earners, but rather wage growth at the bottom of the wage distribution @aeppli2022. Additionally, further evidence indicates that metric choice can influence the ambiguity of earnings and wage inequality conclusions @parolin2025.
 
-**The direct consequences of this decoupling are clear.** Though
-households and individuals often have stakes in firm productivity by
-means other than wages, wages remain the most direct link between
-aggregate national productivity growth and local economic health.
-Therefore, aggregate productivity growth is not sufficient to secure
-broad-based improvements in living standards if the most direct link
-between productivity and livelihoods (wages) is weak. The benefits of
-economic growth have already accrued unevenly across communities in the
-United States. Economic history and industrial activity have
-heterogeneously impacted the development trajectories of US regions (
-@fee2025, @storper2009 ).
+**The direct consequences of this decoupling are clear.** Though households and individuals often have stakes in firm productivity by means other than wages, wages remain the most direct link between aggregate productivity growth and local economic health. Therefore, aggregate productivity growth is not sufficient to secure broad-based improvements in living standards if the most direct link between productivity and livelihoods is weak @mishel2021. Furthermore, in a context in which the benefits of economic growth have already accrued unevenly across communities in the United States by virtue of economic history and industrial concentration, allowing this pattern to continue could have adverse consequences for households and communities @bauluz, @rickard2020, @fee2025, @storper2009 @fallah2011 @benmelech.
 
 <!-- **Regardless of the distribution of wage growth across the country, its -->
 
@@ -165,134 +136,15 @@ heterogeneously impacted the development trajectories of US regions (
 
 <!-- could emerge. -->
 
-**A link that has been far less explored in this context is the
-spillover effect of local wages to local wealth-building and its effect
-on public goods.** Wage growth is an important contributor to local
-wealth-building, allowing households and communities to invest more in
-local public goods. Communities whose wages rise in line with
-productivity growth will likely reap the benefits of economic growth
-whereas those who do not, risk falling behind. This link is particularly
-important in the US given the structure of local public financing.
-Majority of local public services are funded via property taxes. This
-funding structure entrenches a mechanism for generating inequality of
-opportunity between diversely affluent regions of the country. Put
-plainly, given the structure of US public services, wherein they are
-funded largely through property taxes and thus tied to asset values,
-inequality in wealth-building can have significant effects for the
-quality of local public services.
+**A link that has been far less explored in this context is the spillover effect of local wages to local wealth-building and its effect on public goods.** Wage growth is an important contributor to local wealth-building, allowing households and communities to invest more in local public goods @boustan2013. Communities whose wages rise in line with productivity growth will likely reap the benefits of economic growth whereas those who do not, risk falling behind. This link is particularly important in the US given the structure of local public financing. Majority of local public services are funded via property taxes. This funding structure entrenches a mechanism for generating inequality of opportunity between diversely affluent regions of the country @manduca2025 @weir2021 @schechtl2024 @mettler2011 .[^3] Put plainly, given the structure of US public services, wherein they are tied to asset values, inequality in wealth-building can have significant effects for the quality of local public services. Furthermore, a sometimes lacking, or at best under-performing, federal equalisation systems perpetuates this structural force @beland2017 @biasi2023 @hoxby1998 @mccabe2019 @baker2016 .
 
-**Community well-being and public expenditure in the US is already
-characterised by a high degree of spatial heterogeneity.** Evidence of
-how income and wealth inequality perpetuate other forms of inequality
-(opportunity, health, infrastructure quality, and broader well-being) is
-steadily increasing (@chetty2016, @logan2012, @semuels2016,
-@Avancena2021, @flavin2009). @boustanEffectRisingIncome2013 find that
-greater income inequality leads to higher public expenditure across all
-public goods indicating that a presence of higher-earners in a local
-area contributes to higher levels of expenditure. Though this does not
-support an unambiguous denunciation of inequality in itself, it provides
-additional evidence for the fact that local incomes affect public
-expenditure raising the potential for "superstar" and "left behind"
-regions to emerge absent even income growth.
+[^3]: A burgeoning literature points to the role of racial segregation and its enduring legacy in perpetuating inequality in local economic health, wealth, and public service expenditure @avenancio-león2022 @trounstine2016 @trounstine2021 .
 
-(Manduca 2025, Feler & Senses 2017)
+**Community well-being and public expenditure in the US is already characterised by a high degree of spatial heterogeneity @manduca2025, @obrien2025, @feler2017 .** Evidence of how income inequality perpetuates other forms of inequality (opportunity, health, infrastructure quality, and broader well-being) is steadily increasing @chetty2016, @logan2012, @semuels2016, @Avancena2021, @flavin2009. @boustanEffectRisingIncome2013 find that greater income inequality leads to higher public expenditure across all public goods indicating that a presence of higher-earners in a local area contributes to higher levels of expenditure. Though this does not support an unambiguous denunciation of inequality in itself, it provides additional evidence for the fact that local incomes affect public expenditure raising the potential for "superstar" and "left behind" regions to emerge absent even income growth.
 
-**One public service that has particularly important ties to ensuring
-generational resilience to economic decline is education.** Public
-schools around the US are responsible for educating over 80% of
-school-age children. In 2019, governments around the US (including the
-federal government) spent a total of \$870 billion on public education,
-roughly \$17,013 per pupil (@nationalcenterforeducationstatistics2023) .
-However, the quality of services delivered varies widely across the
-country. In 2016, for example, the Connecticut State Department of
-Education reported that the town of Greenwich, one of the highest-income
-towns in the country, spent \$8,000 more per pupil than Bridgeport
-(\$21.9k versus \$13.7k per pupil), despite both towns being part of the
-same county, located less than 40 kilometers apart (@semuels2016), and
-competing in academic and extra-curricular activities.
+**One public service that has particularly important ties to ensuring generational resilience to economic decline is education.** Public schools around the US are responsible for educating over 80% of school-age children. In 2019, governments around the US (including the federal government) spent a total of \$870 billion on public education, roughly \$17,013 per pupil @nationalcenterforeducationstatistics2023. However, the quality of services delivered varies widely across the country @biolsi2022. Take Connecticut for example. In 2016, according to the Connecticut State Department of Education, the town of Greenwich town, one of the highest-income towns in the country, spent \$22,000 per pupil while Bridgeport, although only located 40Km away, spent \$14,000 @semuels2016.
 
-(Zheng & Graham, Biolsi 2022)
-
-**The quality of public education, especially at an early age, can have
-long-lasting consequences for personal and economic well-being over an
-individual's lifetime as well as generations following them
-(@alfonso2020).** Therefore, ensuring that local or regional economic
-decline does not disrupt or worsen the quality of education delivered is
-of paramount importance to ensure greater equality in the long-run. [^3]
-[^4] \[\^6\] Altogether, this evidence points to the value of
-identifying the extent to which expenditure on public education is
-reliant on local wage growth across the country.
-
-[^3]: Perhaps the most prominent and often-cited relationship between
-    education and extractive industries is through the lens of the
-    'resource curse.' The validity and empirical existence of a
-    'resource curse' has been tested since its conception with disparate
-    results [@ahlerup2020, @badeeb2017, @blanco2012, @borge2015,
-    @brunnschweiler2008, @cockx2014, @cockx2016, @deacon2011,
-    @dialga2022, @douglas2017, @haber, @menaldo2016, @ross2018,
-    @ross2015, @sincovich2018, @wiens2014]. The literature is divided
-    into two strands focusing on either political (the relationship
-    between resource wealth and governance) [@ross2015, @ross2015,
-    @wiens2014, @deacon2011] or economic (the relationship between
-    resource wealth and economic growth or human capital) resource
-    curses. Empirical investigation of the economic resource curse has
-    explored the effect of resource dependence on economic growth,
-    public health and education expenditure and outcomes, mainly at a
-    national level [@borge2015, @cockx2016, @douglas2017,
-    @sincovich2018]. In the case of education, the distinct outcome
-    measured is level of educational attainment, in other words, whether
-    the presence of a booming resource extraction economy provides
-    disincentives to education for young people. It is worth noting that
-    this literature has been repeatedly questioned on theoretical and
-    conceptual grounds as institutional context often dictates whether a
-    resource curse exists and empirical analyses seem to be very
-    sensitive to methodological choices [@ross2018, @ross2015,
-    @dialga2022]. Although awareness of this strand of literature is of
-    relevance to this work, the unresolved nature of the 'debate'
-    surrounding its existence requires caution if eventually utilised as
-    a theoretical framework for answering the research question.
-
-[^4]: @ahlerup2020 find that for 30 countries in Africa, the presence of
-    gold mines during adolescence have a significant effect on
-    educational attainment. @badeeb2017 investigates whether resource
-    dependence slows economic growth with no explicit mention of
-    education. @blanco2012 find that in Latin America, petroleum export
-    has a significant long-run negative relationships with human
-    capital. @borge2015 find support for the paradox of plenty
-    hypothesis in Norway - that higher local public revenue negatively
-    affects the efficiency of local public good provision.
-    @brunnschweiler2008 critically evaluate 'the empirical basis for the
-    so-called resource curse and find that, despite the topic's
-    popularity in economics and political science research, this
-    apparent paradox may be a red herring. The most commonly used
-    measure of “resource abundance” can be more usefully interpreted as
-    a proxy for “resource dependence”-endogenous to underlying
-    structural factors. In multiple estimations that combine resource
-    abundance and dependence, institutional, and constitutional
-    variables, we find that (i) resource abundance, constitutions, and
-    institutions determine resource dependence, (ii) resource dependence
-    does not affect growth, and (iii) resource abundance positively
-    affects growth and institutional quality.' @cockx2014 use a panel on
-    140 countries from 1995-2009 and find an inverse relationship
-    between resource dependence and and public health spending over
-    time. @cockx2016 investigate a panel of 140 countries from 1995-2009
-    to find an adverse effect of resource depdence on public education
-    expenditures relative to GDP. @dialga2022 find disparate results for
-    health and education controlling for institutional quality.
-    @douglas2017 "measure the effect of resource-sector dependence on
-    long-run income growth using the natural experiment of coal mining
-    in 409 Appalachian counties selected for homogeneity. Using a panel
-    data set (1970–2010), we find a one standard deviation increase in
-    resource dependence is associated with 0.5–1 percentage point
-    long-run and a 0.2 percentage point short-run decline in the annual
-    growth rate of per capita personal income. We also measure the
-    extent to which the resource curse operates through disincentives to
-    education, and find significant effects, but this “education
-    channel” explains less than 15 percent of the apparent curse.'
-    @haber focus on authoriarian regimes. @menaldo2016 argues again that
-    this is an institutions curse and not a resource curse issure.
-    @sincovich2018 provide a literature review of resource curse
-    investigations in the Australian context.
+**The quality of public education, especially at an early age, can have long-lasting consequences for personal and economic well-being over an individual's lifetime as well as generations following them @alfonso2020, @zheng2022@unicef .** Although only a small piece of the puzzle that determines quality public education, expenditure levels ensure adequate funding for facilities, teachers, administrators, and other services @baker2017 @baker2025 @jackson2016 . Furthermore, evidence suggests that progressive spending delivers efficiency gains in school performance @rauscher2022 . Therefore, ensuring that local or regional economic decline does not disrupt or worsen the quality of education delivered is of paramount importance to ensure greater equality in the long-run. Altogether, this evidence points to the value of identifying the extent to which expenditure on public education is reliant on local wage growth across the country.
 
 <!-- [^6]: One investigation assessed the dependence of local public revenues -->
 
@@ -322,140 +174,29 @@ reliant on local wage growth across the country.
 
 <!--     expenditure, even at the state level. -->
 
-**Expenditure numbers matter for education quality/outcomes.** (Baker
-2016, Jackson 2016),
+**This study therefore determines whether elasticities of public elementary education expenditure to local wage growth are non-zero.** If productivity gains translate unevenly into wages across regions, then the fiscal capacity of local governments may be shaped as much by institutional and structural conditions as by the distribution of aggregate economic growth. We investigate the following questions:
 
-**This study therefore determines whether elasticities of public
-elementary education expenditure to local wage growth are non-zero.** If
-productivity gains translate unevenly into wages across industries and
-regions, then the fiscal capacity of local governments may be shaped as
-much by institutional and structural conditions as by aggregate economic
-growth. We answer the following questions:
+*RQ1:* Do local wage gains affect public education expenditure in levels?
 
-*RQ1:* Do local wage gains affect public education expenditure?
+*RQ2:* If so, is this relationship constant across commuting zones? What sources of heterogeneity mediate this relationship?
 
-*RQ2:* If so, is this relationship constant across commuting zones? What
-sources of heterogeneity mediate this relationship?
-
-*RQ3:* In light of reforms to intergovernmental education funding to
-alleviate uneven educational expenditure, do intergovernmental transfers
-alleviate wealth-driven inequalities in public education expenditure?
-
-The elasticity of public education expenditure to local wages has
-ambiguous interpretation that depend on various possible fiscal
-priorities (wording?) and possible substitution effects. A positive
-elasticity would suggest that higher wages increase household savings
-rates and willingness to invest in local public goods, consistent with
-standard wealth effects. However, this relationship raises concerns
-about possible divergence wherein wage growth in high-earning regions
-could amplify educational investment, potentially widening spatial
-inequality in public education quality.
-
-Conversely, a negative elasticity could emerge through several channels.
-Any response in needs-based intergovernmental revenue mechanisms may
-partially offset local fiscal capacity, creating an inverse relationship
-between wages and education spending. Alternatively, in more affluent
-communities, rising wages may enable households to substitute towards
-private education, crowding out or reducing demand for public
-expenditure. Furthermore, such a relationship could provide additional
-empirical support for a "resource curse" dynamic wherein local
-communities reprioritise fiscal windfalls toward government expenditure
-other than in public education. (Cite Texas Shale Boom Paper).
-
-In either case, the consequence of a non-zero elasticity, whether
-positive or negative, has potential adverse consequences for spatial
-inequality of public education delivery by either boosting public
-education in affluent areas or dampening investment in less affluent
-areas.
-
-Finally, a near-zero elasticity either has a modelling or
-policy-relevant implication. On the modelling side, a near-zero
-elasticity could indicate either that wage-public goods relationship
-operates on a longer time scale than that examined in this work. This
-would indicate the need for an alternative identification strategy.
-Alternatively, a near-zero elasticity could indicate that local public
-education systems are effectively insulated from local wage changes
-partly because intergovernmental transfers successfully equalise funding
-across regions.
+*RQ3:* In light of recent reforms to intergovernmental education funding aimed at reducing disparities in educational expenditure, do intergovernmental transfers mitigate wealth-driven inequalities in public education spending?
 
 ## Theoretical Motivation and Empirical Approach
 
-This work interrogates the elasticity of public education expenditure to
-uneven economic and wage growth across US commuting zones.
+Any study of the linkage between two or more local socio-economic outcomes presents considerable endogeneity challenges. In the context of this study, wages and public education expenditure are undoubtedly endogenous. Higher-income families may self-select into districts with greater education spending, confounding causal inference. Lower-income families likely struggle financially to make similar mobility decisions. Local education contributes to the quality of local human capital impacting wages and potentially preferences for education.
 
-<!-- \textcolor{violet}{We leverage the structure of public finance, where local revenues are drawn primarily from property taxation, to construct an instrumental variable design via a shift-share instrument.} -->
+Therefore, we approach causal identification by instrumenting local wages using a shift-share instrumental variable design. More precisely, to interrogate the elasticity of public education expenditure to wages across US commuting zones, we construct a shift-share instrument that combines fixed local industry employment shares with national industry-level changes real value added using data from the US Bureau of Labor Statistics and Bureau of Economic Analysis. This instrument generates plausibly exogenous local variation by exploiting how different regions are differentially exposed to common national trends, while abstracting from endogenous local dynamics. It is particularly well suited in this setting, since the local tax base, and thus education spending, likely depends on industries that are unevenly distributed across regions but subject to similar industry-specific wage shocks. Finally, we use this instrument to identify the effect of wage shocks on local public education expenditure as reported by the US Census Bureau's Annual Survey of State and Local Government Finances.
 
-We construct a shift-share (Bartik) instrument that combines fixed local
-industry employment shares with national industry-level changes in wages
-and real value added. Following the established literature [@bartik1991;
-@goldsmith-pinkham2020; @ferri2022], we fix local employment shares to a
-baseline period and interact them with national growth rates in industry
-real value added. Using data from the U.S. Bureau of Labor Statistics
-and Bureau of Economic Analysis, we construct commuting-zone-level
-Bartik instruments based on both outcomes. This provides a credible and
-transparent identification strategy that links macroeconomic shocks to
-local education funding.
-
-This strategy generates plausibly exogenous local variation by
-exploiting how different regions are differentially exposed to common
-national trends, while abstracting from endogenous local dynamics. It is
-particularly well suited in this setting, since the local tax base, and
-thus education spending, depends heavily on industries that are unevenly
-distributed across regions but likely subject to similar
-industry-specific wage shocks. Finally, we use this instrument to
-identify the effect of wage shocks on local public education expenditure
-as reported in a panel dataset from the Annual Survey of State and Local
-Government Finances.
-
-The outlined instrumental variable strategy tackles the central
-endogeneity challenge present in any study of the linkage between two or
-more local socio-economic outcomes. In the context of this study, wages
-and public education expenditure are undoubtedly endogenous, since
-higher-income families may self-select into districts with greater
-education spending, confounding causal inference. Therefore, we
-instrument local wages with the constructed shift-share instruments to
-circumvent this challenge allowing for plausibly causal inference.
-
-Given the substantial heterogeneity across U.S. states arising both from
-structural sources (such as differences in tax systems, regulatory
-environments, and legislative institutions) and from evolved
-characteristics (including industrial composition, income levels,
-inequality, and broader measures of economic diversity) the scope for
-identifying a single, well-defined national average treatment effect is
-inherently limited. We provide an initial benchmark using a pooled
-estimation to establish baseline relationships between wages, GDP, and
-asset values that appear to generalize reasonably across the national
-economy, before investigating the heterogeneity that these pooled
-estimates mask in our main analysis. We further advance this analysis
-via state-by-state and industry-by-industry estimations and group
-commuting zones by their historic growth trajectories to improve
-comparability of treatment and control groups in our instrumental
-variable design.
-<!-- \textcolor{violet}{We then provide an analysis of the relationship between diverse treatment effects and commuting zone characteristics. } -->
+Given the substantial heterogeneity across U.S. states arising both from structural sources (such as differences in tax systems, regulatory environments, and legislative institutions) and from evolved characteristics (including industrial composition, income levels, inequality, and broader measures of economic diversity) the scope for identifying a policy-relevant single national average treatment effect is inherently limited. Therefore, we proceed in two steps. First, we provide an initial benchmark using a pooled estimation to establish a baseline relationship between wages and education expenditure that generalizes reasonably across the national economy. Second, we investigate the regional and industrial heterogeneity that these pooled estimates mask via a state-by-state estimation, industry-by-industry estimation, and grouping commuting zones by their historic wage and GDP growth trajectories to improve comparability of treatment and control groups in our instrumental variable design. In the latter heterogeneity analysis, we construct commuting zone growth rates as idiosyncratic variables absent state and national-level growth rates, understanding that *relative* growth rates are of particular importance in a landscape where local economies determine the actual *value* of wage levels.
 
 ## Detailed results
 
-1.  Public education expenditure is not agnostic to local economic
-    conditions. We establish a strong causal link between public
-    education expenditure and local wages using a shift-share
-    instrumental variable estimation, and subsequently for specific
-    industries and states and growth cohorts. The estimated treatment
-    effect of local wages on public education expenditure varies in
-    magnitude, and statistical significance across states.
-2.  Estimating the instrumental variable model separately for each state
-    reveals substantial heterogeneity in the relationship between wages
-    and education expenditure. Less than 10 of the 40 states analysed in
-    this study show persistent causal relationships between wages and
-    education expenditure, indicating that these carry the weight of
-    national-level identification.
-3.  \textcolor{violet}{Industry-level estimation result.} TBA
+1.  Public education expenditure is not agnostic to local economic conditions. We establish a strong positive causal link between public education expenditure and local wages, wherein a 10% increase in local wages drives a 2.2% increase in public elementary education expenditure, with a long-run increase of 4.6%.
+2.  Estimating the instrumental variable model separately for each state reveals substantial heterogeneity in the relationship between wages and education expenditure. Only a third of the 40 states analysed in this study show persistent causal relationships between wages and education expenditure, indicating that these carry the weight of national-level identification. Majority of the states in which we identify a statistically significant effect rely on an above-average share of education funding coming from local sources rather than intergovernmental transfers. Across these states the wage elasticity varies between 2-10% increases in response to a 10% increase in local wages, with Colorado, Florida, and South Dakota exhibiting highest wage elasticities.
+3.  Furthermore, we find that this elasticity is strongest (weakest) in magnitude and statsitical significance for commuting zones whose wage growth rates are low (high) relative to those of other regions, indicating the potential risk for depressed education expenditure in regions where wages are stagnating or potentially declining.
 
-## Roadmap
-
-In the sections that follow, we outline in @sec-data the data to be used
-in the analysis; @sec-methods the methodological approach with
-accompanying results; @sec-discussion and @sec-conclusion provide a
-discussion and concluding remarks.
+In the sections that follow, we outline the various data sources used in @sec-data; provide a detailed overview of our shift-share construction and methodological approach @sec-methods with accompanying results; and conclude with a discussion of policy implications in @sec-discussion.
 
 ```{r, echo = FALSE, message = FALSE, cache = FALSE, include = FALSE, eval = TRUE}
 
@@ -469,6 +210,7 @@ library(quantreg)
 library(purrr)
 library(zoo)
 library(tidycensus)
+library(plm)
 library(here)
 library(viridis)
 library(viridisLite)
@@ -576,104 +318,27 @@ source(here("code/source_code/pull_data.R"))
 
 # Data {#sec-data}
 
-We compile a panel dataset of the following indicators across 636
-commuting zones (CZ) in 41 US states between 2001-2021.
+We compile a panel dataset of the following indicators across 636 commuting zones (CZ) in 40 US states annually between 2001-2021.
 
-**Expenditure and Revenue:** This work employs Willamette University's
-Annual Government Finance Database at the commuting zone (CZ) level.
-This resource is a harmonised repository of the data collected annually
-as part of the US Census Bureau's Annual Survey of State & Local
-Government Finances, the 'only comprehensive source of information on
-the finances of local governments in the United States' (@pierson). The
-data includes commuting-zone level revenue and expenditure on public
-education including disaggregated values by revenue source (federal,
-state, or other intergovernmental revenue) and expenditure item
-(lunches, wages, debt). All values are reported in real US dollars. The
-data for property taxes collected used in the regressions below also
-come from this dataset. Expenditure on vocational training and from
-Educational Service Agencies (ESAs) are also sourced from this dataset.
-We aggregate school district measures up to the commuting zone-level to
-ensure the availability of adequate control and treatment variables.
-[^5]
+**Expenditure and Revenue:** This work relies on a harmonised repository from Willamette University of the data collected annually as part of the US Census Bureau's Annual Survey of State & Local Government Finances (SLGF). The SLGF is the 'only comprehensive source of information on the finances of local governments in the United States' @pierson. The data includes county-level revenue, property taxes, and expenditure on public education including disaggregated values by revenue source (federal, state, or other intergovernmental revenue) and expenditure item (lunches, wages, debt). All values are reported in real US dollars. We aggregate school district measures up to the commuting zone-level to ensure the availability of adequate control and treatment variables. We choose to conduct the analysis on the commuting zone level because it is a more accurate picture of a local labor market area @carpenterWhenUseCommuting2022. [^4] Our main outcome variable is per pupil spending on elementary education.
 
-[^5]: The database is provided for six different levels of government:
-    state, county, municipal, township, special district, and school
-    district. Reporting is only mandated in Census years (every five
-    years), and even then missing data remains a challenge. This means
-    that data provided at any other level of government suffers from
-    significant levels of missing data, with a high level of selection
-    bias correlated with administrative capacity. However, strengthened
-    by a partnership with the National Center for Education Statistics,
-    observations for US school districts exhibit near-complete coverage
-    between 1997-2021 (@pierson). We choose to conduct the analysis on
-    the commuting zone level because (1) it is a more accurate picture
-    of a local labor market area (@carpenterWhenUseCommuting2022) and
-    (2) a lack of availability of control variables at a school district
-    level.
+[^4]: The database is provided for six different levels of government: state, county, municipal, township, special district, and school district. Reporting is only mandated in Census years (every five years), and even then missing data remains a challenge. This means that data provided at any other level of government suffers from significant levels of missing data, with a high level of selection bias correlated with administrative capacity. However, strengthened by a partnership with the National Center for Education Statistics, observations for US school districts exhibit near-complete coverage between 1997-2021 (@pierson).
 
-Thus, this dataset provides estimates in \$USD on total public school
-revenue disaggregated by source (federal, state, local intergovernmental
-versus own local sources) and expenditure disaggregated by item (level
-of schooling, teacher salaries, debt, etc.).
+**Population controls:** We source commuting-zone level population statistics by aggregating data from county-level populations statistics from the US Census Bureau
 
-**Population controls:** US Census Bureau.
+**Local GDP:** We gather local GDP control variables by aggregating county-level GDP data from the Bureau of Economic Analysis (BEA). This BEA data is only available after 2001, defining the lower limit of our panel's time dimension. We primarily rely on private industry GDP as a control variable given a large remaining portion of GDP is government expenditure which includes public education expenditure.
 
-**GDP Controls:** We gather GDP control variables from the Bureau of
-Economic Analysis (BEA). This BEA data is only available after 2001,
-therefore the panel reported and used below is restricted from
-2001-2021. The controls used in the below are commuting zone-level
-private industry GDP. We decide to use private industry GDP as a control
-variable given a large remaining portion of GDP is government
-expenditure which includes public education expenditure.
+**Property Prices:** The US Federal Housing Finance Agency maintains an annual county-level Housing Price Index (HPI) metric, a geographically linked measure of the movement of single-family house prices. The HPI is a weighted, repeat-sales index, measuring average price changes in repeat sales or refinancings on the same properties. This information is obtained by reviewing repeat mortgage transactions on single-family properties whose mortgages have been purchased or securitized by Fannie Mae or Freddie Mac (two US government-sponsored enterprises that guarantee most US mortgages) @usfederalhousingfinanceagency. We aggregate to the commuting zone level via a population-weighted mean.
 
-**Property Prices:** The US Federal Housing Finance Agency provides
-geographically linked data on single-family house prices called the
-Housing Price Index. HPI is a broad measure of the movement of
-single-family house prices. The FHFA HPI is a weighted, repeat-sales
-index, meaning that it measures average price changes in repeat sales or
-refinancings on the same properties. This information is obtained by
-reviewing repeat mortgage transactions on single-family properties whose
-mortgages have been purchased or securitized by Fannie Mae or Freddie
-Mac (two US government-sponsored enterprises that guarantee most US
-mortgages) since January 1975
-\href{https://www.fhfa.gov/data/hpi}{(Source)}. It is reported at the
-county level at an annual frequency. We aggregate to the commuting zone
-level via a mean.
+**Race Controls:** The National Institute of Health National Cancer Institute's Surveillance, Epidemiology, and End Results (SEER) Program provides annual estimates of total White, Black, American Indian/Alaska Native, Asian/Pacific Islander populations at the county level, optionally by Hispanic or non-Hispanic origin @nationalcancerinstitutedccpssurveillanceresearchprogram . Though the US Census Bureau provides county-level estimates of racial make-up of local areas in the American Community Survey, this data is unavailable prior to 2009 and is considered less accurate than those provided by the National Cancer Institute's SEER Database.
 
-**Race Controls:** The National Institute of Health National Cancer
-Institute's Surveillance, Epidemiology, and End Results (SEER) Program
-provides annual estimates of total White, Black, American Indian/Alaska
-Native, Asian/Pacific Islander populations at the county level,
-optionally by Hispanic or non-Hispanic origin. Though the US Census
-Bureau provides county-level estimates of racial make-up of local areas
-in the American Community Survey, this data is unavailable prior to 2009
-and is considered less accurate than those provided by the National
-Cancer Institute's SEER Database.
+**Adequate Education Spending**: The University of Wisconsin's School Finance Indicators Database provides provides detailed data on School Funding Adequacy, measured as the dollar estimate needed per pupil to achieve U.S. average test scores @baker.
 
-This data aggregation results in a complete and balanced panel of 636 US
-commuting zones across 40 states between 2001-2021. [^6] [^7] All data
-used is reported annually at the commuting zone level. [^8] Therefore,
-no time-invariant variables are included (apart from an indicator of the
-state a CZ is in).
+This data aggregation results in a complete and balanced panel of 636 US commuting zones across 40 states between 2001-2021. [^5] All data used is reported annually at the commuting zone level. [^6] Therefore, apart from an indicator of a commuting zone's state, all variables are time-variant.
 
-[^6]: The reason 13% of all US CZs are missing from the dataset is
-    because of (1) the exclusion criteria already outlined; (2) Hawaii
-    and Alaska have been excluded due to the methodological challenge of
-    incorporating their school districts into spatial econometric work;
-    and (3) Connecticut, Maryland, North Carolina, and Virginia have
-    been excluded due to unconventional or incomplete public school
-    district reporting.
+[^5]: 20% of US states are missing from the dataset because (1) we impose an exclusion restriction wherein any commuting zone reporting more than five \$0 values for property taxes collected is excluded due to likely measurement error and (2) Connecticut, Maryland, North Carolina, and Virginia have been excluded due to unconventional or incomplete public school district reporting.
 
-[^7]: Given the work's intent to rely on data on property taxes
-    collected, any CZ that reports more than five 0 values for property
-    taxes collected is excluded.
-
-[^8]: In line with similar work on US economic geography, commuting
-    zones were chosen as the unit of analysis as they are a far less
-    arbitrary and more accurate representation of local labour market
-    areas/economies
-    (\href{https://www.ddorn.net/data.htm\#Local\%20Labor\%20Market\%20Geography}{David Dorn's Resource Page})
-    (\href{https://www.nature.com/articles/s41597-024-03829-5]}{Fowler et al. 2024}).
+[^6]: In line with similar work on US economic geography, commuting zones were chosen as the unit of analysis as they are a far less arbitrary and more accurate representation of local labour market areas/economies (\href{https://www.ddorn.net/data.htm\#Local\%20Labor\%20Market\%20Geography}{David Dorn's Resource Page}) (\href{https://www.nature.com/articles/s41597-024-03829-5]}{Fowler et al. 2024}).
 
 ```{r, echo = FALSE, message = FALSE, warning = FALSE, fig.height = 10, cache = TRUE}
 
@@ -692,69 +357,75 @@ is.pbalanced(mines_cz, index = c("cz_id", "year"))
 
 ```
 
-\autoref{tbl_desc_stats} desc reports summary statistics across relevant
-variables. All (dollar) values are reported in (real 2017-chained)
-thousands except for the House Price Index.
+\autoref{tbl_desc_stats} reports summary statistics across relevant variables. All (dollar) values are reported in (real 2017-chained) thousands except for the House Price Index. \autoref{tab:tbl_order_of_integration} represents the order of integration of relevant variables calculated using a unit root test designed for heterogeneous panels @im2003. All variables are integrated I(0) indicating minimal concern for non-stationarity except in the case of enrollment and population numbers.
 
 ```{r, results = 'asis', message = FALSE}
+# Create pdata for order of integration data:
+pdata_mines_cz <- pdata.frame(arrange(mines_cz, unit, year), index = c("unit", "year"))
+pdata_mines_cz_diff <- pdata.frame(arrange(filter(mines_cz, year != 2001), unit, year), index = c("unit", "year"))
+log_transform = TRUE
 
-# # Function with better error handling
-# test_panel_stationarity <- function(pdata, var_name, test_type = "ips") {
-#   tryCatch({
-#     result <- purtest(pdata[[var_name]], 
-#                      test = test_type,
-#                      exo = "intercept",  # use "trend" if variables have trends
-#                      lags = "AIC",
-#                      pmax = 4)
-#     
-#     return(list(
-#       statistic = result$statistic$statistic,
-#       p_value = result$statistic$p.value,
-#       is_stationary = result$statistic$p.value < 0.05
-#     ))
-#   }, error = function(e) {
-#     return(list(statistic = NA, p_value = NA, is_stationary = NA))
-#   })
-# }
-# 
-# # Determine integration order
-# vars_to_test <- c("Enrollment", "pop_total", "real_Elem_Educ_Total_Exp_pp", 
-#                   "real_Property_Tax_pp", "real_Total_IG_Revenue_pp",
-#                   "real_Total_State_IG_Revenue_pp", "real_gdp_total_pc", 
-#                   "real_gdp_priv_ind_pc", "hpi", "pct_black", 
-#                   "pct_white", "pct_hispanic")
-# 
-# # Test levels
-# level_results <- lapply(vars_to_test, function(v) {
-#   test_panel_stationarity(mines_cz, v)
-# })
-# names(level_results) <- vars_to_test
-# 
-# # For variables non-stationary in levels, test first differences
-# integration_orders <- sapply(vars_to_test, function(v) {
-#   if (level_results[[v]]$is_stationary) {
-#     return("I(0)")
-#   } else {
-#     # Test first difference
-#     pdata[[paste0("d_", v)]] <- diff(pdata[[v]])
-#     diff_test <- test_panel_stationarity(pdata, paste0("d_", v))
-#     
-#     if (diff_test$is_stationary) {
-#       return("I(1)")
-#     } else {
-#       return("I(2)")  # or test second difference if needed
-#     }
-#   }
-# })
-# 
-# # Display results
-# results_df <- data.frame(
-#   Variable = names(integration_orders),
-#   Integration_Order = integration_orders,
-#   Level_p_value = sapply(level_results, function(x) round(x$p_value, 3))
-# )
-# 
-# print(results_df)
+# Function for testing stationarity
+test_panel_stationarity <- function(pdata, var_name, exog = "intercept", test_type = "ips") {
+  #print(var_name)
+  if(var_name == "hpi"){
+    pdata <- pdata %>% group_by(unit) %>% filter(!all(is.na(hpi))) %>% ungroup
+  }
+    result <- purtest(pdata[[var_name]],
+                     test = test_type,
+                     exo = exog,  # use "trend" if variables have trends
+                     lags = "AIC",
+                     pmax = 4)
+    #print(result)
+
+    return(list(
+      statistic = result$statistic$statistic,
+      p_value = result$statistic$p.value,
+      is_stationary = result$statistic$p.value < 0.05
+    ))
+}
+
+# Determine integration order
+vars_to_test <- c("Enrollment", "pop_total", "real_Elem_Educ_Total_Exp_pp",
+                  "real_Property_Tax_pp", "real_Total_IG_Revenue_pp",
+                  "real_Total_State_IG_Revenue_pp", "real_gdp_total_pc",
+                  "real_gdp_priv_ind_pc")#, "hpi")
+if(log_transform){
+  vars_to_test <- paste0("log_", vars_to_test)
+}
+
+# Test levels
+level_results <- lapply(vars_to_test, function(v) {
+  test_panel_stationarity(pdata_mines_cz, v)
+})
+names(level_results) <- vars_to_test
+
+integration_orders <- sapply(vars_to_test, function(v) {
+  if (level_results[[v]]$is_stationary) {
+    return(list(order = "I(0)", diff_p_value = ""))
+  } else {
+    # Test first difference
+    diff_test <- test_panel_stationarity(pdata_mines_cz_diff, paste0("diff_", v), exo = "intercept")
+    if (diff_test$is_stationary) {
+      return(list(order = "I(1)", diff_p_value = round(diff_test$p_value, 4)))
+    } else {
+      # # Test second difference if needed
+      # # Assuming you have second differences with prefix "diff2_"
+      # diff2_test <- test_panel_stationarity(pdata_mines_cz_diff2, paste0("diff2_", v), exo = "intercept")
+      # return(list(order = "I(2)", diff_p_value = round(diff2_test$p_value, 3)))
+      return()
+    }
+  }
+}, simplify = FALSE)
+
+# Display results with cleaner structure
+results_df <- tibble(
+  Variable = names(integration_orders),
+  `Order of Integration` = sapply(integration_orders, function(x) x$order),
+  `I(0) test p-value` = sapply(level_results, function(x) ifelse(round(x$p_value, 4) == 0, "<0.0001",  round(x$p_value, 3))),
+  `I(1) test p-value` = sapply(integration_orders, function(x) ifelse(x$diff_p_value == 0, "<0.0001", ""))
+)
+
 # Variables of interest for descriptive statistics
 vars <- c("Property_Tax", "Total_IG_Revenue", "Total_Fed_IG_Revenue", "Total_State_IG_Revenue", "Total_Educ_Total_Exp", "Elem_Educ_Total_Exp") # Total_Revenu
 
@@ -794,6 +465,25 @@ mines_cz %>%
          #"GDP - Oil, gas, mining",
          #"Active Coal Mines",
          #"Coal Produced (k short tons)"))
+
+results_df %>% 
+  mutate(Variable = case_when(Variable == "log_Enrollment" ~ "Enrollment",
+         Variable == "log_pop_total" ~ "Population",
+         Variable == "log_real_Elem_Educ_Total_Exp_pp" ~ "Elementary Expenditure per pupil",
+         Variable == "log_real_Property_Tax_pp" ~ "Property Tax per pupil",
+         Variable == "log_real_Total_IG_Revenue_pp" ~ "Intergovernmental (IG) Revenue per pupil", 
+         Variable == "log_real_Total_State_IG_Revenue_pp" ~ "State IG Revenue per pupil",
+         Variable == "log_real_gdp_total_pc" ~ "GDP per capita",
+         Variable == "log_real_gdp_priv_ind_pc" ~ "GDP pc - Private Industry")) %>% 
+   kable(.,format = ifelse(latex_tables, "latex", "simple"),
+        caption = "Order of Integration",
+        booktabs = TRUE,  # This is key for stargazer-like lines
+        align = c("l", "c", "c", "c"),  # left, center, center, center
+        col.names = c("Variable", "Order of Integration", "I(0) test p-value", "I(1) test p-value"), label = "tbl_order_of_integration") %>%
+  kable_styling(full_width = FALSE) %>% 
+  footnote(general = "Order of integration determined using the Im-Pesaran-Shin (IPS) panel unit root test with intercept. Lag length selected via AIC with maximum of 4 lags. The null hypothesis is non-stationarity; rejection at the 5% level indicates stationarity. I(0) denotes stationarity in levels and I(1) denotes stationarity in first differences. All variables are log-transformed prior to testing to account for heteroskedasticity.",
+           footnote_as_chunk = TRUE,
+           threeparttable = TRUE)
 
 
 ```
@@ -936,7 +626,9 @@ adequ <- read_xlsx(here('data/raw/school_adequacy_indicators/StateIndicatorsData
 
 ```
 
-```{r, echo = FALSE}
+Figure 1 demonstrates the spread of elementary education expenditure per pupil by commuting zone, grouped by state. Each state's population-weighted mean expenditure per pupil is represented in black. There is considerable within-state variation in per-pupil expenditure levels. Notably, Texas, Montana, and Idaho have commuting zones that spend nearly twice as much as other zones in the same state. Furthermore, the mean level of expenditure is nearly four times as high in the highest-spending state (New York) as in the lowest-spending state, Idaho. We additionally display these values in relation to the estimated "adequate" level of expenditure required for students to achieve U.S. average test scores, represented by the green and red arrows. Majority of states fall short of the deemed adequate expenditure value. Mississippi boasts the greatest shortfall in spending while Wyoming boasts the greatest overshoot in spending. Figure 1 demonstrates the considerable within state variability in spending rates as well as between state variation in levels and student needs.
+
+```{r, echo = FALSE, fig.height = 7, fig.width = 8, fig.cap = "Per Pupil Education Expenditure"}
 
 cz_mean_test <- mines_cz %>% 
   group_by(unit, state) %>% 
@@ -1007,9 +699,133 @@ ggsave(here("output/per_pupil_spending_plot.png"), width = 12, height = 8)
   
 ```
 
-![Wages and Productivity](../output/wage_trends_plot.png)
+Figure 2 demonstrates the trajectories of local wages from an initial level in 2001, demonstrating, the diverging wage growth trajectories of commuting zones in our sample. Blue commuting zones represents those exhibiting relatively high wage growth trajectories as deemed by the calculation in @sec-growthrates. The black dashed line represents the annual national wage growth rate.
+
+![Wages and Productivity](../output/wage_trends_plot.png){#fig-wages fig-cap="Wages and Productivity over Time"}
 
 # Methods {#sec-methods}
+
+## Identification Strategy
+
+We are centrally interested in the effect of changes in local wages on public education expenditure where there is an evident endogeneity concern between public education expenditure and wage. First, there is a likely attracting factor of high levels of education expenditure for higher-income families. Second, absent migration, education systems provision local labour markets with individuals with diverse human capital.
+
+\begin{figure}[H]
+\centering
+\caption{Instrumental Variable Path Diagram}
+\begin{tikzpicture}
+% nodes %
+\node[rectangle] (z) at (0,0) {Instrument};
+\node (t) at (4,0) {Local Wages};
+\node (y) at (8,0) {Education Expenditure};
+\node (u) at (6,-2) {Omitted variable};
+
+% edges %
+\draw[->, line width=1] (z) -- (t);
+\draw[->, line width=1] (t) -- (y);
+\draw[->, line width=1, violet, dashed] (u) -- (t);
+\draw[->, line width=1, violet, dashed] (u) -- (y);
+\draw[->, line width=1, red, bend right=40, dashed] (y) to (t);
+\end{tikzpicture}
+\label{fig:iv-approach}
+\end{figure}
+
+### Shift-share Instrument
+
+Therefore, we adopt a causal identification strategy via a shift-share instrument. Shift-share or *Bartik* instruments have gained popularity in empirical work as a method of handling endogeneity issues in panel data (@ferri2022, @goldsmith-pinkham2020, @bartik1991).[^7] Such instruments combine time-variant, unit-invariant changes in aggregate economic variables (i.e., national changes in industry value added levels) with time-invariant, unit-variant shares in exposure to these macro-level changes (i.e., local shares of employment in particular industries). This decomposition of local-level changes delocalises variation over space and time. In doing so, it provides a defensible strategy for ‘de-endogenising’ the treatment, as local exposure is predetermined with respect to contemporaneous shocks. Moreover, by construction, the approach enables the examination of how macro-level phenomena propagate to and affect local units, as it generates local shocks that are driven by national industry trends weighted but the community exposure to this industries.[^8]
+
+[^7]: Autor et al. use a shift-share instrument to assess the effect of Chinese import competition on manufacturing employment in US commuting zones (@autor2013). As an extension, @feler2017 use a similar shift-share instrument to assess the effect of the same shock on the size of local government. @baccini2021 employ a shift-share instrument for manufacturing layoffs to tease out the effect of a decline in manufacturing on both economically motivated and racial identity voting patterns in the US.
+
+[^8]: An additional popular indicator for modelling industrial shocks is *oil price* as values are often assumed to be exogenous to local and even national conditions (@scheer2022). Third, various indicators for measuring *deindustrialisation* have been proposed including the manufacturing share of employment, value added, and GDP @tregenna2009, @tregenna2020. Finally, in rare instances, exogeneity can be secured due to *geographical, climatological, or geological factors*. For example, @borge2015 obtain an exogenous measure of local revenue by "instrumenting the variation in hydropower revenue, and thus total revenue, by topology, average precipitation and meters of river in steep terrain." Certain authors have argued that the fact that the location of hydrocarbon deposits is dictated by geomorphological processes provides a plausible argument for exogeneity @esposito2021, @chen2022.
+
+In the context of this work, we construct the instrument by interacting commuting-zone level industrial employment shares held constant at a base period with national real value added growth by industry. The literature on Bartik instruments allows for an argument of plausible exogeneity via various channels. First, authors argue that local industry shares are exogenous by imposing that shares be fixed to a particular base year and are therefore unable to adapt to changes in national-level growth rates. Such a shift-share instrument is designed as in @eq-ref-bartik.
+
+$$
+Z_{it} = \sum_{j=1}^{k} S_{ij\tau}G_{njt}
+$$ {#eq-ref-bartik}
+
+where $S_{ij\tau}$ is the local share of unit $i$'s economy (measured using metrics like employment, wages, revenue) in industry $j$ at a fixed base year $\tau$ and $G_{njt}$ is the growth rate of industry $j$ at a national level $n$ at time $t$.
+
+Alternatively, authors may argue that the claim of exogeneity in the national-level growth rates is unlikely to be violated even when allowing the local shares to vary over time. This approach is likely to come at significant expense to instrument exogeneity. It is constructed as follows:
+
+$$
+Z_{it} = \sum_{j=1}^{k} S_{ijt}G_{njt}
+$$
+
+Finally, authors might be concerned about the implausible exogeneity of both shares and national-level growth rates in which case they construct the instrument as in @eq-ref-bartik-2 where the local shares are fixed at a common base year and industry-specific growth rates $G$ are derived from data on other similar regions $o$ rather than national-level changes that are inherently comprised of local-level shifts. This approach likely comes at significant expense to instrument relevance.
+
+$$
+Z_{it} = \sum_{j=1}^{k} S_{0jt}G_{ojt}
+$$ {#eq-ref-bartik-2}
+
+Finally, the authors can make an additional design choice about whether the effect of these instruments should be assumed common to an aggregate local-level wage growth indicator or allowed to vary by industry. In other words, whether to construct the first-stage relationship of the 2SLS as...:
+
+$$
+X_{it} = \alpha_i + \beta\sum_{j=1}^{k}S_{ijt}G_{njt} + \epsilon_{it}
+$$
+
+...or...:
+
+$$
+X_{it} = \alpha_i + \sum_{j=1}^{k}\beta_{j}S_{j}G_{jt} + \epsilon_{it}
+$$
+
+We employ the formulation in @eq-ref-bartik, assuming that base-period local industry shares and time-varying national rates are exogenous to local outcomes and construct the former of the first-stage relationship assuming a common $\beta$ to the sum of these shares.
+
+Using data from the Bureau of Economic Analysis, we construct a shift-share Bartik instrument at the commuting zone level using local employment shares by industry and national changes in industry-specific real value added represented in @eq-bartik. $G_{njt}$ represents national-level changes in value added in industry $j$ in time $t$ and $\frac{N_{ij\tau}}{N_{i\tau}}$ represents the 'sensitivity' of a CZ to these national shocks proxied by an initial share of local employment in industry $j$ in a baseline time period $\tau$. The product of these two values defines the shift-share indicator $\tilde{Z}_{i,t,s}$. In order to construct the share portion, we compute the total local share of employment in a particular industry $j$. Due to challenges with missing data, we compute an average share across 2001-2005 as our 'base year'.
+
+We compute the relevant shift-share instrument across 19 two-digit NAICS industrial categories listed in \autoref{tbl_naics_codes}. Given industry-level disaggregation of local employment data requires data suppression for anonymity reasons, Figure 2 displays the data coverage of our commuting zone level shift-share instruments. Given the high degree of missingness in the 3-digit categorisation we proceed with the 2-digit NAICS codes.
+
+In the Appendices, we provide an additional estimation using a wage-based shift-share instrument constructed using data from the US Bureau of Labor Statistics' Quarterly Census of Employment and Wages (QCEW). This shift-share instrument is constructed as described above using industry-level changes in real wages. Concerns about endogeneity between the instrument and outcome variable are greater using this shift-share instrument and is therefore excluded from the main text. \footnote{We explore the sensitivity of results to the choice of base period
+    $\tau$ by constructing the instrument for various base periods as
+    well as a rolling window.}
+
+$$
+    \tilde{Z}_{it} = \sum_{j=1}^{k}G_{njt} *  \frac{N_{ij\tau}}{N_{i\tau}} 
+$$ {#eq-bartik}
+
+### Empirical Estimation
+
+This yields a 2SLS AR(1) model defined by the first- and second-stage regressions represented in @eq-first-stage and @eq-second-stage. Due to the likely presence of time-dynamic effects, we include contemporaneous, 1-year, 2-year time lags as instruments.
+
+$$
+\textbf{(First stage)}\qquad
+X_{it} \;=\; \rho\,X_{i,t-1} \;+\; \phi \,Y_{i,t-1} \;+\; \sum_{\ell=0}^{2}\pi_{\ell}\,\tilde Z_{i,t-\ell}
+\;+\; \boldsymbol{\theta}\mathbf{W}_{it}' \;+\; \alpha_i \;+\; \lambda_t \;+\; u_{it},
+$$ {#eq-first-stage}
+
+$$
+\textbf{(Second stage)}\qquad
+Y_{it} \;=\; \phi^\ast \,Y_{i,t-1} \;+\; \beta\,\widehat{X}_{it}
+\;+\; \boldsymbol{\delta}\mathbf{W}_{it}'\;+\;  \alpha_i \;+\; \lambda_t \;+\; \varepsilon_{it}
+$$ {#eq-second-stage}
+
+<!-- "Explanation for excluded growth rates: the AR1 beta is nowhere near 1 -->
+
+<!-- and therefore growth rate does not work. the coefficient is a long way -->
+
+<!-- from one which means I do not have to worry about unit roots.", -->
+
+where $W_{it}$ is a vector of control variables. We control for enrollment levels to account for scaling factors in education expenditure, intergovernmental transfers to account for the significant role of such transfers in funding education expenditure, percentage of the population that is Black, percentage of the population that is Hispanic, and private industry GDP per capita levels to account for local price levels.
+
+$Y_{it}$ is the natural logarithm of elementary (serving ages 6-12) education expenditure per pupil for CZ $i$ in year $t$. We focus on elementary education for two reasons. First, this restriction partly shields against a justifiable concern about the endogeneity between wages and quality of local public education. Whereas funding for high school could likely affect local wages given such students are of working age, funding for elementary education is unlikely to impact wage rates via a human capital or skills channel. Second, in terms of public impact, elementary education is of foundational importance in the lives of children. Slips in public education provision at a young age could have scarring effects.
+
+$\alpha_i$ represents a CZ fixed effect and $\lambda_t$ represents year-fixed effects, with stage-relevant superscripts. $\varepsilon_{it}$ and $u_{it}$ represents the error term of the second and first stage, respectively.
+
+We additionally adopt a dynamic specification by including lagged dependent variables in both stages of the IV estimation to avoid spurious correlation identification arising from persistence in expenditure and wage levels, as well as better accounting for heterogeneity across units. Education spending likely exhibits inertia due to slowly evolving budgetary and relevant policy cycles (i.e., property tax rate setting). Similarly, local wage levels are well-predicted by a previous year's wage levels. Failing to account for these dynamics, our estimates would conflate the causal effect of wage innovations with mechanical persistence in levels. This yields a more conservative and interpretable elasticity, though we demonstrate that the exclusion of the AR(1) term in the second-stage yields a contemporaneous effect estimate nearly identical to the long-run wage effect as derived from the dynamic specification in \autoref{tbl_va_ss_baseline}.
+
+### Interpretation
+
+The elasticity of public education expenditure to local wages has an ambiguous interpretation. A positive elasticity would suggest that higher wages increase household savings rates and willingness to invest in local public goods, consistent with standard wealth effects. However, this relationship raises concerns about possible divergence wherein wage growth in high-earning regions could amplify educational investment, potentially widening spatial inequality in public education quality aligning with patterns of income inequality.
+
+Conversely, a negative elasticity could emerge through several channels. Any response in needs-based intergovernmental revenue mechanisms may partially offset local fiscal capacity, creating an inverse relationship between wages and education spending. Alternatively, in more affluent communities, rising wages may enable households to substitute towards private education, crowding out or reducing demand for public expenditure. Furthermore, such a relationship could provide additional empirical support for a "resource curse" dynamic[^9] wherein local communities reprioritise fiscal windfalls toward government expenditure other than public education.
+
+[^9]: Perhaps the most prominent and often-cited relationship between education and extractive industries is through the lens of the 'resource curse.' The validity and empirical existence of a 'resource curse' has been tested since its conception with disparate results [@ahlerup2020, @badeeb2017, @blanco2012, @borge2015, @brunnschweiler2008, @cockx2014, @cockx2016, @deacon2011, @dialga2022, @douglas2017, @haber, @menaldo2016, @ross2018, @ross2015, @sincovich2018, @wiens2014]. The literature is divided into two strands focusing on either political (the relationship between resource wealth and governance) [@ross2015, @ross2015, @wiens2014, @deacon2011] or economic (the relationship between resource wealth and economic growth or human capital) resource curses. Empirical investigation of the economic resource curse has explored the effect of resource dependence on economic growth, public health and education expenditure and outcomes, mainly at a national level [@borge2015, @cockx2016, @douglas2017, @sincovich2018]. In the case of education, the distinct outcome measured is level of educational attainment, in other words, whether the presence of a booming resource extraction economy provides disincentives to education for young people. It is worth noting that this literature has been repeatedly questioned on theoretical and conceptual grounds as institutional context often dictates whether a resource curse exists and empirical analyses seem to be very sensitive to methodological choices [@ross2018, @ross2015, @dialga2022]. Although awareness of this strand of literature is of relevance to this work, the unresolved nature of the 'debate' surrounding its existence requires caution if eventually utilised as a theoretical framework for answering the research question. @ahlerup2020 find that for 30 countries in Africa, the presence of gold mines during adolescence have a significant effect on educational attainment. @badeeb2017 investigates whether resource dependence slows economic growth with no explicit mention of education. @blanco2012 find that in Latin America, petroleum export has a significant long-run negative relationships with human capital. @borge2015 find support for the paradox of plenty hypothesis in Norway - that higher local public revenue negatively affects the efficiency of local public good provision. @brunnschweiler2008 critically evaluate 'the empirical basis for the so-called resource curse and find that, despite the topic's popularity in economics and political science research, this apparent paradox may be a red herring. The most commonly used measure of “resource abundance” can be more usefully interpreted as a proxy for “resource dependence”-endogenous to underlying structural factors. In multiple estimations that combine resource abundance and dependence, institutional, and constitutional variables, we find that (i) resource abundance, constitutions, and institutions determine resource dependence, (ii) resource dependence does not affect growth, and (iii) resource abundance positively affects growth and institutional quality.' @cockx2014 use a panel on 140 countries from 1995-2009 and find an inverse relationship between resource dependence and and public health spending over time. @cockx2016 investigate a panel of 140 countries from 1995-2009 to find an adverse effect of resource depdence on public education expenditures relative to GDP. @dialga2022 find disparate results for health and education controlling for institutional quality. @douglas2017 "measure the effect of resource-sector dependence on long-run income growth using the natural experiment of coal mining in 409 Appalachian counties selected for homogeneity. Using a panel data set (1970–2010), we find a one standard deviation increase in resource dependence is associated with 0.5–1 percentage point long-run and a 0.2 percentage point short-run decline in the annual growth rate of per capita personal income. We also measure the extent to which the resource curse operates through disincentives to education, and find significant effects, but this “education channel” explains less than 15 percent of the apparent curse.' @haber focus on authoriarian regimes. @menaldo2016 argues again that this is an institutions curse and not a resource curse issure. @sincovich2018 provide a literature review of resource curse investigations in the Australian context.
+
+In either case, the consequence of a non-zero elasticity, whether positive or negative, has potential adverse consequences for spatial inequality of public education delivery by either boosting public education in affluent areas or dampening investment in less affluent areas.
+
+Finally, a near-zero elasticity either has a modelling or policy-relevant implication. On the modelling side, a near-zero elasticity could indicate either that the wage-public goods relationship operates on a longer time scale than that examined in this work. This would indicate the need for an alternative identification strategy. Alternatively, a near-zero elasticity could indicate that local public education systems are effectively insulated from local wage changes partly because intergovernmental transfers successfully equalise funding across regions.
+
+### Results
 
 ```{r baseline, include = FALSE, echo = FALSE, results = 'asis'}
 
@@ -1222,193 +1038,6 @@ run_model(selected_twfe_models_state_share_interaction, mines_cz) %>% etable(adj
 
 <!-- ``` -->
 
-\FloatBarrier
-
-## Identification Strategy
-
-We are centrally interested in the effect of changes in local wages on
-public education expenditure. There is a significant endogeneity concern
-in using local wages as a treatment variable for two reasons: (1) the
-likely attracting factor of high levels of education expenditure for
-higher-income families and, (2) absent migration, education systems
-provision local labour markets with individuals with diverse human
-capital. Therefore, we instrument local wages using a shift-share based
-instrument of real value added across 19 industrial categories.
-
-\begin{figure}[H]
-\centering
-\caption{Instrumental Variable Path Diagram}
-\begin{tikzpicture}
-% nodes %
-\node[rectangle] (z) at (0,0) {Instrument};
-\node (t) at (4,0) {Local Wages};
-\node (y) at (8,0) {Education Expenditure};
-\node (u) at (6,-2) {Omitted variable};
-
-% edges %
-\draw[->, line width=1] (z) -- (t);
-\draw[->, line width=1] (t) -- (y);
-\draw[->, line width=1, violet, dashed] (u) -- (t);
-\draw[->, line width=1, violet, dashed] (u) -- (y);
-\draw[->, line width=1, red, bend right=40, dashed] (y) to (t);
-\end{tikzpicture}
-\label{fig:iv-approach}
-\end{figure}
-
-Shift-share or *Bartik* instruments have gained popularity in empirical
-work as a method of handling endogeneity issues in panel data
-(@ferri2022, @goldsmith-pinkham2020, @bartik1991). Such instruments
-combine time-variant, unit-invariant changes in aggregate economic
-variables (ie., national changes in industry wage levels) with
-time-invariant, unit-variant shares in exposure to these macro-level
-changes (ie., local shares of employment in particular industries). This
-decomposition of local-level changes via a delocalisation over space and
-time allows for a defensible 'de-endogenising' of the treatment.
-Notably, the method can also be considered to serve a further purpose
-as, by construction, it allows for the examination of a macro
-phenomenon's effect on more local units.
-
-\footnote{Autor et al. use a shift-share instrument to assess the effect
-of Chinese import competition on manufacturing employment in US
-commuting zones (@autor2013). As an extension, @feler2017 use a similar
-shift-share instrument to assess the effect of the same shock on the
-size of local government. @baccini2021 employ a shift-share instrument
-for manufacturing layoffs to tease out the effect of a decline in
-manufacturing on both economically motivated and racial identity voting
-patterns in the US.}
-\footnote{An additional popular indicator for modelling industrial shocks
-is *oil price* as values are often assumed to be exogenous to local and
-even national conditions (@scheer2022). Third, various indicators for measuring
-*deindustrialisation* have been proposed including the manufacturing
-share of employment, value added, and GDP [@tregenna2009,
-@tregenna2020]. Finally, in rare instances,
-exogeneity can be secured due to *geographical, climatological, or
-geological factors*. For example, @borge2015 obtain an exogenous measure
-of local revenue by "instrumenting the variation in hydropower revenue,
-and thus total revenue, by topology, average precipitation and meters of
-river in steep terrain." Certain authors have argued that the fact that
-the location of hydrocarbon deposits is dictated by geomorphological
-processes provides a plausible argument for exogeneity [@esposito2021,
-@chen2022].}
-
-Therefore, we adopt an identification strategy via a shift-share
-instrument. A shift-share instrument interacts local industry shares
-with national industry-level growth rates to obtain a plausibly
-exogenous local shock. In the context of this work, we construct the
-instrument by interacting a commuting-zone level constant industrial
-employment share variable with national industry-level real value added
-data.
-
-The literature on Bartik instruments allows for an argument of plausible
-exogeneity via various channels. First, authors argue that local
-industry shares are exogenous by imposing that shares be fixed to a
-particular base year and are therefore unable to adapt to changes in
-national-level growth rates. Such a shift-share instrument would look as
-follows:
-
-$$
-Z_{it} = \sum_{j=1}^{k} S_{ij\tau}G_{njt}
-$$ {#eq-ref-bartik}
-
-where $S_{ij\tau}$ is the local share of unit $i$'s economy (measured
-using metrics like employment, wages, revenue) in industry $j$ at a
-fixed base year $\tau$ and $G_{njt}$ is the growth rate of industry $j$
-at a national level $n$ at time $t$.
-
-Alternatively, authors may argue that the claim of exogeneity in the
-national-level growth rates is unlikely to be violated even when
-allowing the local shares to vary over time. This approach is likely to
-come at significant expense to instrument exogeneity. It is constructed
-as follows:
-
-$$
-Z_{it} = \sum_{j=1}^{k} S_{ijt}G_{njt}
-$$
-
-Finally, authors might be concerned about the implausible exogeneity of
-both shares and national-level growth rates in which case they could
-construct the instrument as follows where the local shares are fixed at
-a common base year and industry-specific growth rates $G$ are derived
-from data on other similar regions $o$ rather than national-level
-changes that are inherently comprised of local-level shifts. This
-approach likely comes at significant expense to instrument relevance.
-
-$$
-Z_{it} = \sum_{j=1}^{k} S_{0jt}G_{ojt}
-$$
-
-Finally, the authors can make an additional design choice about whether
-the effect of these instruments should be assumed common to an aggregate
-local-level wage growth indicator or allowed to vary by industry. In
-other words, whether to construct the first-stage relationship of the
-2SLS as...:
-
-$$
-X_{it} = \alpha_i + \beta\sum_{j=1}^{k}S_{ijt}G_{njt} + \epsilon_{it}
-$$
-
-...or...:
-
-$$
-X_{it} = \alpha_i + \sum_{j=1}^{k}\beta_{j}S_{j}G_{jt} + \epsilon_{it}
-$$
-
-We choose to employ the first of these options, assuming that industry
-shares are only exogenous at a given base period and that national level
-growth rates are exogenous and therefore allowed to vary with time.
-
-Using data from the Bureau of Economic Analysis, we construct a
-shift-share Bartik instruments at the commuting zone level using local
-employment shares by industry and national changes in industry-specific
-real value added represented in @eq-bartik. $G_{njt}$ represents
-national-level changes in value added in industry $j$ in time $t$ and
-$\frac{N_{ij\tau}}{N_{i\tau}}$ represents the 'sensitivity' of a CZ to
-these national shocks proxied by an initial share of local employment in
-industry $j$ in a baseline time period $\tau$. The product of these two
-values defines the shift-share indicator $\tilde{Z}_{i,t,s}$. In order
-to construct the share portion, we compute the total local share of
-employment in a particular industry $j$. Due to challenges with missing
-data, we compute an average share across 2001-2005 as our 'base year'.
-
-In the Appendices, we provide an additional estimation using a
-wage-based shift-share instrument constructed using data from the US
-Bureau of Labor Statistics' Quarterly Census of Employment and Wages
-(QCEW). This shift-share instrument is constructed as described above
-using industry-level changes in real wages. Concerns about endogeneity
-are greater using this shift-share instrument and is therefore excluded
-from the main text.
-
-\footnote{We explore the sensitivity of results to the choice of base period
-    $\tau$ by constructing the instrument for various base periods as
-    well as a rolling window.}
-
-$$
-    \tilde{Z}_{it} = \sum_{j=1}^{k}G_{njt} *  \frac{N_{ij\tau}}{N_{i\tau}} 
-$$ {#eq-bartik}
-
-This yields a 2SLS AR(1) model defined by the first- and second-stage
-regressions represented in @eq-first-stage and @eq-second-stage. Due to
-the likely presence of time-dynamic effects, we include contemporaneous,
-1-year, 2-year time lags as instruments.
-
-$$
-\textbf{(First stage)}\qquad
-X_{it} \;=\; \phi\,X_{i,t-1} \;+\; \sum_{\ell=0}^{2}\pi_{\ell}\,\tilde Z_{i,t-\ell}
-\;+\; \boldsymbol{\theta}\mathbf{W}_{it}' \;+\; \alpha_i \;+\; \lambda_t \;+\; u_{it},
-$$ {#eq-first-stage}
-
-$$
-\textbf{(Second stage)}\qquad
-Y_{it} \;=\; \phi^\ast \,Y_{i,t-1} \;+\; \beta\,\widehat{X}_{it}
-\;+\; \boldsymbol{\delta}\mathbf{W}_{it}'\;+\;  \alpha_i \;+\; \lambda_t \;+\; \varepsilon_{it}
-$$ {#eq-second-stage}
-
-<!-- "Explanation for excluded growth rates: the AR1 beta is nowhere near 1 -->
-
-<!-- and therefore growth rate does not work. the coefficient is a long way -->
-
-<!-- from one which means I do not have to worry about unit roots.", -->
-
 ```{r load_industry_shares, include = FALSE, echo = FALSE, cache = TRUE}
 # Draw the functions needed to calculate the SS instruments from the following script.
 source(here("data/raw/QCEW/industry_shares_cleaning.R"))
@@ -1445,40 +1074,6 @@ if(new_ss_calculation){
 }
 
 ```
-
-where $W_{it}$ is a vector of control variables. We control for
-enrollment levels to account for scaling factors in education
-expenditure, intergovernmental transfers to account for the significant
-role of such transfers in funding education expenditure, percentage of
-the population that is Black, percentage of the population that is
-Hispanic, and private industry GDP per capita levels to account for
-local price levels and economic performance.
-
-$Y_{it}$ is the natural logarithm of elementary (serving ages 6-12)
-education expenditure per pupil for CZ $i$ in year $t$. We focus on
-elementary education for two reasons. First, this restriction partly
-shields against a justifiable concern about the endogeneity between
-wages and quality of local public education. Whereas funding for high
-school could likely affect local wages given such students are of
-working age, funding for elementary education is unlikely to impact wage
-rates via a human capital or skills channel. Second, in terms of public
-impact, elementary education is of foundational importance in the lives
-of children. Slips in public education provision at a young age could
-have scarring effects.
-
-$\alpha_i$ represents a CZ fixed effect and $\lambda_t$ represents
-year-fixed effects, with stage-relevant superscripts. $\varepsilon_{it}$
-and $u_{it}$ represents the error term of the second and first stage,
-respectively.
-
-We compute the relevant shift-share instrument across 19 two-digit NAICS
-industrial categories listed in \autoref{tbl_naics_codes}. Given
-industry-level disaggregation of local employment data requires data
-suppression for anonymity reasons, Figure 2 displays the data coverage
-of our commuting zone level shift-share instruments. Given the high
-degree of missingness in the 3-digit categorisation we proceed with the
-2-digit NAICS codes in the rest of the work.
-<!-- \textcolor{red}{We should arguably exclude industries 61 and 92 from the shift-share instrument as there represent the wages of public administration and educational services employees.} -->
 
 ```{r, echo = FALSE, cache = FALSE, results = 'asis', message = FALSE}
 
@@ -1624,15 +1219,17 @@ ss_temp <- ss_temp_filled
 
 ```{r, echo = FALSE, results = 'asis'}
 
-iv_lev_form <- "log_real_Elem_Educ_Total_Exp_pp ~  log_real_Total_IG_Revenue_pp + log_real_gdp_priv_ind_pc + log_Enrollment + pct_black + pct_hispanic | unit + year | "
+iv_lev_form <- "log_real_Elem_Educ_Total_Exp_pp ~  l1_log_real_Elem_Educ_Total_Exp_pp + log_real_Total_IG_Revenue_pp + log_real_gdp_priv_ind_pc + log_Enrollment + pct_black + pct_hispanic | unit + year | "
+
+iv_lev_form_prop <- "log_hpi ~ l1_log_hpi + log_real_gdp_priv_ind_pc + pct_black + pct_hispanic | unit + year | "
 
 iv_gr_form <- "diff_log_real_Elem_Educ_Total_Exp_pp ~ diff_log_real_Total_IG_Revenue_pp + diff_log_real_gdp_priv_ind_pc + diff_log_Enrollment + fd_pct_black + fd_pct_hispanic | unit + year | "
 
-ss_lev_gr_va <- "log_weighted_annual_avg_wkly_wage ~ gdp_ss_2d + l1_gdp_ss_2d + l2_gdp_ss_2d"
+ss_lev_gr_va <- "log_weighted_annual_avg_wkly_wage ~ l1_log_weighted_annual_avg_wkly_wage + gdp_ss_2d + l1_gdp_ss_2d + l2_gdp_ss_2d"
 
 ss_gr_gr_va <- "gr_weighted_annual_avg_wkly_wage ~ gdp_ss_2d + l1_gdp_ss_2d + l2_gdp_ss_2d"
 
-ss_lev_lev_va <- "log_weighted_annual_avg_wkly_wage ~ lev_gdp_ss_2d + l1_lev_gdp_ss_2d + l2_lev_gdp_ss_2d"
+ss_lev_lev_va <- "log_weighted_annual_avg_wkly_wage ~ l1_log_weighted_annual_avg_wkly_wage + lev_gdp_ss_2d + l1_lev_gdp_ss_2d + l2_lev_gdp_ss_2d"
 
 ss_gr_lev_va <- "gr_weighted_annual_avg_wkly_wage ~ lev_gdp_ss_2d + l1_lev_gdp_ss_2d + l2_lev_gdp_ss_2d"
 # mines_cz <- mines_cz %>% 
@@ -1724,27 +1321,27 @@ append_to_appendix("## Wage-based Shift Share Instrument Results",
                panel_lines)
 
 
-iv_model_2d_lev_gr <- run_manual_iv(iv_formula = paste0(iv_lev_form, " log_weighted_annual_avg_wkly_wage ~ ss_2d + l1_ss_2d + l2_ss_2d"), ss_formula = "log_weighted_annual_avg_wkly_wage ~ ss_2d + l1_ss_2d + l2_ss_2d",
-    data = df_ivs, panel.id = c("unit", "year"), cluster = "unit", bootstrap_se = bootstrap_se_spec, n_boot = n_boots, parallel = parallel_spec)
+iv_model_2d_lev_gr <- feols(as.formula(paste0(iv_lev_form, " log_weighted_annual_avg_wkly_wage ~ ss_2d + l1_ss_2d + l2_ss_2d")) ,
+    data = df_ivs, panel.id = c("unit", "year"), cluster = "unit")
 
-iv_model_2d_gr_gr <- run_manual_iv( iv_formula = paste0("diff_log_real_Elem_Educ_Total_Exp_pp ~  l1_diff_log_real_Elem_Educ_Total_Exp_pp + diff_log_real_Total_IG_Revenue_pp + diff_log_real_gdp_priv_ind_pc + diff_log_Enrollment | unit + year | ", "gr_weighted_annual_avg_wkly_wage ~ ss_2d + l1_ss_2d + l2_ss_2d"), ss_formula = "gr_weighted_annual_avg_wkly_wage ~ ss_2d + l1_ss_2d + l2_ss_2d", data = df_ivs, panel.id = c("unit", "year"), cluster = "unit", bootstrap_se = bootstrap_se_spec, n_boot = n_boots, parallel = parallel_spec)
+iv_model_2d_gr_gr <- feols(as.formula(paste0("diff_log_real_Elem_Educ_Total_Exp_pp ~  l1_diff_log_real_Elem_Educ_Total_Exp_pp + diff_log_real_Total_IG_Revenue_pp + diff_log_real_gdp_priv_ind_pc + diff_log_Enrollment | unit + year | ", "gr_weighted_annual_avg_wkly_wage ~ ss_2d + l1_ss_2d + l2_ss_2d")), data = df_ivs, panel.id = c("unit", "year"), cluster = "unit")
 
 
-iv_model_2d_lev_lev <- run_manual_iv(paste0(iv_lev_form, " log_weighted_annual_avg_wkly_wage ~ lev_ss_2d + l1_lev_ss_2d + l2_lev_ss_2d"), ss_formula = " log_weighted_annual_avg_wkly_wage ~ lev_ss_2d + l1_lev_ss_2d + l2_lev_ss_2d",
-    data = df_ivs, panel.id = c("unit", "year"), cluster = "unit", bootstrap_se = bootstrap_se_spec, n_boot = n_boots, parallel = parallel_spec)
+iv_model_2d_lev_lev <- feols(as.formula(paste0(iv_lev_form, " log_weighted_annual_avg_wkly_wage ~ lev_ss_2d + l1_lev_ss_2d + l2_lev_ss_2d")),
+    data = df_ivs, panel.id = c("unit", "year"), cluster = "unit")
 
 # iv_model_2d_gr_gr <- feols(
 #     as.formula(paste0("diff_log_real_Elem_Educ_Total_Exp_pp ~  l1_diff_log_real_Elem_Educ_Total_Exp_pp + diff_log_real_Total_IG_Revenue_pp + diff_log_real_gdp_priv_ind_pc + diff_log_Enrollment | unit + year | gr_weighted_annual_avg_wkly_wage ~ gdp_ss_2d + l1_gdp_ss_2d + l2_gdp_ss_2d")),
 #     data = df_ivs, panel.id = c("unit", "year"), cluster = "unit")
 
-# iv_model_2d_lev_gr_state_fe <- run_manual_iv(   iv_formula = paste0(iv_lev_form, " | state + year | log_weighted_annual_avg_wkly_wage ~ l(gdp_ss_2d,0:2)")),
+# iv_model_2d_lev_gr_state_fe <- feols(   iv_formula = paste0(iv_lev_form, " | state + year | log_weighted_annual_avg_wkly_wage ~ l(gdp_ss_2d,0:2)")),
 #     data = df_ivs, panel.id = c("unit", "year"), cluster = "unit")
 # 
 # iv_model_2d_lev_lev_state_fe <- feols(
 #     as.formula(paste0(iv_lev_form, " | state + year | log_weighted_annual_avg_wkly_wage ~ l(lev_gdp_ss_2d,0:2)")),
 #     data = df_ivs, panel.id = c("unit", "year"), cluster = "unit")
 # 
-# iv_model_2d_lev_gr_l1_state_fe <- run_manual_iv(   iv_formula = paste0(iv_lev_form, " | state + year | log_weighted_annual_avg_wkly_wage ~ l(gdp_ss_2d,0:2)")),
+# iv_model_2d_lev_gr_l1_state_fe <- feols(   iv_formula = paste0(iv_lev_form, " | state + year | log_weighted_annual_avg_wkly_wage ~ l(gdp_ss_2d,0:2)")),
 #     data = df_ivs, panel.id = c("unit", "year"), cluster = "unit")
 # 
 # iv_model_2d_lev_lev_l1_state_fe <- feols(
@@ -1814,97 +1411,27 @@ etable(iv_model_2d_lev_lev, iv_model_2d_lev_gr, iv_model_2d_gr_gr, adjustbox = T
 
 ```
 
-In \autoref{tbl_va_ss_baseline}, we demonstrate a strong and highly
-significant first-stage relationship wherein our VA-based shift-share
-instrument indicates a strong positive contemporaneous relationship with
-local wages. We find that a 1% increase in our shift-share instrument
-raises local wages by 0.25% in the same year though these wages rebound
-as evidenced by the statistically significant negative coefficient of a
-similar magnitude on the l1 regressor. Essentially, the time dynamics
-indicate that local wages respond quickly to national sectoral shocks,
-though not permanently. This can likely be interpreted as a temporary
-local demand boom following industry-level value added shocks. This
-provides additional evidence that the shift-share instrument captures
-short-term exogenous variation rather than slow-moving trends in local
-wages, boosting credibility in our instrumental variable relevance. The
-growth rate specification in columns 3-4 provide further evidence of the
-transitory nature of these demand shocks as only the contemporaneous
-growth rate effect is significant.
+In \autoref{tbl_va_ss_baseline}, we demonstrate a strong and highly significant first-stage relationship wherein our shift-share instrument indicates a strong positive contemporaneous relationship with local wages. Our main specification in Columns 1-2 indicates that a 10% nicrease in local wages leads to a 2.23% increase in per-pupil education expenditure in the short run. The first-stage F-statistic substantially exceeds conventional weak instrument thresholds. The Wu-Hausman test definitevely rejects the exogeneity of wages, validating our instrumental variable approach. However, the Wald over-identification test suggests potential instrument invalidity, though this is likely an artifact of the inclusion of AR(1) terms in the first-stage and not an indictment of the exclusion restriction itself. The implied long-run elasticity is near 0.46, indicating that the cumulative effect of a 10% wage increase is a 4.6% increase in education spending.
 
-The first-stage F-statistic using the level SS instrument is well above
-conventional weak instrument thresholds confirming instrument relevance.
-Furthermore, the Wu-Hausman tests reject the null of exogeneity,
-confirming that OLS estimates are biased and IV estimation is
-appropriate. Wald tests of joint significance further support the
-strength of the instruments and the importance of incorporating
-time-lagged instruments.
+In Columns 3-4, we corroborate this long-run effect by removing the AR(1) term in the second-stage regression. The statistically significant causal effect of the treatment approaches this long-run effect of 4.6% (5.6%), capturing the total association between wages and expenditures, including both the immediate and long-run effects. This near-equivalence in the estimated effect reflects the fact that the underlying data-generating process is defined by dynamics, validating our use of a fully dynamic system.
 
-Using wage shocks in levels yields strong instruments, defensible
-first-stage F-statistics, and stable second-stage estimates: positive
-(negative) local wage shocks robustly decrease (increase) education
-spending.
+Understanding that wage shocks are likely transmitted to education expenditure through property taxes, we test this potential mechanism in columns 5-6 (adjusting the set of control variables to better suit the first-stage relationship in theory). We find a highly significant house price elasticity, wherein a 10% increase in wages generate an 8.4% increase in local house prices. Note that the sample size decreases because of missing data in the housing price index for several of our commuting zones.
 
-Taken together, these two specifications yield consistent and meaningful
-results wherein the shift-share instrument allows for the causal
-identification of negative relationship between local wage shocks and
-education expenditure. The similarity in magnitude of the two designs
-implies that the estimated effect is robust to the timing and
-persistence of the underlying economic shocks. Most importantly, this
-indicates that the mechanism identified is driven by temporary demand
-shocks rather than permanent income effects. Interpretation of these
-results requires a further exploration of local heterogeneity, outlined
-in the following sections.
-
-One could interpret this result as either a confirmation of resource
-course dynamics in communities dependent on industries employing
-lower-skill workers. If these effects are concentrated in less
-economically prosperous areas, local wage booms in particular sectors
-might be distracting public and administrative attention away from local
-public education investments. On the other hand, if these effects are
-driven by wage booms in communities reliant on higher-skill labour, one
-could see this as a potential feedback between decreases in
-intergovernmental revenues which are intended to be needs-based, even
-though the specification controls for this effect, or potentially a
-crowding out of public education by private education. The results below
-do not provide a meaningful ability to distinguish the relative accuracy
-of either of these hypotheses.
-
-<!-- Together with the results from our wage-based shift-hsare instrument, we -->
-
-<!-- find evidence that shifts in wage growth, rather than simply changes in -->
-
-<!-- economic growth is more important for local public education -->
-
-<!-- expenditure. In other words, national level wage growth is a more -->
-
-<!-- important predictor local wage effects than the mere presence of -->
-
-<!-- industry-level VA growth. This makes intuitive sense in that the link -->
-
-<!-- from industrial success (labour) to personal and community wealth -->
-
-<!-- creation is mediated via wage and not necessarily the total industrial -->
-
-<!-- output which might not be reflected in wages (especially given recent -->
-
-<!-- evidence of decoupling of wages from productivity) -->
-
-<!-- \textcolor{red}{Source here - OECD and FRED Data}.   -->
-
-<!-- ![Wages and Productivity](../output/FRED%20wage%20decoupling.png) -->
+Our findings indicate that, in a decentralised education system, local labour market strength affects public education expenditure. Regions experiencing wage growth see spillovers into public education expenditure, whereas communities facing wage stagnation or decline might see their educational spending erode as a result.
 
 ```{r, echo = FALSE, results = 'asis'}
 
-iv_model_2d_lev_gr <- run_manual_iv(iv_formula = paste0(iv_lev_form, ss_lev_lev_va), ss_formula = ss_lev_lev_va,
-    data = df_ivs, panel.id = c("unit", "year"), cluster = "unit", bootstrap_se = bootstrap_se_spec, n_boot = n_boots, parallel = parallel_spec)
+iv_model_2d_lev_gr <- feols(as.formula(paste0(iv_lev_form, ss_lev_lev_va)), data = df_ivs, panel.id = c("unit", "year"), cluster = "unit")
 
-iv_model_2d_gr_gr <- run_manual_iv(iv_formula = paste0(iv_gr_form, ss_gr_gr_va), ss_formula = ss_gr_gr_va, data = df_ivs, panel.id = c("unit", "year"), cluster = "unit", bootstrap_se = bootstrap_se_spec, n_boot = n_boots, parallel = parallel_spec)
+iv_model_2d_gr_gr <- feols(as.formula(paste0(iv_gr_form, ss_gr_gr_va)), data = df_ivs, panel.id = c("unit", "year"), cluster = "unit")
 
-iv_model_2d_gr_lev <- run_manual_iv(iv_formula = paste0(iv_gr_form, ss_gr_lev_va), ss_formula = ss_gr_lev_va, data = df_ivs, panel.id = c("unit", "year"), cluster = "unit", bootstrap_se = bootstrap_se_spec, n_boot = n_boots, parallel = parallel_spec)
+iv_model_2d_gr_lev <- feols(as.formula(paste0(iv_gr_form, ss_gr_lev_va)), data = df_ivs, panel.id = c("unit", "year"), cluster = "unit")
 
-iv_model_2d_gr_lev_lev_ed <- run_manual_iv(iv_formula = paste0(iv_lev_form, ss_gr_lev_va), ss_formula = ss_gr_lev_va, data = df_ivs, panel.id = c("unit", "year"), cluster = "unit", bootstrap_se = bootstrap_se_spec, n_boot = n_boots, parallel = parallel_spec)
+iv_model_2d_gr_lev_lev_ed <- feols(as.formula(paste0(iv_lev_form, ss_gr_lev_va)), data = df_ivs, panel.id = c("unit", "year"), cluster = "unit")
 
-iv_model_2d_lev_lev <- run_manual_iv(iv_formula = paste0(iv_lev_form, ss_lev_lev_va), ss_formula = ss_lev_lev_va, data = df_ivs, panel.id = c("unit", "year"), cluster = "unit", bootstrap_se = bootstrap_se_spec, n_boot = n_boots, parallel = parallel_spec)
+iv_model_2d_lev_lev <- feols(as.formula(paste0(iv_lev_form, ss_lev_lev_va)), data = df_ivs, panel.id = c("unit", "year"), cluster = "unit")
+
+iv_model_2d_lev_lev_prop <- feols(as.formula(paste0(iv_lev_form_prop, ss_lev_lev_va)), data = df_ivs, panel.id = c("unit", "year"), cluster = "unit")
 # No AR
 iv_model_2d_lev_lev_test <- feols(as.formula("log_real_Elem_Educ_Total_Exp_pp ~  log_real_Total_IG_Revenue_pp + log_real_gdp_priv_ind_pc + log_Enrollment + pct_black + pct_hispanic | unit + year | log_weighted_annual_avg_wkly_wage ~ lev_gdp_ss_2d + l1_lev_gdp_ss_2d + l2_lev_gdp_ss_2d"), data = df_ivs, panel.id = c("unit", "year"), cluster = "unit")
 # SS AR
@@ -1914,11 +1441,11 @@ iv_model_2d_lev_lev_test3 <- feols(as.formula("log_real_Elem_Educ_Total_Exp_pp ~
 # FS AR
 iv_model_2d_lev_lev_test4 <- feols(as.formula("log_real_Elem_Educ_Total_Exp_pp ~ log_real_Total_IG_Revenue_pp + log_real_gdp_priv_ind_pc + log_Enrollment + pct_black + pct_hispanic | unit + year | log_weighted_annual_avg_wkly_wage ~ l1_log_weighted_annual_avg_wkly_wage + lev_gdp_ss_2d + l1_lev_gdp_ss_2d + l2_lev_gdp_ss_2d"), data = df_ivs, panel.id = c("unit", "year"), cluster = "unit")
 
-etable(iv_model_2d_lev_lev, iv_model_2d_gr_gr, adjustbox = TRUE, stage = 1:2,fitstat = iv_fitstats, tex = latex_tables, caption = "IV Estimation Using VA-based Shift-share instrument (l0, l1, l2) in Levels with CZ and year fixed effects and lags.", label = "tbl_va_ss_baseline")
-
-etable(iv_model_2d_lev_lev, iv_model_2d_lev_lev_test3, iv_model_2d_lev_lev_test, adjustbox = TRUE, stage = 1:2, fitstat = iv_fitstats, tex = TRUE, caption = "IV Estimation Using VA-based Shift-share instrument (l0, l1, l2) in Levels with CZ and year fixed effects and lags.", label = "tbl_va_ss_baseline", headers = c("(FS) Manual IV - Full AR", "(SS) Manual IV - Full AR", "(FS) Full AR", "(SS) Full AR", "(FS) No AR", "(SS) No AR"))
-
-etable(iv_model_2d_lev_lev_test2, iv_model_2d_lev_lev_test4, iv_model_2d_lev_lev_test3,  adjustbox = TRUE, stage = 1:2, fitstat = iv_fitstats, tex = TRUE, caption = "IV Estimation Using VA-based Shift-share instrument (l0, l1, l2) in Levels with CZ and year fixed effects and lags.", label = "tbl_va_ss_baseline", headers = c("(FS) SS AR", "(SS) SS AR", "(FS) FS AR", "(SS) FS AR", "(FS) Full AR", "(SS) Full AR"))
+etable(iv_model_2d_lev_lev, iv_model_2d_lev_lev_test4, iv_model_2d_lev_lev_prop, adjustbox = TRUE, stage = 1:2,fitstat = iv_fitstats, tex = latex_tables, caption = "IV Estimation Using VA-based Shift-share instrument (l0, l1, l2) in Levels with CZ and year fixed effects and lags.", label = "tbl_va_ss_baseline")
+# 
+# etable(iv_model_2d_lev_lev, iv_model_2d_lev_lev_test3, iv_model_2d_lev_lev_test, adjustbox = TRUE, stage = 1:2, fitstat = iv_fitstats, tex = TRUE, caption = "IV Estimation Using VA-based Shift-share instrument (l0, l1, l2) in Levels with CZ and year fixed effects and lags.", label = "tbl_va_ss_baseline", headers = c("(FS) Manual IV - Full AR", "(SS) Manual IV - Full AR", "(FS) Full AR", "(SS) Full AR", "(FS) No AR", "(SS) No AR"))
+# 
+# etable(iv_model_2d_lev_lev_test2, iv_model_2d_lev_lev_test4, iv_model_2d_lev_lev_test3,  adjustbox = TRUE, stage = 1:2, fitstat = iv_fitstats, tex = TRUE, caption = "IV Estimation Using VA-based Shift-share instrument (l0, l1, l2) in Levels with CZ and year fixed effects and lags.", label = "tbl_va_ss_baseline", headers = c("(FS) SS AR", "(SS) SS AR", "(FS) FS AR", "(SS) FS AR", "(FS) Full AR", "(SS) Full AR"))
 
 
 ```
@@ -2025,34 +1552,15 @@ ggplot(data.frame(z = z_used, z1 = z1_used, z2 = z2_used, x_hat = x_hat, x_orig 
 
 ## Accounting for Heterogeneity
 
-In order to make meaningful policy-related insights, we need to unmask
-the substantial heterogeneity obscured by the national-level average
-treatment effects described above. These national-level estimates are
-unlikely to apply uniformly across states and commuting zones.
-Therefore, this next section is dedicated to unpacking this
-heterogeneity. Below, we (1) explore various metrics of local economic
-growth and decline to partition our sample in a data-driven manner,
-employ (2) industry-by-industry and (2) state-by-state estimations in
-our IV specifications using our VA-based shift-share instrument.
+In order to make meaningful policy-related insights, we need to unmask the substantial heterogeneity obscured by national-level average treatment effects. These national-level estimates are unlikely to apply uniformly across states and commuting zones, especially given heterogeneity in local tax regimes.
 
-However, given the high degree of both structural (state-specific tax,
-regulatory, and legislative regimes) and evolved heterogeneity
-(industrial activity, income, inequality, economic diversity) the
-proposed analysis necessitates a disaggregated estimation strategy to
-truly account for the heterogeneity across the units of observation.
-Therefore, subsequent treatment estimation is dedicated to
-state-by-state, industry-by-industry, and a growth cohort sub-sampling
-procedure taking into account legacy income and wage growth rates.
+Therefore, we (1) use data on local wages and GDP to create indicators for whether regions are exhibiting relative decline or growth compared to other commuting zones to partition our sample in a data-driven manner, employ (2) industry-by-industry and (2) state-by-state estimations in our IV specifications using our VA-based shift-share instrument.
 
-For completeness, we provide results of average treatment effects for
-all implemented estimations in the Appendices.
+For completeness, we provide results of average treatment effects for all implemented estimations in the Appendices.
 
-### Declining vs. Growing Regions
+### Declining vs. Growing Regions {#sec-growthrates}
 
-First, we identify declining and growing regions by estimating
-commuting-zone wage and private industry GDP growth rates conditional on
-state and national level growth rates and partition our sample across
-this distribution.
+First, we identify declining and growing regions by estimating commuting-zone wage and private industry GDP growth rates conditional on state and national level growth rates and partition our sample across this distribution.
 
 ```{r, include = FALSE, cache = TRUE}
 
@@ -2067,7 +1575,7 @@ cz_labels <- read_xls(here('data/out/cz00_eqv_v1.xls')) %>%
   group_by(unit) %>%
   summarise(
     msa = paste(sort(unique(metropolitan_area_2003)), collapse = ";\n"),
-    n_msa = n_distinct(metropolitan_area_2003),                     # optional: how many collapsed
+    n_msa = n_distinct(metropolitan_area_2003),   
     .groups = "drop"
   )
 
@@ -2115,24 +1623,13 @@ growth_rates <- mines_cz_short %>%
   left_join(., natl_lev, by = c("year"), suffix = c("", "_natl"))
 ```
 
-In order to identify declining and growing commuting zones, we estimate
-separate time series models by commuting zone as follows. These models
-allow for the identification of commuting-zone level growth rates while
-controlling for state and national trends in a two-step framework.
-First, we orthogonalize the state-level growth rate with respect to the
-national trend, isolating state-specific fluctuations unrelated to the
-national business cycle:
+In order to identify declining and growing commuting zones, we estimate separate time series models by commuting zone as follows. These models allow for the identification of commuting-zone level growth rates while controlling for state and national trends in a two-step framework. First, we orthogonalize the state-level growth rate with respect to the national trend, isolating state-specific fluctuations unrelated to the national business cycle:
 
 $$
 \widetilde{\Delta \log GDPpc}^{state}_{t} 
 = \Delta \log GDPpc^{state}_{t} 
 - \hat{\gamma}\, \Delta \log GDPpc^{nat}_{t}
-$$ Second, we regress commuting zone growth on both the national growth
-rate and the orthogonalized state residuals, thereby decomposing local
-growth into national, state, and idiosyncratic components. This approach
-identifies commuting zones whose trajectories systematically diverge
-from higher-level aggregate patterns, providing a clean measure of
-relative local economic performance.
+$$ Second, we regress commuting zone growth on both the national growth rate and the orthogonalized state residuals, thereby decomposing local growth into national, state, and idiosyncratic components. This approach identifies commuting zones whose trajectories systematically diverge from higher-level aggregate patterns, providing a clean measure of relative local economic performance.
 
 $$
 \Delta \log GDPpc^{CZ}_{t} 
@@ -2142,45 +1639,56 @@ $$
 + \varepsilon_{t}
 $$
 
-In these equations, each GDP term represents the private industry GDP
-per capita at the CZ, state, or national level, denoted by superscript.
+In these equations, each GDP term represents the private industry GDP per capita at the CZ, state, or national level, denoted by superscript.
 
-\textcolor{red}{I think this can be supported by interesting literature from the "left behind" and "geographies of discontent" literature in which 'relative' economic performance is what matters most for individuals' happiness. Might be a conceptual leap but an interesting connection?}
+<!-- \textcolor{red}{I think this can be supported by interesting literature from the "left behind" and "geographies of discontent" literature in which 'relative' economic performance is what matters most for individuals' happiness. Might be a conceptual leap but an interesting connection?} -->
 
-Intuitively, this specification measures how much of each CZ’s growth
-can be explained by broader aggregate trends versus localized factors.
-By controlling for orthogonalized state and national variation, the
-estimated intercept ($\alpha_{g}$) and residual terms capture
-persistent, region‐specific trends that are not driven by common
-macroeconomic forces. This allows us to identify which commuting zones
-are systematically growing or declining relative to their state and
-national baselines, thereby providing a purer measure of local economic
-dynamics that is robust to shared higher-level shocks.
+Intuitively, this specification measures how much of each CZ’s growth can be explained by broader aggregate trends versus localized factors. By controlling for orthogonalized state and national variation, the estimated intercept ($\alpha_{g}$) and residual terms capture persistent, region‐specific trends that are not driven by common macroeconomic forces. This allows us to identify which commuting zones are systematically growing or declining relative to their state and national baselines, thereby providing a purer measure of local economic dynamics that is robust to shared higher-level shocks.\footnote{We provide similar analysis of gross GDP in the Appendix.}
 
-We then classify commuting zones by the value of $\alpha_{g}$ which
-represents their deviation from state- and national-level GDP growth
-rates. We estimate this trend deviation in per capita values of private
-industry GDP.
+We perform the same trend deviation calculation for wages where each wage variable represents the commuting zone, state, and national level growth rate in the weekly average wage as reported in QCEW.
 
-\footnote{We provide similar analysis of gross GDP in the Appendix.}
+<!-- $$\Delta (log) Wage^{CZ}_{t} = \alpha + \Delta (log) Wage^{state}_{t} + \Delta (log) Wage^{national}_{t} + \epsilon_t$$ -->
 
-Figure 3 plots the distribution of values of $\alpha_g$ where the
-vertical dashed lines represent the 25th and 75th percentiles.
-<!-- \textcolor{red}{I recently attended a talk that noted this is a common distribution for personal income growth rates. Might be interesting to note that here.} -->
+<!-- New implementation:  -->
 
-Next, Figure 4 below demonstrates the considerable variability in
-GDP-level growth rates across commuting zones in the US between
-2001-2021. Visualising the per capita growth rate deviations by state
-and region demonstrates heterogeneity in this variability across states
-and regions. For example, Texas, Montana, and Colorado have outstanding
-positive outliers in the distribution whereas Kentucky, Louisiana, South
-Dakota have outstanding negative outliers.
+<!-- % --- Original specification --- -->
+
+<!-- $$ -->
+
+<!-- \Delta \log Wage^{CZ}_{t}  -->
+
+<!-- = \alpha  -->
+
+<!-- + \beta_{s} \, \Delta \log Wage^{state}_{t}  -->
+
+<!-- + \beta_{n} \, \Delta \log Wage^{nat}_{t}  -->
+
+<!-- + \varepsilon_{t} -->
+
+<!-- $$ -->
+
+$$
+\widetilde{\Delta \log Wage}^{state}_{t} 
+= \Delta \log Wage^{state}_{t} 
+- \hat{\gamma}\, \Delta \log Wage^{nat}_{t}
+$$
+
+$$
+\Delta \log Wage^{CZ}_{t} 
+= \alpha_{w} 
++ \beta_{n} \, \Delta \log Wage^{nat}_{t} 
++ \beta_{s} \, \widetilde{\Delta \log Wage}^{state}_{t} 
++ \varepsilon_{t}
+$$
+
+Figure 5 plots the distribution of values of $\alpha_g$, $\alpha_w$, and the distribution of commuting-zone level loadings on national and state-level growth rates. The figure demonstrates that commuting zones load more variably onto state-level growth rates and more consistently onto national-level growth rates. These distributions are expected by design as the state-level growth rates provide variation that the national level rates do not. <!-- \textcolor{red}{I recently attended a talk that noted this is a common distribution for personal income growth rates. Might be interesting to note that here.} -->
+
+Next, Figure 6 demonstrates the considerable variability in GDP-level growth rates across commuting zones in the US between 2001-2021. Visualising the per capita growth rate deviations by state and region demonstrates heterogeneity in this variability across states and regions. For example, Texas, Montana, North Dakota, and Colorado have outstanding positive outliers in the distribution whereas Kentucky, Louisiana, South Dakota have outstanding negative outliers. The grey lines represent the commuting zones value of $\alpha_w$, indicating that in a large share of cases, wage growth rates are defined by a different sign than the GDP growth rates, indicating even potential local divergence in growth rates. Though the calculations above could lead to insignificant such relationships because the growth rates are calculated in reference to different data, the volume of states exhibiting diverging wage and GDP per capita growth rates indicate that such a divergence is likely a fact of life in many commuting zones.
+
+To account for this inherent incomparability of the growth rates $\alpha_w$ and $\alpha_g$, we display a standard Pearson correlation coefficient between teh commuting zone time series of GDP per capita and wages, indicating that several states house commuting zones whose wages do not track GDP growth. Many states see nearly exclusively positive correlation coefficients, whereas others see a mix of commuting zones where the relationship is positive or negative.
 
 <!-- \textcolor{violet}{This makes intuitive sense but I should make this more clear with text labels in the plot. I have marked the negatively trending outliers and they are all from Louisiana, Oklahoma, and Wyoming which makes sense. I will make this outlier marking clearer.} -->
 
-Finally, Figure 5 represents the distribution of the loadings on the
-residualised state factors and the national growth rates at the
-commuting zone level.
 <!-- \textcolor{violet}{I wonder if there is a potential interpretation for the right skew of the betas. I will look into this.} -->
 
 ```{r, echo = FALSE, eval = TRUE, include = FALSE, fig.height = 10, fig.width = 10, warning = FALSE, cache = TRUE, fig.cap = c("Distribution of GDP Trend Coefficients", "Lollipop Plot of GDPpc Growth Rates")}
@@ -2427,59 +1935,31 @@ scatter_betas / (hist_nat + hist_state)
 
 ```
 
-We perform the same trend deviation calculation for wages where each
-wage variable represents the commuting zone, state, and national level
-growth rate in the weekly average wage as reported in QCEW.
+<!-- In Figure 7, we see that there is similar variability though the -->
 
-<!-- $$\Delta (log) Wage^{CZ}_{t} = \alpha + \Delta (log) Wage^{state}_{t} + \Delta (log) Wage^{national}_{t} + \epsilon_t$$ -->
+<!-- patterns do not consistently indicate the same high- and low-performing -->
 
-<!-- New implementation:  -->
+<!-- outliers across states indicating that GDP and wage growth are not -->
 
-<!-- % --- Original specification --- -->
+<!-- consistently correlated across regions. We demonstrate this fact in -->
 
-<!-- $$ -->
+<!-- Figure 8 where, although there is a positive correlation between -->
 
-<!-- \Delta \log Wage^{CZ}_{t}  -->
+<!-- commuting zone GDPpc and wage trend deviations, the decile-decile plot -->
 
-<!-- = \alpha  -->
+<!-- demonstrates a noisy relationship largely driven by certain outliers. -->
 
-<!-- + \beta_{s} \, \Delta \log Wage^{state}_{t}  -->
+<!-- Figure 11 presents a correlation coefficient by commuting zone between -->
 
-<!-- + \beta_{n} \, \Delta \log Wage^{nat}_{t}  -->
+<!-- the two rates, providing greater detail on this relationship. -->
 
-<!-- + \varepsilon_{t} -->
+<!-- \autoref{fig:wage-trends-plots-1} \autoref{fig:wage-trends-plots2} -->
 
-<!-- $$ -->
+<!-- \autoref{fig:wage-trends-plots3} \autoref{fig:wage-trends-plots4} -->
 
-$$
-\widetilde{\Delta \log Wage}^{state}_{t} 
-= \Delta \log Wage^{state}_{t} 
-- \hat{\gamma}\, \Delta \log Wage^{nat}_{t}
-$$
+<!-- \autoref{fig:wage-trends-plots5} \ref{fig:wage-trends-plots} -->
 
-$$
-\Delta \log Wage^{CZ}_{t} 
-= \alpha_{w} 
-+ \beta_{n} \, \Delta \log Wage^{nat}_{t} 
-+ \beta_{s} \, \widetilde{\Delta \log Wage}^{state}_{t} 
-+ \varepsilon_{t}
-$$
-
-In Figure 7, we see that there is similar variability though the
-patterns do not consistently indicate the same high- and low-performing
-outliers across states indicating that GDP and wage growth are not
-consistently correlated across regions. We demonstrate this fact in
-Figure 8 where, although there is a positive correlation between
-commuting zone GDPpc and wage trend deviations, the decile-decile plot
-demonstrates a noisy relationship largely driven by certain outliers.
-
-Figure 11 presents a correlation coefficient by commuting zone between
-the two rates, providing greater detail on this relationship.
-
-\autoref{fig:wage-trends-plots-1} \autoref{fig:wage-trends-plots2}
-\autoref{fig:wage-trends-plots3} \autoref{fig:wage-trends-plots4}
-\autoref{fig:wage-trends-plots5} \ref{fig:wage-trends-plots}
-\autoref{fig:wage-trends-plots}
+<!-- \autoref{fig:wage-trends-plots} -->
 
 <!-- \textcolor{violet}{Georgia is an incredibly interesting case in which nearly all commuting zones have relatively declining GDPpc growth rates but relatively growing wage growth rates}. -->
 
@@ -3110,12 +2590,6 @@ cz_regions +
 
 ```
 
-Below, we display, by state, the Pearson correlation coefficient between
-CZ level GDP growth rates and wage growth rates. Interestingly, many
-states see nearly exclusively positive correlation coefficients, whereas
-others see a mix of commuting zones where the relationship is positive
-or negative.
-
 ```{r, echo = FALSE, fig.height = 10, fig.width = 10, warning = FALSE, cache = TRUE, fig.cap = "Correlation Between GDP Growth Rates and Wage Growth Rates by State"}
 
 # 1) compute unit-level correlations (if you already have this, skip this block)
@@ -3240,14 +2714,7 @@ mines_cz_wage_decl <- cz_wage_trends %>%
 
 #### Sample Partitioning by Growth Rates
 
-Using these growth rates, we partition the sample according to the
-percentiles described above. \autoref{tbl_gdp_ss_wage_subsamples} and
-\autoref{tbl_gdp_ss_gdp_subsamples} examine how the relationship between
-local economic conditions and elementary education expenditure per pupil
-varies across structurally growing and declining regions as defined in
-the previous section. We partition our sample into four sub-samples by
-their values of $\alpha_{w}$ and $\alpha_{g}$ as shown in
-@tbl-categories.
+Using these growth rates, we partition the sample according to the percentiles described above. \autoref{tbl_gdp_ss_wage_subsamples} and \autoref{tbl_gdp_ss_gdp_subsamples} examine how the relationship between local economic conditions and elementary education expenditure per pupil varies across structurally growing and declining regions as defined in the previous section. We partition our sample into four sub-samples by their values of $\alpha_{w}$ and $\alpha_{g}$ as shown in @tbl-categories.
 
 | Category        | Definition ($\alpha_{w}$, $\alpha_{g}$) |
 |-----------------|-----------------------------------------|
@@ -3258,48 +2725,15 @@ their values of $\alpha_{w}$ and $\alpha_{g}$ as shown in
 
 : Category Definitions {#tbl-categories}
 
-Zones with negative (positive) values of $\alpha_{w}$ or $\alpha_g$ are
-designated as declining (growing), while those in the bottom (P25) and
-top (P75) quartiles are labelled hyper-declining and hyper-growing,
-respectively. This stratification enables comparison of fiscal
-responsiveness across local economies with different long-run growth
-trajectories.
+Zones with negative (positive) values of $\alpha_{w}$ or $\alpha_g$ are designated as declining (growing), while those in the bottom (P25) and top (P75) quartiles are labelled hyper-declining and hyper-growing, respectively. This stratification enables comparison of fiscal responsiveness across local economies with different long-run growth trajectories.
 
-\autoref{tbl_gdp_ss_wage_subsamples} partitions CZs by $\alpha_w$.
-Interestingly, we see that the effect of intergovernmental revenue is
-nearly half the size in hyper-growing areas than the hyper-declining
-areas indicating the importance of intergovernmental transfers in areas
-where wages are declining. Additionally, the scaling effects of
-enrollment are only significant in regions where wages exhibit high
-growth or are moderately declining. Furthermore, the role of private
-industry GDP in local elementary education expenditure explains
-variation in education expenditure in those regions in which scaling
-laws do not seem to apply.
-<!-- \textcolor{violet}{The switch in significance between enrollment and private industry GDP contributions is really interesting. Wonder if there is an interesting interpretation here?}. -->
-Most importantly though, the negative relationship between annual wages
-and elementary education expenditure is only present in areas that
-exhibit historically hyper-declining or moderately growing wage trends.
-<!-- \textcolor{violet}{Again, this might change once I incorporate the state-level trends into the calculation of $\alpha_w$.}. -->
-Additionally, the first-stage F statistics only support causal
-identification in these columns.
+\autoref{tbl_gdp_ss_wage_subsamples} partitions CZs by $\alpha_w$. Interestingly, we observe positive statistically significant relationships between wages and public education expenditure though the magnitude and statistical significance of this relationship declines almost uniformly as $\alpha_w$ discretely increases. We see a similar declining size and significance in the explanatory variable accounting for inter-governmental revenue, indicating that these revenues play a smaller role in regions exhibiting above-average wage growth.
 
-In regions where wages are already declining, positive wage shocks
-decrease spending on local public education providing potential support
-for a story in which regions with declining wages de-prioritise
-education when positive wage shocks "come to town." In the case of
-moderately growing regions,
 <!-- \textcolor{violet}{I am thinking of a few different interpretations here but not quite sure yet...}. -->
 
-\autoref{tbl_gdp_ss_gdp_subsamples} partitions CZs by long-run GDP per
-capita trends. When partitioning the sample by GDP growth rates, the
-interpretation is more straight-forward. Areas in which GDP is
-exhibiting relative decline, the causal relationship between wages and
-education expenditure is consistent with high first stage F statistics,
-convincing performance on the Wu-Hausman endogeneity test, and
-defensible, albeit weak, performance on the Wald test. These results
-suggest an asymmetric fiscal response where wage shocks in areas whose
-GDP is declining, have a negative effect on local public education
-spending, in contrast to growing regions.
+In \autoref{tbl_gdp_ss_gdp_subsamples} partitions CZs by long-run GDP per capita trends. The statistical significance and magnitude variations in the wage response tell a less monotonic story here, likely mirroring the lack of systematic correlation between $\alpha_w$ and $\alpha_g$ When partitioning the sample by GDP growth rates, the interpretation is more straight-forward.
+
+Regardless, all models remain well-identified, with high first stage F statistics, convincing performance on the Wu-Hausman endogeneity tests and Wald tests. Combined, these results indicate that partitioning by background wage growth rates provides greater insight into the sample's heterogeneity than diversity in GDP per capita growth rates. More precisely, given communities feel wage growth more directly than GDP per capita improvements, it is likely that the relationship between public education and wage changes is better captured by sub-sampling by wage growth rates.
 
 ```{r, include = FALSE, eval = TRUE, echo = FALSE}
 library(ggrepel)
@@ -3453,24 +2887,24 @@ dfs_wage <- list("All" = mines_cz_decl, "Hyper-Declining (Wage)" = decl_extr_wag
 ```{r, echo = FALSE}
 
 mods <- list()
-mods_fs <- list()
+#mods_fs <- list()
 for(df in names(dfs)){
     # IV regression using shift-share instrument
-    iv_model <-  run_manual_iv(iv_formula = paste0(iv_lev_form, ss_lev_lev_va), ss_formula = ss_lev_lev_va,
-   data = dfs[[df]], panel.id = c("unit", "year"), cluster = "unit", include_lag_endog = TRUE, include_lag_outcome = TRUE, bootstrap_se = bootstrap_se_spec, n_boot = n_boots, parallel = parallel_spec)
-    mods[[df]] <- iv_model$second_stage
-    mods_fs[[df]] <- iv_model$first_stage
+    iv_model <-  feols(as.formula(paste0(iv_lev_form, ss_lev_lev_va)),
+   data = dfs[[df]], panel.id = c("unit", "year"), cluster = "unit")
+    mods[[df]] <- iv_model#$second_stage
+    #mods_fs[[df]] <- iv_model$first_stage
     gc()
 }
 
 mods_wage <- list()
-mods_wage_fs <- list()
+#mods_wage_fs <- list()
 for(df_wage in names(dfs_wage)){
     # IV regression using shift-share instrument
-    iv_model <- run_manual_iv(iv_formula = paste0(iv_lev_form, ss_lev_lev_va), ss_formula = ss_lev_lev_va,
-   data = dfs_wage[[df_wage]], panel.id = c("unit", "year"), cluster = "unit", bootstrap_se = bootstrap_se_spec, n_boot = n_boots, parallel = parallel_spec)
-    mods_wage[[df_wage]] <- iv_model$second_stage
-    mods_wage_fs[[df_wage]] <- iv_model$first_stage
+    iv_model <- feols(as.formula(paste0(iv_lev_form, ss_lev_lev_va)),
+   data = dfs_wage[[df_wage]], panel.id = c("unit", "year"), cluster = "unit")
+    mods_wage[[df_wage]] <- iv_model#$second_stage
+    #mods_wage_fs[[df_wage]] <- iv_model#$first_stage
     gc()
 }
 
@@ -3483,9 +2917,9 @@ append_to_appendix("### Wage-based SS Instrument for Growth Rate Sample Partitio
 our relevant signal is picked up in regions across both trend metrics. Though the effects are more consistent across wage-trending sub-samples."))
 
 etable(mods, tex = latex_tables, adjustbox = TRUE, headers = names(mods), fitstat = iv_fitstats, title = "Second-Stage: Wage-based Shift-Share Instrument (l1) Applied to Declining GDP vs. Growing GDP Regions")
-etable(mods_fs, tex = latex_tables, adjustbox = TRUE, headers = names(mods), fitstat = iv_fitstats, title = "First-Stage: Wage-based Shift-Share Instrument (l1) Applied to Declining GDP vs. Growing GDP Regions")
+# etable(mods, tex = latex_tables, adjustbox = TRUE, headers = names(mods), stage = 1, fitstat = iv_fitstats, title = "First-Stage: Wage-based Shift-Share Instrument (l1) Applied to Declining GDP vs. Growing GDP Regions")
 etable(mods_wage, tex = latex_tables, adjustbox = TRUE, headers = names(mods_wage), fitstat = iv_fitstats, title = "Second-Stage: Wage-based Shift-Share Instrument (l1) Applied to Declining Wage vs. Growing Wage Regions")
-etable(mods_wage_fs, tex = latex_tables, adjustbox = TRUE, headers = names(mods_wage), fitstat = iv_fitstats, title = "First-Stage: Wage-based Shift-Share Instrument (l1) Applied to Declining Wage vs. Growing Wage Regions")
+# etable(mods_wage, tex = latex_tables, adjustbox = TRUE, headers = names(mods_wage), stage = 1, fitstat = iv_fitstats, title = "First-Stage: Wage-based Shift-Share Instrument (l1) Applied to Declining Wage vs. Growing Wage Regions")
 
 ```
 
@@ -3494,24 +2928,24 @@ etable(mods_wage_fs, tex = latex_tables, adjustbox = TRUE, headers = names(mods_
 ```{r, echo = FALSE}
 
 mods <- list()
-mods_fs <- list()
+#mods_fs <- list()
 for(df in names(dfs)){
     # IV regression using shift-share instrument
-    iv_model <- run_manual_iv(iv_formula = paste0(iv_lev_form, ss_lev_lev_va), ss_formula = ss_lev_lev_va,
-   data = dfs[[df]], panel.id = c("unit", "year"), cluster = "unit", bootstrap_se = bootstrap_se_spec, n_boot = n_boots, parallel = parallel_spec)
-    mods[[df]] <- iv_model$second_stage
-    mods_fs[[df]] <- iv_model$first_stage
+    iv_model <- feols(as.formula(paste0(iv_lev_form, ss_lev_lev_va)),
+   data = dfs[[df]], panel.id = c("unit", "year"), cluster = "unit")
+    mods[[df]] <- iv_model#$second_stage
+    #mods_fs[[df]] <- iv_model$first_stage
     gc()
 }
 
 mods_wage <- list()
-mods_wage_fs <- list()
+#mods_wage_fs <- list()
 for(df_wage in names(dfs_wage)){
     # IV regression using shift-share instrument
-    iv_model <- run_manual_iv(iv_formula = paste0(iv_lev_form, ss_lev_lev_va), ss_formula = ss_lev_lev_va,
-   data = dfs_wage[[df_wage]], panel.id = c("unit", "year"), cluster = "unit", bootstrap_se = bootstrap_se_spec, n_boot = n_boots, parallel = parallel_spec)
-    mods_wage[[df_wage]] <- iv_model$second_stage
-    mods_wage_fs[[df_wage]] <- iv_model$first_stage
+    iv_model <- feols(as.formula(paste0(iv_lev_form, ss_lev_lev_va)),
+   data = dfs_wage[[df_wage]], panel.id = c("unit", "year"), cluster = "unit")
+    mods_wage[[df_wage]] <- iv_model#$second_stage
+    #mods_wage_fs[[df_wage]] <- iv_model$first_stage
     gc()
 }
 
@@ -3522,9 +2956,9 @@ for(df_wage in names(dfs_wage)){
 ```{r, echo = FALSE, results='asis'}
 
 etable(mods_wage, tex = latex_tables, headers = names(mods_wage), adjustbox = TRUE, fitstat = iv_fitstats, title = "Second-Stage: VA-based Shift-Share Instrument (l1) Applied to Declining Wage vs. Growing Wage Regions", label = "tbl_gdp_ss_wage_subsamples")
-etable(mods_wage_fs, tex = latex_tables, headers = names(mods_wage), adjustbox = TRUE, fitstat = iv_fitstats, title = "First-Stage: VA-based Shift-Share Instrument (l1) Applied to Declining Wage vs. Growing Wage Regions", label = "tbl_gdp_ss_wage_subsamples")
+# etable(mods_wage, tex = latex_tables, headers = names(mods_wage), adjustbox = TRUE, fitstat = iv_fitstats, title = "First-Stage: VA-based Shift-Share Instrument (l1) Applied to Declining Wage vs. Growing Wage Regions", label = "tbl_gdp_ss_wage_subsamples")
 etable(mods,   tex = latex_tables, adjustbox = TRUE, headers = names(mods), fitstat = iv_fitstats, title = "Second-Stage: VA-based Shift-Share Instrument (l1) Applied to Declining GDP vs. Growing GDP Regions", label = "tbl_gdp_ss_gdp_subsamples")
-etable(mods_fs,   tex = latex_tables, adjustbox = TRUE, headers = names(mods), fitstat = iv_fitstats, title = "First-Stage: VA-based Shift-Share Instrument (l1) Applied to Declining GDP vs. Growing GDP Regions", label = "tbl_gdp_ss_gdp_subsamples")
+# etable(mods,   tex = latex_tables, adjustbox = TRUE, headers = names(mods), fitstat = iv_fitstats, title = "First-Stage: VA-based Shift-Share Instrument (l1) Applied to Declining GDP vs. Growing GDP Regions", label = "tbl_gdp_ss_gdp_subsamples")
 
 ```
 
@@ -3532,18 +2966,9 @@ etable(mods_fs,   tex = latex_tables, adjustbox = TRUE, headers = names(mods), f
 
 ### State-by-state estimation
 
-Given the substantial heterogeneity in state-level economic makeup and
-public finance regimes, we investigate state-specific and
-industry-specific relationships between our variables of interest.
+Next, given the substantial heterogeneity in state-level economic makeup and public finance regimes, we investigate state-specific relationships between our variables of interest.
 
-First, states vary in the number of commuting zones they contain. Figure
-12 demonstrates that states have anywhere between 2 (Delaware) and 58
-(Texas) commuting zones. This allows us to estimate panel-style
-regressions within each state to net out between-state variation that
-might be confounding our current treatment estimates.
-<!-- \textcolor{violet}{These -->
-<!-- should be interpreted with caution in those states that contain very few -->
-<!-- commuting zones.} -->
+First, states vary in the number of commuting zones they contain. Figure 12 demonstrates that states have anywhere between 2 (Delaware) and 58 (Texas) commuting zones. This allows us to estimate panel-style regressions within each state to net out between-state variation that might be confounding our current treatment estimates. <!-- \textcolor{violet}{These --> <!-- should be interpreted with caution in those states that contain very few --> <!-- commuting zones.} -->
 
 ```{r, echo = FALSE, results = 'asis', fig.cap = "Histogram: Commuting Zones by State"}
 reg_states <- mines_cz_short %>%
@@ -3585,8 +3010,8 @@ extract_coef_info <- function(model, state_name, iv = FALSE) {
       # Get summary
       coef_summary <- summary(model)$coeftable
   if(iv){
-      ftest_summary <- model$iv_fstat_marginal
-      ftest_p_summary <- model$iv_fstat_marginal_p
+      ftest_summary <- fitstat(model, "ivf1.stat")[[1]]
+      ftest_p_summary <- fitstat(model, "ivf1.p")[[1]]
   }
 
   model_r2 <- r2(model, type = "wr2")
@@ -3725,29 +3150,26 @@ results_df_cleaned_desc <- results_df_cleaned
 
 \FloatBarrier
 
-Using our instrumental variable approach with a value-added based
-shift-share instrument, we corroborate the directionality and magnitude
-of the effect for 5 states: Ohio, Missouri, Arizona, Washington,
-Delaware, and New Hampshire. Delaware's sample size is so small that
-it's likely uninformative. However, the rest of the states provide
-interesting points of analysis.
+Using our instrumental variable approach with a value-added based shift-share instrument, we corroborate the directionality and magnitude of the effect for 12 states: New Hampshire, Colorado, Florida, South Dakota, Kentucky, Louisiana, Pennsylvania, North Dakota, Oregon, Oklahoma, Arizona, and Indiana. In estimating the state-by-state regressions, we exclude any states where our F-statistic is below conventional weak instrument thresholds (F statistics \<= 12 and p-value \< 0.05) and the p-value of the second stage coefficient of interest is \< 0.1.
+
+Examining various characteristics of these states, we find that they vary widely in demographic composition, enrollment levels, and wage levels indicating that the detected effects are not attributable to any extremes in these values. Notably, majority of them reuly on a significant share of educational expenditure from local sources rather than intergovernmental sources.
 
 ```{r, echo = FALSE, fig.height = 10, fig.width = 10, fig.cap = "State-by-State Wage Effect Using SS GDP Shock"}
 
-f_stat_threshold = 6
+f_stat_threshold = 12
 
 state_mods_ss <- list()
 for(k in reg_states){
   mod <- df_ivs %>%
     filter(state == k) %>%
-    run_manual_iv(paste0(iv_lev_form, ss_lev_lev_va), ss_formula = ss_lev_lev_va,
-    data = ., panel.id = c("unit", "year"), cluster = "unit", bootstrap_se = bootstrap_se_spec, n_boot = n_boots, parallel = parallel_spec)
-  state_mods_ss[[as.character(k)]] <- mod$second_stage
+    feols(as.formula(paste0(iv_lev_form, ss_lev_lev_va)),
+    data = ., panel.id = c("unit", "year"), cluster = "unit")
+  state_mods_ss[[as.character(k)]] <- mod#$second_stage
   gc()
 }
 
 # Define variable names of interest
-vars_of_interest <- c("log_weighted_annual_avg_wkly_wage", "fitted_endog")
+vars_of_interest <- c("fit_log_weighted_annual_avg_wkly_wage", "fitted_endog")
 
 # Apply to list of models
 # Assuming: model_list is named by state names
@@ -3951,18 +3373,7 @@ state_by_state_sig / state_rankings_plot
 
 ```
 
-Placing the descriptive (linear combination of l0, l1, l2 lagged wage
-coefficient values) and causal estimates (second stage regression
-estimates - statistically significant second-stage estimates are
-represented by solid blue filled circles) side-by-side we can see an
-emerging pattern. First, positive wage-education relationships (Ohio,
-Arizona, New Hampshire) are corroborated more often than negative ones
-(WA). Among the well-identified relationships, only Mississippi and
-Missouri's relationship is revealed to be the opposite of what is
-suggested by the descriptive regression results.
-<!-- \textcolor{red}{Note the very unusual behaviour of Mississippi. I tried excluding Mississippi from the earlier regression estimations to ensure that it was not driving the negative relationship between wages and education expenditure in the national-level treatment effect. However, the strength and direction of the effect in the overall and partitioned sample regression results were consistent even without Mississippi.} -->
-
-```{r, fig.width = 10, fig.height = 8}
+```{r desc_v_iv, include = FALSE, echo = FALSE, results = 'asis', fig.height = 12, fig.width = 12, fig.cap = "Descriptive vs IV Regression Esimate"}
 
 results_df_cleaned_desc %>% 
   select(r2_within, state_name, total_estimate, any_significant) %>% 
@@ -3998,13 +3409,13 @@ state_mods_ss <- list()
 for(k in reg_states){
   mod <- df_ivs %>%
     filter(state == k) %>%
-    run_manual_iv(paste0(iv_lev_form, ss_lev_lev_va), ss_formula = ss_lev_lev_va,
-    data = ., panel.id = c("unit", "year"), cluster = "unit", bootstrap_se = bootstrap_se_spec, n_boot = n_boots, parallel = parallel_spec)
-  state_mods_ss[[as.character(k)]] <- mod$second_stage
+    feols(as.formula(paste0(iv_lev_form, ss_lev_lev_va)),
+    data = ., panel.id = c("unit", "year"), cluster = "unit")
+  state_mods_ss[[as.character(k)]] <- mod
 }
 
 # Define variable names of interest
-vars_of_interest <- c("log_weighted_annual_avg_wkly_wage", "fitted_endog")
+vars_of_interest <- c("fit_log_weighted_annual_avg_wkly_wage")
 
 # Apply to list of models
 # Assuming: model_list is named by state names
@@ -4111,12 +3522,7 @@ geom_point(aes(y = estimate), shape = 21, size = 4, fill = NA, color = "black", 
 
 ### Industry by Industry
 
-Second, given our shift-share instruments are the composite effect of
-shifts in industry-level wages and real value added, we can decompose
-this instrument into industry-specific real value added shocks. This
-decomposition allows us to examine the effect of industry-specific
-changes across states in a more explicit manner. In other words, our
-instrument is...
+Finally, given our shift-share instruments are the composite effect of shifts in industry-level real value added (VA), we can decompose this instrument into industry-specific real value added shocks. This decomposition allows us to examine the effect of industry-specific changes across states in a more explicit manner. In other words, we re-design our instrument as...
 
 $$
     \tilde{Z}_{ijt} = G_{njt} *  \frac{N_{ij\tau}}{N_{i\tau}}
@@ -4124,13 +3530,11 @@ $$ {#eq-bartik-decomposed}
 
 ...rather than the sum of all industry-level shocks.
 
-We estimate separate panel regressions using the full commuting zone
-sample and then grouping commuting zones by state instrumenting local
-level wages by these decomposed shift-share shocks by industry.
+We estimate separate panel regressions using the full commuting zone sample and then grouping commuting zones by state instrumenting local level wages by these decomposed shift-share shocks by industry.
 
-Using our value added-based shift share instrument, Figure 16
-demonstrates the overall treatment effect of local wage changes
-instrumented via an industry-specific GDP shock.
+Using our value added-based shift share instrument, Figure 10 demonstrates the overall treatment effect of local wage changes instrumented via an industry-specific GDP shock. We find that regardless of the instrument design, the coefficient estimate is consistent with the baseline results, where the estimated effect of a 10% change to local wages on public education expenditure is a 2.2% increase, with the effect's magnitude varying meaningfully for several states. We plot the relevant state-level effects for those states whose estimations pass the same restriction criteria as above (F statistics \<= 12 and p-value \< 0.05 and the p-value of the second stage coefficient of interest is \< 0.1).
+
+\textcolor{red}{Again, I want to improve this.}
 
 <!-- \textcolor{red}{Note: I think that the below implementation/interpretation is wrong as we cannot formally interpret anything from the instrument itself. Two options: (1) This table should be filtered by F-test or instrumental variable relevance to find what is most useful. What we would ideally see is a consistent wage response regardless of instrument choice. (2) Instrument *industry-specific* wages (not overall local wage levels() using these industry-specific shocks. In the second case, this could link well to the intro in which only those regressions in which there is a strong first stage (ie. GDP changes do predict local wages well) would qualify for analysis. If this reveals any significant effect, we would have a potential answer to the broader question as currently outlined in the intro...?} -->
 
@@ -4205,7 +3609,7 @@ temp_vars <- ss_temp %>%
   select(starts_with("lev_gdp_ss"), -contains("2d") , -contains("_61")) %>%  # <- fix select syntax
   names()
 
-vars_of_interest <- c("log_weighted_annual_avg_wkly_wage", "fitted_endog")
+vars_of_interest <- c("fit_log_weighted_annual_avg_wkly_wage", "fitted_endog")
 
 df_ivs_ind <- df_ivs %>% 
   select(unit, year, state, log_real_Elem_Educ_Total_Exp_pp, l1_log_real_Elem_Educ_Total_Exp_pp, log_real_Total_IG_Revenue_pp, log_real_gdp_priv_ind_pc, log_Enrollment, pct_black, pct_hispanic, log_weighted_annual_avg_wkly_wage, l1_log_weighted_annual_avg_wkly_wage, all_of(temp_vars)) %>% 
@@ -4222,9 +3626,8 @@ for (k in temp_vars) {
   ss_form_temp <- paste0(" log_weighted_annual_avg_wkly_wage ~ ", k ," + l1_", k, " + l2_", k, " + l1_log_weighted_annual_avg_wkly_wage")
 
   # "All" model IV
-  iv_model <- run_manual_iv(paste0(iv_lev_form, ss_form_temp), ss_formula = ss_form_temp,
-    data = df_ivs_ind, panel.id = c("unit", "year"), cluster = "unit", 
-    bootstrap_se = bootstrap_se_spec, n_boot = n_boots, parallel = parallel_spec) %>% .$second_stage %>% extract_coef_info(state_name = "All", iv = TRUE)
+  iv_model <- feols(as.formula(paste0(iv_lev_form, ss_form_temp)), 
+    data = df_ivs_ind, panel.id = c("unit", "year"), cluster = "unit") %>% extract_coef_info(state_name = "All", iv = TRUE)
 
   # State-by-state models
   state_mods_ind <- list()
@@ -4237,10 +3640,10 @@ for (k in temp_vars) {
         filter(!all(is.na(get(k)))) %>% n_groups(.) == 1) {
       # skip if no variation
     } else {
-      mod <- tmp %>% run_manual_iv(paste0(iv_lev_form, ss_form_temp), ss_formula = ss_form_temp,
-          data = ., panel.id = c("unit", "year"), cluster = "unit", bootstrap_se = FALSE
+      mod <- tmp %>% feols(as.formula(paste0(iv_lev_form, ss_form_temp)),
+          data = ., panel.id = c("unit", "year"), cluster = "unit"
         )
-      state_mods_ind[[s]] <- mod$second_stage
+      state_mods_ind[[s]] <- mod
     }
   }
 
@@ -5062,18 +4465,27 @@ for(mod in list(pvar_model_levels, pvar_model_levels_pc)){
 
 <!-- ``` -->
 
-# Discussion {#sec-discussion}
+# Conclusion
 
-...
+## Discussion
 
-# Conclusion {#sec-conclusion}
+This work establishes a causal link between local wage growth and public education expenditure. Our baseline estimates reveal a short-run wage elasticity of 0.23, with a long-run cumulative effect of approximately 0.46. The dynamic components of the econometric specification indicate significant persistence in local public education budgets, indicating both institutional inertia but also the likely rare revision of local tax rates allowing local wage growth to boost education spending. This persistence indicates potential for asymmetric adjustment likely correlated with local growth trajectories, wherein communities experiencing wage growth are likely to see gradual spending increases, while declining communities could experience the opposite effect.
 
-The determinants of inequality in public education delivery in the US
-are multiple and complex. Significant evidence exists of the role of
-historically discriminatory policies related to congressional
-districting, under-investment in low-income areas of color. Though this
-work does not directly inform this debate, further work could explore
-the extent to which wage growth interacts with such structural policies.
+This positive elasticity is concentrated in a third of the states in the sample (New Hampshire, Colorado, Florida, South Dakota, Kentucky, Louisiana, Pennsylvania, North Dakota, Oregon, Oklahoma, Arizona, and India), whereas other states exhibit minimal or insignificant responsiveness.
+
+Though outcomes measured in this study are not direct inequality metrics, our findings reveal that the decentralised school financing system in the US has the potential to exacerbate inequalities in local public well-being by failing to equalise across regions experiencing diverging growth trajectories. As a result, in the states in which local spending is responsive to changes in local wages, the quality of early childhood education might be compromised by macroeconomic trends and industry-specific shocks beyond local control. Thus, equalisation formulas at the state and federal level that fail to account for wage trends and fiscal multipliers may contribute to disparities in public goods delivery. Theories of effective equalisation, and indeed preferences for redistribution, differ especially across regions of the the United States. However, equalisation efforts should at least aim to insulate communities from potential downward pressures on public education expenditure.
+
+The determinants of inequality in public education delivery in the US are multiple and complex. Significant evidence exists of the role of historically discriminatory policies related to congressional districting, under-investment in low-income areas of color @trounstine2016 @trounstine2021 @sosina2019 . Though this work does not directly inform this debate, further work could explore the extent to which wage growth interacts with such structural policies.
+
+Addressing structural inequality requires rethinking education finance, taking the decentralised American context as given. Ensuring educational equity for all children requires not just strengthening existing mechanisms for redistribution, but also, in light of our results, insulating communities from macroeconomic trends that impact communities heterogeneously.
+
+## Limitations
+
+-   Excludability assumptions about local industry composition
+
+-   Data limits true consideration of non-stationarity issues. Estimating this model in first differences or growth rates would be preferable to address non-stationarity concerns as well as allow for asymmetric treatmetn estimation to distinguish between negative and positive wage pressures. However, this would require improvements in data collection of the required variables.
+
+-   Commuting zones mask substantial within-commuting zone heterogeneity
 
 # Data and Code Availability
 
@@ -5081,12 +4493,9 @@ the extent to which wage growth interacts with such structural policies.
 
 # Use of AI
 
--   Used ChatGPT to help improve readability of plots (formatting,
-    margins, labeling, font size).
+-   Used ChatGPT to help improve readability of plots (formatting, margins, labeling, font size).
 -   Used ChatGPT to debug errors in R during data cleaning and plotting.
--   Used ChatGPT to provide suggestions for reducing run time of
-    repetitive tasks (ex. downloading and processing multiple data
-    files).
+-   Used ChatGPT to provide suggestions for reducing run time of repetitive tasks (ex. downloading and processing multiple data files).
 
 # Acknowledgements
 
