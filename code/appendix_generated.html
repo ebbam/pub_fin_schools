@@ -82,23 +82,43 @@ window.Quarto = {
 </section>
 <section id="descriptive-regression-results" class="level1">
 <h1>Descriptive Regression Results</h1>
-<p>In the following set of results, I report descriptive regressions to establish relationships between property taxes, education expenditure, GDP (total, private industry, O&amp;G&amp;mining), etc. All regression models that follow include TWFE (CZ- and year- fixed effects) and standard errors clustered by commuting zone. All functional forms in the feols() functions below are of the form Y ~ X In the cases in which multiple estimations are included via sw(Xa, Xb, Xc + Xd), the function will return results for Y~Xa, Y~Xb, Y ~ Xc + Xd.</p>
+<p>In the following set of results, we report descriptive regressions to establish relationships between property taxes, education expenditure, private industry GDP, and house prices. All regression models that follow include TWFE (CZ- and year- fixed effects) and standard errors clustered by commuting zone.</p>
 <section id="property-tax-gdp" class="level2">
 <h2 class="anchored" data-anchor-id="property-tax-gdp">Property Tax ~ GDP</h2>
-<p>GDP has a highly relevant relationship to property taxes. A 1% increase in GDP (per capita) leads to a 0.38% (0.32%) increase in property taxes collected (per capita).</p>
+<p>GDP has a highly relevant relationship to property taxes. A 1% increase in GDP (per capita) is assocaited with a 0.38% (0.32%) increase in property taxes collected (per capita) ().</p>
 </section>
 <section id="education-expenditure-revenue-sources" class="level2">
 <h2 class="anchored" data-anchor-id="education-expenditure-revenue-sources">Education Expenditure ~ Revenue Sources</h2>
 <p>The below regressions are included to establish the relationship between education expenditure and its component parts (ie. the largest form of IG revenue is state funding and Own Source revenue is largely sourced from Property Taxes).</p>
 </section>
-<section id="education-expenditure-gdp" class="level2">
-<h2 class="anchored" data-anchor-id="education-expenditure-gdp">Education Expenditure ~ GDP</h2>
-<p>A 1% increase in GDP pc is associated with a 0.19% increase in education expenditure per pupil, dominated by the effect of GDP from private industry (0.16%). I include here also the GDP generated from the oil, gas, mining, and quarrying sector. The effect is small and statistically insignificant.</p>
-</section>
 </section>
 <section id="key-relationships-between-economic-variables" class="level1">
 <h1>Key Relationships between Economic Variables</h1>
-<p>Below we display key relationships between several of the economic variables in our study.</p>
+<p>Below we display key relationships between several of the economic variables in our study. All economic indicators (house prices, private industry GDP, and wages are positively associated with education expenditure, whereas enrollment is negatively associated with education expenditure per pupil.</p>
+<section id="baseline-estimates" class="level2">
+<h2 class="anchored" data-anchor-id="baseline-estimates">Baseline Estimates</h2>
+<p>We descriptively establish foundational relationships between local economic conditions that seem to reasonably generalise across the country using an AR(1) two-way fixed effects ordinary least-squares panel model with standard errors clustered by commuting zone. We outline the model specification immediately below:</p>
+<p><span id="eq-desc_function"><span class="math display">\[
+Y_{it} = \beta_{0} + \beta_{x}X_{it} + \theta Y_{it-1} + \delta_1 Enrollment_{it} + \delta_2 IGR_{it} + \delta_3 Black_{it} + \delta_3 Hispanic_{it} + \alpha_i + \gamma_t + \varepsilon_{it}
+\tag{1}\]</span></span></p>
+<p><span class="math inline">\(Y_{it}\)</span> is the natural logarithm of elementary (serving ages 6-12) education expenditure per pupil for CZ <span class="math inline">\(i\)</span> in year <span class="math inline">\(t\)</span>. <span class="math inline">\(\alpha_i\)</span> represents a CZ fixed effect and <span class="math inline">\(\gamma_t\)</span> represents year-fixed effects, respectively. <span class="math inline">\(\varepsilon_{it}\)</span> represents the error term. We control for enrollment to account for scaling factors in education expenditure and intergovernmental transfers to account for the significant role of such transfers in funding education expenditure. <span class="math inline">\(X_{it}\)</span> takes three forms represented by <a href="#eq-gdp-function" class="quarto-xref">Equation&nbsp;2</a>, <a href="#eq-wage-function" class="quarto-xref">Equation&nbsp;3</a>, <a href="#eq-hpi-function" class="quarto-xref">Equation&nbsp;4</a> where <span class="math inline">\(h\)</span> represents <span class="math inline">\(h\)</span>-year time lags. We estimate all equations in levels and growth rates.</p>
+<p><span id="eq-gdp-function"><span class="math display">\[
+X_{it}^{GDP} = \sum_{h=0}^{2} \beta_h^{ ext{GDP}} \log( ext{GDP}_{i,t-h})
+\tag{2}\]</span></span></p>
+<p><span id="eq-wage-function"><span class="math display">\[
+X_{it}^{Wage} = \sum_{h=0}^{2} \beta_h^{    ext{Wage}} \log(    ext{Wage}_{i,t-h})
+\tag{3}\]</span></span></p>
+<p><span id="eq-hpi-function"><span class="math display">\[
+X_{it}^{HPI} = \sum_{h=0}^{2} \beta_h^{ ext{HPI}} \log(\text{HPI}_{i,t-h})
+\tag{4}\]</span></span></p>
+<p> reports the results from regressions of log elementary education expenditure per pupil on contemporaneous and lagged measures of local economic activity. presents the analogous specifications using annualized growth rates to capture short-run dynamics. The estimates in show that per-pupil education spending is systematically higher in commuting zones with ‘stronger’ local economies measured in local wages, industrial GDP, and house prices.</p>
+<p>Lagged economic indicators, particularly private industry GDP and average weekly wages, are positively and significantly associated with education spending. In the baseline specification (Column 1), the elasticity of education spending with respect to local GDP per capita (private industry) is positive and statistically significant once lagged values are included.</p>
+<p>A ten-percent increase in local GDP per capita two years prior is associated with roughly a 1% increase in current education expenditure per pupil, suggesting that fiscal capacity effects unfold gradually over time. In the case of industry GDP, the magnitude of the coefficients increases with the number of lags, suggesting a gradual adjustment process by which local economic growth translates into higher public investment in education over time. For example, a 10% increase in lagged (t–2) real private GDP per capita is associated with a 0.6% increase in per-pupil spending. The house price index also enters positively and significantly but only contemporaneously reflecting the immediate link between house prices and the property taxes that fund public education. This points to the fundamental relationship between community asset wealth and public education expenditure.</p>
+<p>Intergovernmental revenue per pupil emerges as the strongest and most consistent predictor of education expenditure after the auto-regressive coefficient. A 10% increase in intergovernmental transfers is associated with approximately a 2% increase in per-pupil education spending, controlling for CZ and year fixed effects. This finding highlights the importance of state and federal aid in sustaining local education budgets.</p>
+<p>The growth rate regressions, while explaining less variance overall, largely confirm the patterns observed in the level specifications. Intergovernmental revenue growth remains a strong and highly significant determinant of education expenditure growth. Lagged wage and GDP growth also emerge as important predictors, particularly at longer lags. Notably, wage growth two years prior is associated with a 0.31% increase in education spending growth, suggesting that labor market improvements take at least a year to materialize in local education budgets hinting at the relevance of our primary identifying relationship.</p>
+<p>Taken together, these results offer three key insights. First, public education investment is strongly mediated by external fiscal flows, reaffirming the role of intergovernmental transfers in equalizing local education finance. Second, local labor market conditions, captured through wages and GDP, exert lagged effects on education spending consistent with lagged effects of local economic conditions to industrial change. Third, local housing markets play a significant role shaping education budgets, reflecting the link between property values and tax revenues which respond contemporaneously as a result of the direct mechanical link between property values and local public revenue generation.</p>
+<p>Additionally, in both levels and growth rates, the consistently negative coefficient on enrollment indicates a scaling relationship in which expenditure per pupil declines as enrollment sizes grow.</p>
+</section>
 <section id="baseline-regressions-with-state-fixed-effects" class="level2">
 <h2 class="anchored" data-anchor-id="baseline-regressions-with-state-fixed-effects">Baseline Regressions with State Fixed Effects</h2>
 <p>Regressions establishing baseline relationships between local economic variables and elementary education expenditure using state-fixed effects rather than commuting-zone level effects.</p>
@@ -106,34 +126,39 @@ window.Quarto = {
 <section id="funding-share-interaction" class="level2">
 <h2 class="anchored" data-anchor-id="funding-share-interaction">Funding Share Interaction</h2>
 <p>Furthermore, given the heterogeneity in reliance on intergovernmental transfers (largely coming from the state), we interact all economic predictors above with a variable that represents the share of total elementary education expenditure (as a continuous variable) coming from state-level funding.</p>
-<p></p>
 </section>
-<section id="ss-construction" class="level2">
-<h2 class="anchored" data-anchor-id="ss-construction">SS Construction</h2>
+<section id="ss-construction-visual" class="level2">
+<h2 class="anchored" data-anchor-id="ss-construction-visual">SS Construction Visual</h2>
 <p>Plots of the data inputs to the shift-share instrument.</p>
 </section>
 <section id="wage-based-shift-share-instrument-results" class="level2">
 <h2 class="anchored" data-anchor-id="wage-based-shift-share-instrument-results">Wage-based Shift Share Instrument Results</h2>
 <p>First, we display the results for a 2SLS estimation using our wage-based shift-share instrument.</p>
-<p>In Table 5, the instrumental variable estimates provide evidence of a robust causal relationship between local wages and public education expenditure. Utilising our wage-based shift-share instrument we see highly significant and relevant first-stage relationships when the shift-share instrument is imposed in levels (except in column 5). In each case except columns 5-6 (l1 SS, CZ FE), the first-stage regression yields a statistically significant extcolor{violet}{and economically large coefficient}. Varying the time-lag and inclusion of state or commuting zone fixed effects, we see that a 1% increase in the shift-share measure (which can be interpreted as a natural logarithm) is associated with a 0.02-0.06% increase in average weekly wages (p &lt; 0.01), with an F-statistic between 11-103 (near or above conventional weak instrument thresholds) confirming instrument relevance. The Wu-Hausman tests reject the null of exogeneity, confirming that OLS estimates are biased and IV estimation is appropriate. Wald tests of joint significance further support the strength of the instruments.</p>
-<p>Using wage shocks in levels yields strong instruments, high first-stage F-statistics, and stable second-stage estimates: higher local wages robustly increase education spending. Furthermore, given the dependent variable measures per pupil expenditure, this result implies direct effects in experience per student. In contrast, when shocks are measured in growth rates (Table 6), the instruments lose predictive power (first-stage F-statistics ~1–2), resulting in weak identification. The second-stage coefficients become unstable and often insignificant, while Hausman tests fail to reject exogeneity. This suggests that the growth-rate specification is poorly identified and cannot provide reliable causal inference, whereas the level specification produces credible and consistent results.</p>
-<p>The specification that uses wage shocks in levels provides the most credible identification strategy. Since levels capture the cross-sectional fiscal variation that drives differences in property values and school spending, the level specification is more consistent with the economic mechanisms of interest and delivers more reliable causal estimates. At the same time, the weakness of the growth-rate specification does raise concerns about the robustness of the results. If the relationship between wages, house prices, and education expenditure is driven by common non-stationary trends, then regressions in levels risk spurious correlation. The fact that the IV design loses power when variables are differenced into growth rates may suggest that part of the strong level results reflect long-run trends rather than short-run causal shocks. While the large first-stage F-statistics and Hausman tests in the level specification support its validity, the weak performance of the growth-rate version cautions that the results could be sensitive to issues of persistence and trending in the data. Taken together, these results suggest that while the level specification provides strong identification and compelling evidence of a positive causal effect of local wages on education spending, the weak performance of the growth-rate specification highlights the need for caution, as the strength of the findings may partly reflect long-run trending relationships rather than purely exogenous shocks. However, examining the structure of the growth rate shock, the instability of the variable is likely causing the poor identification in the growth rate regressions.</p>
+<p>The instrumental variable estimates provide similar evidence of a robust causal relationship between local wages and public education expenditure. Utilising our wage-based shift-share instrument we see highly significant and relevant first-stage relationships when the shift-share instrument is imposed in levels (except in column 5). In each case except columns 5-6 (l1 SS, CZ FE), the first-stage regression yields a statistically significant and economically large coefficient. Varying the time-lag and inclusion of state or commuting zone fixed effects, we see that a 10% increase in the shift-share measure (which can be interpreted as a natural logarithm) is associated with a 2-6% increase in average weekly wages (p &lt; 0.01), with an F-statistic well above conventional weak instrument thresholds confirming instrument relevance. The Wu-Hausman tests reject the null of exogeneity, confirming that OLS estimates are biased and IV estimation is appropriate. Wald tests of joint significance further support the strength of the instruments.</p>
+<p>Using wage shocks in levels yields strong instruments, high first-stage F-statistics, and stable second-stage estimates: higher local wages robustly increase education spending. Furthermore, given the dependent variable measures per pupil expenditure, this result implies direct effects in experience per student. In contrast, when shocks are measured in growth rates, though the F-statistic remains strong, the second-stage coefficients become statistically insignificant. This suggests that the growth-rate specification is poorly identified and cannot provide reliable causal inference, whereas the level specification produces credible and consistent results.</p>
+<p>The specification that uses wage shocks in levels provides the most credible identification strategy. Since levels capture the cross-sectional fiscal variation that drives differences in property values and school spending, the level specification is more consistent with the economic mechanisms of interest and delivers more reliable causal estimates. Simultaneously, the weakness of the growth-rate specification does raise concerns about the robustness of the results. If the relationship between wages, house prices, and education expenditure is driven by common non-stationary trends, then regressions in levels risk spurious correlation. The fact that the IV design loses power when variables are differenced into growth rates may suggest that part of the strong level results reflect long-run trends rather than short-run causal shocks. However, examining the structure of the growth rate shock, the instability of the variable is likely causing the poor identification in the growth rate regressions.</p>
 <section id="baseline-models-for-growth-rate-sample-partitioning" class="level3">
 <h3 class="anchored" data-anchor-id="baseline-models-for-growth-rate-sample-partitioning">Baseline Models for Growth Rate Sample Partitioning</h3>
 </section>
 <section id="wage-based-ss-instrument-for-growth-rate-sample-partitioning" class="level3">
 <h3 class="anchored" data-anchor-id="wage-based-ss-instrument-for-growth-rate-sample-partitioning">Wage-based SS Instrument for Growth Rate Sample Partitioning</h3>
-<p>When applying our instrumental variable design we find that majority of our relevant signal is picked up in regions across both trend metrics. Though the effects are more consistent across wage-trending sub-samples.</p>
+<p>When applying our instrumental variable design we find that the signal is consistent across various GDP growth trajectories, but the relationship weakens as communities are defined by higher rates of wage growth.</p>
 </section>
-<section id="wage-based-ss-state-by-state-estimation" class="level3">
-<h3 class="anchored" data-anchor-id="wage-based-ss-state-by-state-estimation">Wage-based SS State by State Estimation</h3>
+</section>
+<section id="state-by-state-wage-effect" class="level2">
+<h2 class="anchored" data-anchor-id="state-by-state-wage-effect">State-by-State Wage Effect</h2>
+<p>We report the effect of a 1% increase in Wage on education expenditure per pupil as defined in <strong>?@eq-desc-function</strong> where <span class="math inline">\(X_{i,t}\)</span> takes on the values in <a href="#eq-wage-function" class="quarto-xref">Equation&nbsp;3</a>. First, we re-employ our baseline regression in which we regress our outcome variable on wage levels at time <span class="math inline">\(t-h\)</span> where <span class="math inline">\(h = [0,2]\)</span>. The plot below displays the cumulative effect of a 1% increase in wage levels on education expenditure per pupil in purple. The X marks represent the individual coefficients on each time lag of the treatment variable, the linear combination of which form the total dynamic effect represented by the purple dots. Majority of states see positive elasticities in relation to wage changes in this descriptive specification, but some (South Carolina, Missouri, Kentucky, Washington) see negative elasticities.</p>
+</section>
+<section id="instrumental-versus-descriptive-relationship" class="level2">
+<h2 class="anchored" data-anchor-id="instrumental-versus-descriptive-relationship">Instrumental versus Descriptive Relationship</h2>
+<p>The below plots displays the descriptive regression estimate compared to the IV fitted regression coefficient, describing the effect of a 1% increase in local wages on education expenditure per pupil. Majority of states find at least a coefficient of equal sign. Interestingly though, the valid and statistically significant instrumental variable coefficients only ever identify positive elasticities.</p>
 <section id="wage-based-ss-in-industry-by-industry-estimation" class="level4">
 <h4 class="anchored" data-anchor-id="wage-based-ss-in-industry-by-industry-estimation">Wage-based SS in Industry-by-Industry Estimation</h4>
 <p>Using our wage-based shift share instrument, the below demonstrates the overall treatment effect of local wage changes instrumented via our wage-based shift-share shock.</p>
 </section>
-</section>
 <section id="quantile-regression" class="level3">
 <h3 class="anchored" data-anchor-id="quantile-regression">Quantile Regression</h3>
+<p>We perform a comparative quantile regression, where commuting zones are grouped by their levels of per pupil expenditure. We group them into the 10th, 25th, median, 75th, and 90th percentiles. We find that all coefficients are relatively stable apart from the relationship between per pupil expenditure and race, where the regression coefficient notably switches sign from negative to positive as the level of expenditure increases. Additionally, examining the central relationship of interest in this work, we find that the effect of wages on expenditure is significant contemporaneously in those commuting zones near the median level of expenditure, whereas those spending a relatively high amount of resources on local education, see a delayed effect.</p>
 </section>
 <section id="high-income-outliers" class="level3">
 <h3 class="anchored" data-anchor-id="high-income-outliers">High-Income Outliers</h3>
@@ -187,39 +212,6 @@ X_{it} =
 <li><span class="math inline">\(\alpha_i\)</span> unit fixed effects</li>
 <li><span class="math inline">\(\varepsilon_{it}\)</span> error term</li>
 </ul>
-</section>
-</section>
-<section id="descriptive-regression-results-1" class="level1">
-<h1>Descriptive Regression Results</h1>
-<p>In the following set of results, I report descriptive regressions to establish relationships between property taxes, education expenditure, GDP (total, private industry, O&amp;G&amp;mining), etc. All regression models that follow include TWFE (CZ- and year- fixed effects) and standard errors clustered by commuting zone. All functional forms in the feols() functions below are of the form Y ~ X In the cases in which multiple estimations are included via sw(Xa, Xb, Xc + Xd), the function will return results for Y~Xa, Y~Xb, Y ~ Xc + Xd.</p>
-<section id="property-tax-gdp-1" class="level2">
-<h2 class="anchored" data-anchor-id="property-tax-gdp-1">Property Tax ~ GDP</h2>
-<p>GDP has a highly relevant relationship to property taxes. A 1% increase in GDP (per capita) leads to a 0.38% (0.32%) increase in property taxes collected (per capita).</p>
-</section>
-<section id="education-expenditure-revenue-sources-1" class="level2">
-<h2 class="anchored" data-anchor-id="education-expenditure-revenue-sources-1">Education Expenditure ~ Revenue Sources</h2>
-<p>The below regressions are included to establish the relationship between education expenditure and its component parts (ie. the largest form of IG revenue is state funding and Own Source revenue is largely sourced from Property Taxes).</p>
-</section>
-<section id="education-expenditure-gdp-1" class="level2">
-<h2 class="anchored" data-anchor-id="education-expenditure-gdp-1">Education Expenditure ~ GDP</h2>
-<p>A 1% increase in GDP pc is associated with a 0.19% increase in education expenditure per pupil, dominated by the effect of GDP from private industry (0.16%). I include here also the GDP generated from the oil, gas, mining, and quarrying sector. The effect is small and statistically insignificant.</p>
-</section>
-</section>
-<section id="key-relationships-between-economic-variables-1" class="level1">
-<h1>Key Relationships between Economic Variables</h1>
-<p>Below we display key relationships between several of the economic variables in our study.</p>
-<section id="baseline-regressions-with-state-fixed-effects-1" class="level2">
-<h2 class="anchored" data-anchor-id="baseline-regressions-with-state-fixed-effects-1">Baseline Regressions with State Fixed Effects</h2>
-<p>Regressions establishing baseline relationships between local economic variables and elementary education expenditure using state-fixed effects rather than commuting-zone level effects.</p>
-</section>
-<section id="funding-share-interaction-1" class="level2">
-<h2 class="anchored" data-anchor-id="funding-share-interaction-1">Funding Share Interaction</h2>
-<p>Furthermore, given the heterogeneity in reliance on intergovernmental transfers (largely coming from the state), we interact all economic predictors above with a variable that represents the share of total elementary education expenditure (as a continuous variable) coming from state-level funding.</p>
-<p></p>
-</section>
-<section id="ss-construction-1" class="level2">
-<h2 class="anchored" data-anchor-id="ss-construction-1">SS Construction</h2>
-<p>Plots of the data inputs to the shift-share instrument.</p>
 </section>
 </section>
 

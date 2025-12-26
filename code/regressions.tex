@@ -103,8 +103,8 @@
 
 
  
-\usepackage[]{natbib}
-\bibliographystyle{unsrt}
+\usepackage[backend=biber,style=numeric,sorting=none]{biblatex}
+\addbibresource{references.bib}
 
 
 \usepackage[margin=1in]{geometry}
@@ -210,132 +210,128 @@
 
 \section{Introduction}\label{introduction}
 
-\textbf{Since the 1970s, a persistent divergence between productivity
-growth and wage growth has emerged in the United States
-\citet{hoffmann2020}, \citet{stansbury},
-\citet{economicpolicyinstitute}, \citet{elsby2013}.} While labour
-productivity has continued to rise, the earnings of typical workers have
-increased far more slowly, leading to a substantial decoupling between
-the two trends. Economists cite various contributors to this phenomenon
-from human capital \citet{autor2014}, \citet{katz1992},
-\citet{acemoglu2012}, \citet{autor2011} to competition
-\citet{stansbury}, \citet{deb2022}, \citet{yeh2022}, \citet{azar2022},
-\citet{wilmers2018} to institutional and policy forces
-\citet{egger2019}, \citet{lee1999}, \citet{mishel2021},
-\citet{barkai2020}, \citet{autor2016}, \citet{card2001},
-\citet{bivens2013}, \citet{stansbury2020} .\footnote{Summers \&
-  Stansbury 2018 argue that productivity growth still exerts a positive
-  influence on wages overall, but that institutional and structural
-  changes have weakened the link for large segments of the workforce
-  (\citet{summers2018} \citet{stansbury}). They point to declining union
-  density, erosion of the minimum wage, globalization, and increased
-  market concentration as key factors that have shifted bargaining power
-  away from workers and reduced labour's share of national income
-  \citet{autor2014}. Furthermore, additional evidence finds that this
-  decoupling is far from a universal phenomenon. Rather, decoupling
-  applies almost strictly to lower- and medium-wage earners, while
-  already higher wages manage to keep up (relatively) with productivity
-  growth rates.} Though its causes are hotly debated, the fact itself is
-well-documented, especially for lower- and middle-income workers,
-contributing to what is often termed the ``hollowing of the middle
-class'' \citet{komlos2018}. \footnote{Though authors find that wage
-  inequality growth has stagnated in the last decade this is not a
+\textbf{Since the 1970s, the United States has experienced a persistent
+divergence between productivity growth and wage growth
+\autocite{hoffmann2020,stansbury,economicpolicyinstitute,elsby2013}.}
+While labour productivity has continued to rise, the earnings of typical
+workers have increased far more slowly, leading to a substantial
+decoupling between the two trends. Explanations range from heterogeneous
+demand for human capital
+\autocite{autor2014,katz1992,acemoglu2012,autor2011,autor_growth_2013}
+to competition \autocite{stansbury,deb2022,yeh2022,azar2022,wilmers2018}
+to weakened labor market institutions and policy forces
+\autocite{egger2019,lee1999,mishel2021,barkai2020,autor2016,card2001,bivens2013,stansbury2020}.\footnote{Summers
+  \& Stansbury 2018 argue that productivity growth still exerts a
+  positive influence on wages overall, but that institutional and
+  structural changes have weakened the link for large segments of the
+  workforce (\textcite{summers2018} \textcite{stansbury}). They point to
+  declining union density, erosion of the minimum wage, globalization,
+  and increased market concentration as key factors that have shifted
+  bargaining power away from workers and reduced labour's share of
+  national income \textcite{autor2014}. Furthermore, additional evidence
+  finds that this decoupling is far from a universal phenomenon. Rather,
+  decoupling applies almost strictly to lower- and medium-wage earners,
+  while already higher wages manage to keep up (relatively) with
+  productivity growth rates.} Though its causes are hotly debated, the
+fact itself is well-documented, especially for lower- and middle-income
+workers, contributing to what is often termed the ``hollowing of the
+middle class'' \autocite{komlos2018}. \footnote{Though authors find that
+  wage inequality growth has stagnated in the last decade this is not a
   result of a ``catch-up'' effect of lower- or middle-income earners
   with top income earners, but rather wage growth at the bottom of the
-  wage distribution \citet{aeppli2022}. Additionally, further evidence
-  indicates that metric choice can influence the ambiguity of earnings
-  and wage inequality conclusions \citet{parolin2025}.}
+  wage distribution \textcite{aeppli2022}. Additionally, further
+  evidence indicates that metric choice can influence the ambiguity of
+  earnings and wage inequality conclusions \textcite{parolin2025}.}
 
-\textbf{The direct consequences of this decoupling are clear.} Though
-households and individuals often have stakes in firm productivity by
-means other than wages, wages remain the most direct link between
-aggregate productivity growth and local economic health. Therefore,
-aggregate productivity growth is not sufficient to secure broad-based
-improvements in living standards if the most direct link between
-productivity and livelihoods is weak \citet{mishel2021}. Furthermore, in
-a context in which the benefits of economic growth have already accrued
-unevenly across communities in the United States by virtue of economic
-history and industrial concentration, allowing this pattern to continue
-could have adverse consequences for households and communities
-\citet{bauluz}, \citet{rickard2020}, \citet{fee2025},
-\citet{storper2009} \citet{fallah2011} \citet{benmelech}.
+\textbf{Regardless of its causes, the decline in the wage–productivity link has important consequences.}
+Wages remain the most direct channel through which national productivity
+growth translates into household well-being. When wage growth lags
+productivity, improvements in aggregate efficiency do not translate into
+broad-based improvements in living standards \autocite{mishel2021}.
+Furthermore, in a context in which the benefits of economic growth have
+already accrued unevenly across communities in the United States, this
+pattern may reinforce existing spatial inequalities in economic
+activities, especially in regions where industrial composition and
+historical shocks have already left communities economically vulnerable
+\autocite{bauluz,rickard2020,fee2025,storper2009,fallah2011,benmelech}.
 
 \textbf{A link that has been far less explored in this context is the
 spillover effect of local wages to local wealth-building and its effect
 on public goods.} Wage growth is an important contributor to local
 wealth-building, allowing households and communities to invest more in
-local public goods \citet{boustan2013}. Communities whose wages rise in
-line with productivity growth will likely reap the benefits of economic
-growth whereas those who do not, risk falling behind. This link is
-particularly important in the US given the structure of local public
+local public goods \autocite{boustan2013}. Communities whose wages rise
+in line with productivity growth will likely reap the benefits of
+economic growth whereas those who do not, risk falling behind. This link
+is particularly important in the US given the structure of local public
 financing. Majority of local public services are funded via property
 taxes. This funding structure entrenches a mechanism for generating
 inequality of opportunity between diversely affluent regions of the
-country \citet{manduca2025} \citet{weir2021} \citet{schechtl2024}
-\citet{mettler2011} .\footnote{A burgeoning literature points to the
-  role of racial segregation and its enduring legacy in perpetuating
-  inequality in local economic health, wealth, and public service
-  expenditure \citet{avenancio-león2022} \citet{trounstine2016}
-  \citet{trounstine2021} .} Put plainly, given the structure of US
-public services, wherein they are tied to asset values, inequality in
+country
+\autocite{manduca2025,weir2021,schechtl2024,mettler2011}.\footnote{A
+  burgeoning literature points to the role of racial segregation and its
+  enduring legacy in perpetuating inequality in local economic health,
+  wealth, and public service expenditure \textcite{avenancio-león2022}
+  \textcite{trounstine2016} \textcite{trounstine2021} .} Existing work
+shows that income inequality and uneven local income growth shape
+inequalities in local public goods provision, residential mobility, and
+long-run opportunity. Wage stagnation can translate directly into
+weakened fiscal capacity. Put plainly, given the structure of US public
+services, wherein they are tied to asset values, inequality in
 wealth-building can have significant effects for the quality of local
 public services. Furthermore, a sometimes lacking, or at best
 under-performing, federal equalisation systems perpetuates this
-structural force \citet{beland2017} \citet{biasi2023} \citet{hoxby1998}
-\citet{mccabe2019} \citet{baker2016} .
+structural force
+\autocite{beland2017,biasi2023,hoxby1998,mccabe2019,baker2016,aesa2024}.
 
 \textbf{Community well-being and public expenditure in the US is already
-characterised by a high degree of spatial heterogeneity
-\citet{manduca2025}, \citet{obrien2025}, \citet{feler2017} .} Evidence
-of how income inequality perpetuates other forms of inequality
-(opportunity, health, infrastructure quality, and broader well-being) is
-steadily increasing \citet{chetty2016}, \citet{logan2012},
-\citet{semuels2016}, \citet{Avancena2021}, \citet{flavin2009}.
-\citet{boustanEffectRisingIncome2013} find that greater income
-inequality leads to higher public expenditure across all public goods
-indicating that a presence of higher-earners in a local area contributes
-to higher levels of expenditure. Though this does not support an
-unambiguous denunciation of inequality in itself, it provides additional
-evidence for the fact that local incomes affect public expenditure
-raising the potential for ``superstar'' and ``left behind'' regions to
-emerge absent even income growth.
+characterized by a high degree of spatial heterogeneity
+\autocite{manduca2025,obrien2025,feler2017}.} Evidence of how income
+inequality perpetuates other forms of inequality (opportunity, health,
+infrastructure quality, and broader well-being) is steadily increasing
+\autocite{chetty2016,logan2012,semuels2016,Avancena2021,flavin2009,boustanEffectRisingIncome2013}
+find that greater income inequality leads to higher public expenditure
+across all public goods indicating that a presence of higher-earners in
+a local area contributes to higher levels of expenditure. Though this
+does not support an unambiguous denunciation of inequality in itself, it
+provides additional evidence for the fact that local incomes affect
+public expenditure raising the potential for ``superstar'' and ``left
+behind'' regions to emerge absent even income growth.
 
-\textbf{One public service that has particularly important ties to
-ensuring generational resilience to economic decline is education.}
-Public schools around the US are responsible for educating over 80\% of
-school-age children. In 2019, governments around the US (including the
-federal government) spent a total of \$870 billion on public education,
-roughly \$17,013 per pupil
-\citet{nationalcenterforeducationstatistics2023}. However, the quality
-of services delivered varies widely across the country
-\citet{biolsi2022}. Take Connecticut for example. In 2016, according to
-the Connecticut State Department of Education, the town of Greenwich
-town, one of the highest-income towns in the country, spent \$22,000 per
-pupil while Bridgeport, although only located 40Km away, spent \$14,000
-\citet{semuels2016}.
+\textbf{Local public education is particularly relevant in this
+context.} Public schools are responsible for education over 80\% of
+American school-age children. In 2019, governments around the US
+(including the federal government) spent a total of \$870 billion on
+public education, roughly \$17,013 per pupil
+\autocite{nationalcenterforeducationstatistics2023,skinner2019}.
+However, the quality of services delivered and fiscal resources spent
+vary widely across the country \autocite{biolsi2022}. Take Connecticut
+for example. In 2016, according to the Connecticut State Department of
+Education, the town of Greenwich town, one of the highest-income towns
+in the country, spent \$22,000 per pupil while Bridgeport, although only
+located 40Km away, spent \$14,000 \autocite{semuels2016}.
 
 \textbf{The quality of public education, especially at an early age, can
 have long-lasting consequences for personal and economic well-being over
 an individual's lifetime as well as generations following them
-\citet{alfonso2020}, \citet{zheng2022}\citet{unicef} .} Although only a
-small piece of the puzzle that determines quality public education,
-expenditure levels ensure adequate funding for facilities, teachers,
-administrators, and other services \citet{baker2017} \citet{baker2025}
-\citet{jackson2016} . Furthermore, evidence suggests that progressive
-spending delivers efficiency gains in school performance
-\citet{rauscher2022} . Therefore, ensuring that local or regional
-economic decline does not disrupt or worsen the quality of education
-delivered is of paramount importance to ensure greater equality in the
-long-run. Altogether, this evidence points to the value of identifying
-the extent to which expenditure on public education is reliant on local
-wage growth across the country.
+\autocite{alfonso2020,zheng2022}.} Although only a small piece of the
+puzzle that determines quality public education, expenditure levels
+ensure adequate funding for facilities, teachers, administrators, and
+other services \autocite{baker2017,baker2025,jackson2016}. Furthermore,
+evidence suggests that progressive spending delivers efficiency gains in
+school performance \autocite{rauscher2022}. Therefore, ensuring that
+local or regional economic decline does not disrupt or worsen the
+quality of education delivered is of paramount importance to ensure
+greater equality in the long-run. Altogether, this evidence points to
+the value of identifying the extent to which expenditure on public
+education is reliant on local wage growth across the country.
 
-\textbf{This study therefore determines whether elasticities of public
-elementary education expenditure to local wage growth are non-zero.} If
-productivity gains translate unevenly into wages across regions, then
-the fiscal capacity of local governments may be shaped as much by
-institutional and structural conditions as by the distribution of
-aggregate economic growth. We investigate the following questions:
+\textbf{Despite the large literature on the existence of
+wage-productivity decoupling, inequality in local public goods
+provision, and US school financing system, one central link remains
+underexplored: Are local public education budgets sensitive to local
+wages, and if so, for whom and under what conditions?}
+
+To be more precise, this study investigates the following questions:
 
 \emph{RQ1:} Do local wage gains affect public education expenditure in
 levels?
@@ -351,27 +347,40 @@ public education spending?
 \subsection{Theoretical Motivation and Empirical
 Approach}\label{theoretical-motivation-and-empirical-approach}
 
-Any study of the linkage between two or more local socio-economic
-outcomes presents considerable endogeneity challenges. In the context of
-this study, wages and public education expenditure are undoubtedly
-endogenous. Higher-income families may self-select into districts with
-greater education spending, confounding causal inference. Lower-income
-families likely struggle financially to make similar mobility decisions.
-Local education contributes to the quality of local human capital
-impacting wages and potentially preferences for education.
+Although as mentioned above, existing work provides correlational
+evidence that higher income communities invest more in local services,
+the causal effect of wage growth on education spending is unclear due to
+substantial endogeneity. Any study of the linkage between two or more
+local socio-economic outcomes presents considerable endogeneity
+challenges.
 
-Therefore, we approach causal identification by instrumenting local
-wages using a shift-share instrumental variable design. More precisely,
-to interrogate the elasticity of public education expenditure to wages
-across US commuting zones, we construct a shift-share instrument that
-combines fixed local industry employment shares with national
-industry-level changes real value added using data from the US Bureau of
-Labor Statistics and Bureau of Economic Analysis. This instrument
-generates plausibly exogenous local variation by exploiting how
-different regions are differentially exposed to common national trends,
-while abstracting from endogenous local dynamics. It is particularly
-well suited in this setting, since the local tax base, and thus
-education spending, likely depends on industries that are unevenly
+Higher-wage households select into districts with better schools.
+Education quality affects local human capital and, thus, wages. Local
+fiscal decisions respond to political, demographic, and institutional
+environments that co-evolve with economic conditions. Moreover, regional
+heterogeneity is large. States differ in their reliance on local versus
+state funding; commuting zones differ in industrial composition and
+exposure to national shocks; and localities vary in their ability to
+translate tax bases into expenditures. On a cultural level, the quality
+of local education can potentially impact preferences for education in
+turn.
+
+Thus, a national ``average'\,' elasticity may be misleading. What is
+missing is a causally identified, regionally sensitive, and
+mechanism-informed estimate of the elasticity of public education
+expenditure to local wages.
+
+To overcome these challenges, we construct a shift--share instrumental
+variable for local wages. More precisely, to interrogate the elasticity
+of public education expenditure to wages across US commuting zones, we
+construct a shift-share instrument that combines fixed local industry
+employment shares with national industry-level changes real value added
+using data from the US Bureau of Labor Statistics and Bureau of Economic
+Analysis. This instrument generates plausibly exogenous local variation
+by exploiting how different regions are differentially exposed to common
+national trends, while abstracting from endogenous local dynamics. It is
+particularly well suited in this setting, since the local tax base, and
+thus education spending, likely depends on industries that are unevenly
 distributed across regions but subject to similar industry-specific wage
 shocks. Finally, we use this instrument to identify the effect of wage
 shocks on local public education expenditure as reported by the US
@@ -396,45 +405,64 @@ analysis, we construct commuting zone growth rates as idiosyncratic
 variables absent state and national-level growth rates, understanding
 that \emph{relative} growth rates are of particular importance in a
 landscape where local economies determine the actual \emph{value} of
-wage levels.
+wage levels. This allows us to identify where the wage--expenditure link
+is strongest or weakest, and to assess whether intergovernmental
+transfers mitigate inequalities in local fiscal capacity.
 
-\subsection{Detailed results}\label{detailed-results}
+\subsection{Detailed Results and
+Contribution}\label{detailed-results-and-contribution}
 
 \begin{enumerate}
 \def\labelenumi{\arabic{enumi}.}
-\tightlist
 \item
-  Public education expenditure is not agnostic to local economic
-  conditions. We establish a strong positive causal link between public
-  education expenditure and local wages, wherein a 10\% increase in
-  local wages drives a 2.2\% increase in public elementary education
+  First, we find that public education expenditure responds strongly and
+  positively to local wage growth. A 10\% increase in local wages is
+  associated with a 2.2\% increase in public elementary education
   expenditure, with a long-run increase of 4.6\%.
 \item
-  Estimating the instrumental variable model separately for each state
-  reveals substantial heterogeneity in the relationship between wages
-  and education expenditure. Only a third of the 40 states analysed in
-  this study show persistent causal relationships between wages and
-  education expenditure, indicating that these carry the weight of
-  national-level identification. Majority of the states in which we
-  identify a statistically significant effect rely on an above-average
-  share of education funding coming from local sources rather than
-  intergovernmental transfers. Across these states the wage elasticity
-  varies between 2-10\% increases in response to a 10\% increase in
-  local wages, with Colorado, Florida, and South Dakota exhibiting
-  highest wage elasticities.
+  Second, estimating the instrumental variable model separately for each
+  state reveals substantial heterogeneity in the relationship between
+  wages and education expenditure. Only a third of the 40 states
+  analysed in this study show persistent causal relationships between
+  wages and education expenditure, indicating that these carry the
+  weight of national-level identification. Most of these states rely on
+  an above-average share of education funding coming from local sources
+  (property taxes CHECK) rather than intergovernmental transfers. Across
+  these states the wage elasticity varies between 2-10\% increases in
+  response to a 10\% increase in local wages, with Colorado, Florida,
+  and South Dakota exhibiting highest wage elasticities.
 \item
-  Furthermore, we find that this elasticity is strongest (weakest) in
-  magnitude and statsitical significance for commuting zones whose wage
-  growth rates are low (high) relative to those of other regions,
-  indicating the potential risk for depressed education expenditure in
-  regions where wages are stagnating or potentially declining.
+  Third, elasticities are largest, both in terms of size and statistical
+  significance, in commuting zones with historically low wage growth
+  compared to other regions, and smallest in regions with historically
+  strong wage trajectories. This indicates that regions already
+  experiencing economic stagnation may face compounded disadvantages
+  through weaker fiscal capacity for education spending.
 \end{enumerate}
+
+As such, these results make three important contributions to the
+existing literature. First, the paper provides the first causal
+estimates of the elasticity of local public education expenditure to
+local wage growth across US commuting zones, documenting both the
+average national relationship and substantial regional heterogeneity.
+
+Second, the results show that local fiscal capacity is closely tied to
+historically uneven wage growth, implying that wage-productivity
+decoupling has important implications not only for households but also
+for public sector institutions that shape long-run opportunity. Lastly,
+the paper demonstrates how the structure of the US school financing
+system amplifies or dampens the effects of local economic change, with
+weaker equalising opportunities exacerbating the consequences of wage
+stagnation. Together, these findings show that the wage-productivity
+nexus has implications that go far beyond household earnings: it shapes
+the fiscal foundations of local public education and, through that
+channel, the intergenerational transmission of economic opportunity.
 
 In the sections that follow, we outline the various data sources used in
 Section~\ref{sec-data}; provide a detailed overview of our shift-share
 construction and methodological approach Section~\ref{sec-methods} with
 accompanying results; and conclude with a discussion of policy
-implications in \textbf{?@sec-discussion}.
+implications in Section~\ref{sec-conclusion}.
 
 \section{Data}\label{sec-data}
 
@@ -446,7 +474,7 @@ repository from Willamette University of the data collected annually as
 part of the US Census Bureau's Annual Survey of State \& Local
 Government Finances (SLGF). The SLGF is the `only comprehensive source
 of information on the finances of local governments in the United
-States' \citet{pierson}. The data includes county-level revenue,
+States' \autocite{pierson}. The data includes county-level revenue,
 property taxes, and expenditure on public education including
 disaggregated values by revenue source (federal, state, or other
 intergovernmental revenue) and expenditure item (lunches, wages, debt).
@@ -455,7 +483,7 @@ measures up to the commuting zone-level to ensure the availability of
 adequate control and treatment variables. We choose to conduct the
 analysis on the commuting zone level because it is a more accurate
 picture of a local labor market area
-\citet{carpenterWhenUseCommuting2022}. \footnote{The database is
+\autocite{carpenterWhenUseCommuting2022}. \footnote{The database is
   provided for six different levels of government: state, county,
   municipal, township, special district, and school district. Reporting
   is only mandated in Census years (every five years), and even then
@@ -465,8 +493,8 @@ picture of a local labor market area
   administrative capacity. However, strengthened by a partnership with
   the National Center for Education Statistics, observations for US
   school districts exhibit near-complete coverage between 1997-2021
-  (\citet{pierson}).} Our main outcome variable is per pupil spending on
-elementary education.
+  (\textcite{pierson}).} Our main outcome variable is per pupil spending
+on elementary education.
 
 \textbf{Population controls:} We source commuting-zone level population
 statistics by aggregating data from county-level populations statistics
@@ -488,7 +516,7 @@ This information is obtained by reviewing repeat mortgage transactions
 on single-family properties whose mortgages have been purchased or
 securitized by Fannie Mae or Freddie Mac (two US government-sponsored
 enterprises that guarantee most US mortgages)
-\citet{usfederalhousingfinanceagency}. We aggregate to the commuting
+\autocite{usfederalhousingfinanceagency}. We aggregate to the commuting
 zone level via a population-weighted mean.
 
 \textbf{Race Controls:} The National Institute of Health National Cancer
@@ -496,16 +524,16 @@ Institute's Surveillance, Epidemiology, and End Results (SEER) Program
 provides annual estimates of total White, Black, American Indian/Alaska
 Native, Asian/Pacific Islander populations at the county level,
 optionally by Hispanic or non-Hispanic origin
-\citet{nationalcancerinstitutedccpssurveillanceresearchprogram} . Though
-the US Census Bureau provides county-level estimates of racial make-up
-of local areas in the American Community Survey, this data is
+\autocite{nationalcancerinstitutedccpssurveillanceresearchprogram}.
+Though the US Census Bureau provides county-level estimates of racial
+make-up of local areas in the American Community Survey, this data is
 unavailable prior to 2009 and is considered less accurate than those
 provided by the National Cancer Institute's SEER Database.
 
 \textbf{Adequate Education Spending}: The University of Wisconsin's
 School Finance Indicators Database provides provides detailed data on
 School Funding Adequacy, measured as the dollar estimate needed per
-pupil to achieve U.S. average test scores \citet{baker}.
+pupil to achieve U.S. average test scores \autocite{baker}.
 
 This data aggregation results in a complete and balanced panel of 636 US
 commuting zones across 40 states between 2001-2021. \footnote{20\% of US
@@ -518,18 +546,16 @@ commuting zones across 40 states between 2001-2021. \footnote{20\% of US
 commuting zone level. \footnote{In line with similar work on US economic
   geography, commuting zones were chosen as the unit of analysis as they
   are a far less arbitrary and more accurate representation of local
-  labour market areas/economies
-  (\href{https://www.ddorn.net/data.htm\#Local\%20Labor\%20Market\%20Geography}{David Dorn's Resource Page})
-  (\href{https://www.nature.com/articles/s41597-024-03829-5]}{Fowler et al. 2024}).}
-Therefore, apart from an indicator of a commuting zone's state, all
-variables are time-variant.
+  labor market areas/economies \autocite{dorn,fowler2024}.} Therefore,
+apart from an indicator of a commuting zone's state, all variables are
+time-variant.
 
 \autoref{tbl_desc_stats} reports summary statistics across relevant
 variables. All (dollar) values are reported in (real 2017-chained)
 thousands except for the House Price Index.
 \autoref{tab:tbl_order_of_integration} represents the order of
 integration of relevant variables calculated using a unit root test
-designed for heterogeneous panels \citet{im2003}. All variables are
+designed for heterogeneous panels \autocite{im2003}. All variables are
 integrated I(0) indicating minimal concern for non-stationarity except
 in the case of enrollment and population numbers.
 
@@ -666,42 +692,43 @@ capital.
 Therefore, we adopt a causal identification strategy via a shift-share
 instrument. Shift-share or \emph{Bartik} instruments have gained
 popularity in empirical work as a method of handling endogeneity issues
-in panel data (\citet{ferri2022}, \citet{goldsmith-pinkham2020},
-\citet{bartik1991}).\footnote{Autor et al.~use a shift-share instrument
-  to assess the effect of Chinese import competition on manufacturing
-  employment in US commuting zones (\citet{autor2013}). As an extension,
-  \citet{feler2017} use a similar shift-share instrument to assess the
-  effect of the same shock on the size of local government.
-  \citet{baccini2021} employ a shift-share instrument for manufacturing
-  layoffs to tease out the effect of a decline in manufacturing on both
-  economically motivated and racial identity voting patterns in the US.}
-Such instruments combine time-variant, unit-invariant changes in
-aggregate economic variables (i.e., national changes in industry value
-added levels) with time-invariant, unit-variant shares in exposure to
-these macro-level changes (i.e., local shares of employment in
-particular industries). This decomposition of local-level changes
-delocalises variation over space and time. In doing so, it provides a
-defensible strategy for `de-endogenising' the treatment, as local
-exposure is predetermined with respect to contemporaneous shocks.
-Moreover, by construction, the approach enables the examination of how
-macro-level phenomena propagate to and affect local units, as it
-generates local shocks that are driven by national industry trends
-weighted but the community exposure to this industries.\footnote{An
-  additional popular indicator for modelling industrial shocks is
-  \emph{oil price} as values are often assumed to be exogenous to local
-  and even national conditions (\citet{scheer2022}). Third, various
-  indicators for measuring \emph{deindustrialisation} have been proposed
-  including the manufacturing share of employment, value added, and GDP
-  \citet{tregenna2009}, \citet{tregenna2020}. Finally, in rare
+in panel data
+\autocite{ferri2022,goldsmith-pinkham2020,bartik1991}.\footnote{Autor et
+  al.~use a shift-share instrument to assess the effect of Chinese
+  import competition on manufacturing employment in US commuting zones
+  (\textcite{autor2013}). As an extension, \textcite{feler2017} use a
+  similar shift-share instrument to assess the effect of the same shock
+  on the size of local government. \textcite{baccini2021} employ a
+  shift-share instrument for manufacturing layoffs to tease out the
+  effect of a decline in manufacturing on both economically motivated
+  and racial identity voting patterns in the US.} Such instruments
+combine time-variant, unit-invariant changes in aggregate economic
+variables (i.e., national changes in industry value added levels) with
+time-invariant, unit-variant shares in exposure to these macro-level
+changes (i.e., local shares of employment in particular industries).
+This decomposition of local-level changes delocalises variation over
+space and time. In doing so, it provides a defensible strategy for
+`de-endogenising' the treatment, as local exposure is predetermined with
+respect to contemporaneous shocks. Moreover, by construction, the
+approach enables the examination of how macro-level phenomena propagate
+to and affect local units, as it generates local shocks that are driven
+by national industry trends weighted but the community exposure to this
+industries.\footnote{An additional popular indicator for modelling
+  industrial shocks is \emph{oil price} as values are often assumed to
+  be exogenous to local and even national conditions
+  (\textcite{scheer2022}). Third, various indicators for measuring
+  \emph{deindustrialisation} have been proposed including the
+  manufacturing share of employment, value added, and GDP
+  \textcite{tregenna2009}, \textcite{tregenna2020}. Finally, in rare
   instances, exogeneity can be secured due to \emph{geographical,
-  climatological, or geological factors}. For example, \citet{borge2015}
-  obtain an exogenous measure of local revenue by ``instrumenting the
-  variation in hydropower revenue, and thus total revenue, by topology,
-  average precipitation and meters of river in steep terrain.'' Certain
-  authors have argued that the fact that the location of hydrocarbon
-  deposits is dictated by geomorphological processes provides a
-  plausible argument for exogeneity \citet{esposito2021},
-  \citet{chen2022}.}
+  climatological, or geological factors}. For example,
+  \textcite{borge2015} obtain an exogenous measure of local revenue by
+  ``instrumenting the variation in hydropower revenue, and thus total
+  revenue, by topology, average precipitation and meters of river in
+  steep terrain.'' Certain authors have argued that the fact that the
+  location of hydrocarbon deposits is dictated by geomorphological
+  processes provides a plausible argument for exogeneity
+  \textcite{esposito2021}, \textcite{chen2022}.}
 
 In the context of this work, we construct the instrument by interacting
 commuting-zone level industrial employment shares held constant at a
@@ -886,73 +913,69 @@ empirical support for a ``resource curse'' dynamic\footnote{Perhaps the
   most prominent and often-cited relationship between education and
   extractive industries is through the lens of the `resource curse.' The
   validity and empirical existence of a `resource curse' has been tested
-  since its conception with disparate results \citep[\citet{badeeb2017},
-  \citet{blanco2012}, \citet{borge2015}, \citet{brunnschweiler2008},
-  \citet{cockx2014}, \citet{cockx2016}, \citet{deacon2011},
-  \citet{dialga2022}, \citet{douglas2017}, \citet{haber},
-  \citet{menaldo2016}, \citet{ross2018}, \citet{ross2015},
-  \citet{sincovich2018}, \citet{wiens2014}]{ahlerup2020}. The literature
-  is divided into two strands focusing on either political (the
-  relationship between resource wealth and governance)
-  \citep[\citet{ross2015}, \citet{wiens2014},
-  \citet{deacon2011}]{ross2015} or economic (the relationship between
-  resource wealth and economic growth or human capital) resource curses.
-  Empirical investigation of the economic resource curse has explored
-  the effect of resource dependence on economic growth, public health
-  and education expenditure and outcomes, mainly at a national level
-  \citep[\citet{cockx2016}, \citet{douglas2017},
-  \citet{sincovich2018}]{borge2015}. In the case of education, the
-  distinct outcome measured is level of educational attainment, in other
-  words, whether the presence of a booming resource extraction economy
-  provides disincentives to education for young people. It is worth
-  noting that this literature has been repeatedly questioned on
-  theoretical and conceptual grounds as institutional context often
-  dictates whether a resource curse exists and empirical analyses seem
-  to be very sensitive to methodological choices
-  \citep[\citet{ross2015}, \citet{dialga2022}]{ross2018}. Although
+  since its conception with disparate results
+  \autocite{ahlerup2020,badeeb2017,blanco2012,borge2015,brunnschweiler2008,cockx2014,cockx2016,deacon2011,dialga2022,douglas2017,haber,menaldo2016,ross2018,ross2015,sincovich2018,wiens2014}.
+  The literature is divided into two strands focusing on either
+  political (the relationship between resource wealth and governance)
+  \autocite{ross2015,ross2015,wiens2014,deacon2011} or economic (the
+  relationship between resource wealth and economic growth or human
+  capital) resource curses. Empirical investigation of the economic
+  resource curse has explored the effect of resource dependence on
+  economic growth, public health and education expenditure and outcomes,
+  mainly at a national level
+  \autocite{borge2015,cockx2016,douglas2017,sincovich2018}. In the case
+  of education, the distinct outcome measured is level of educational
+  attainment, in other words, whether the presence of a booming resource
+  extraction economy provides disincentives to education for young
+  people. It is worth noting that this literature has been repeatedly
+  questioned on theoretical and conceptual grounds as institutional
+  context often dictates whether a resource curse exists and empirical
+  analyses seem to be very sensitive to methodological choices
+  {[}\textcite{ross2018}; @ross2015; \textcite{dialga2022}{]}. Although
   awareness of this strand of literature is of relevance to this work,
   the unresolved nature of the `debate' surrounding its existence
   requires caution if eventually utilised as a theoretical framework for
-  answering the research question. \citet{ahlerup2020} find that for 30
-  countries in Africa, the presence of gold mines during adolescence
+  answering the research question. \autocite{ahlerup2020} find that for
+  30 countries in Africa, the presence of gold mines during adolescence
   have a significant effect on educational attainment.
-  \citet{badeeb2017} investigates whether resource dependence slows
+  \autocite{badeeb2017} investigates whether resource dependence slows
   economic growth with no explicit mention of education.
-  \citet{blanco2012} find that in Latin America, petroleum export has a
-  significant long-run negative relationships with human capital.
-  \citet{borge2015} find support for the paradox of plenty hypothesis in
-  Norway - that higher local public revenue negatively affects the
-  efficiency of local public good provision. \citet{brunnschweiler2008}
-  critically evaluate `the empirical basis for the so-called resource
-  curse and find that, despite the topic's popularity in economics and
-  political science research, this apparent paradox may be a red
-  herring. The most commonly used measure of ``resource abundance'' can
-  be more usefully interpreted as a proxy for ``resource
-  dependence''-endogenous to underlying structural factors. In multiple
-  estimations that combine resource abundance and dependence,
-  institutional, and constitutional variables, we find that (i) resource
-  abundance, constitutions, and institutions determine resource
-  dependence, (ii) resource dependence does not affect growth, and (iii)
-  resource abundance positively affects growth and institutional
-  quality.' \citet{cockx2014} use a panel on 140 countries from
-  1995-2009 and find an inverse relationship between resource dependence
-  and and public health spending over time. \citet{cockx2016}
-  investigate a panel of 140 countries from 1995-2009 to find an adverse
-  effect of resource depdence on public education expenditures relative
-  to GDP. \citet{dialga2022} find disparate results for health and
-  education controlling for institutional quality. \citet{douglas2017}
-  ``measure the effect of resource-sector dependence on long-run income
-  growth using the natural experiment of coal mining in 409 Appalachian
-  counties selected for homogeneity. Using a panel data set
-  (1970--2010), we find a one standard deviation increase in resource
-  dependence is associated with 0.5--1 percentage point long-run and a
-  0.2 percentage point short-run decline in the annual growth rate of
-  per capita personal income. We also measure the extent to which the
-  resource curse operates through disincentives to education, and find
-  significant effects, but this ``education channel'' explains less than
-  15 percent of the apparent curse.' \citet{haber} focus on authoriarian
-  regimes. \citet{menaldo2016} argues again that this is an institutions
-  curse and not a resource curse issure. \citet{sincovich2018} provide a
+  \autocite{blanco2012} find that in Latin America, petroleum export has
+  a significant long-run negative relationships with human capital.
+  \autocite{borge2015} find support for the paradox of plenty hypothesis
+  in Norway - that higher local public revenue negatively affects the
+  efficiency of local public good provision.
+  \autocite{brunnschweiler2008} critically evaluate `the empirical basis
+  for the so-called resource curse and find that, despite the topic's
+  popularity in economics and political science research, this apparent
+  paradox may be a red herring. The most commonly used measure of
+  ``resource abundance'' can be more usefully interpreted as a proxy for
+  ``resource dependence''-endogenous to underlying structural factors.
+  In multiple estimations that combine resource abundance and
+  dependence, institutional, and constitutional variables, we find that
+  (i) resource abundance, constitutions, and institutions determine
+  resource dependence, (ii) resource dependence does not affect growth,
+  and (iii) resource abundance positively affects growth and
+  institutional quality.' \autocite{cockx2014} use a panel on 140
+  countries from 1995-2009 and find an inverse relationship between
+  resource dependence and and public health spending over time.
+  \autocite{cockx2016} investigate a panel of 140 countries from
+  1995-2009 to find an adverse effect of resource dependence on public
+  education expenditures relative to GDP. \autocite{dialga2022} find
+  disparate results for health and education controlling for
+  institutional quality. \autocite{douglas2017} ``measure the effect of
+  resource-sector dependence on long-run income growth using the natural
+  experiment of coal mining in 409 Appalachian counties selected for
+  homogeneity. Using a panel data set (1970--2010), we find a one
+  standard deviation increase in resource dependence is associated with
+  0.5--1 percentage point long-run and a 0.2 percentage point short-run
+  decline in the annual growth rate of per capita personal income. We
+  also measure the extent to which the resource curse operates through
+  disincentives to education, and find significant effects, but this
+  ``education channel'' explains less than 15 percent of the apparent
+  curse.' \autocite{haber} focus on authoriarian regimes.
+  \autocite{menaldo2016} argues again that this is an institutions curse
+  and not a resource curse issure. \autocite{sincovich2018} provide a
   literature review of resource curse investigations in the Australian
   context.} wherein local communities reprioritise fiscal windfalls
 toward government expenditure other than public education.
@@ -1429,6 +1452,10 @@ growth rates.
    \end{adjustbox}
 \end{table}
 
+used (Mb) gc trigger (Mb) limit (Mb) max used (Mb) Ncells 4599133 245.7
+7280012 388.8 NA 7280012 388.8 Vcells 200573820 1530.3 258877180 1975.1
+2048 203429400 1552.1
+
 \FloatBarrier
 
 \subsubsection{State-by-state
@@ -1442,7 +1469,9 @@ First, states vary in the number of commuting zones they contain. Figure
 12 demonstrates that states have anywhere between 2 (Delaware) and 58
 (Texas) commuting zones. This allows us to estimate panel-style
 regressions within each state to net out between-state variation that
-might be confounding our current treatment estimates.
+might be confounding our current treatment estimates. We exclude any
+states that contain less than 5 commuting zones due to sample size
+concerns.
 
 \begin{figure}[H]
 
@@ -1460,13 +1489,13 @@ might be confounding our current treatment estimates.
 
 Using our instrumental variable approach with a value-added based
 shift-share instrument, we corroborate the directionality and magnitude
-of the effect for 12 states: New Hampshire, Colorado, Florida, South
-Dakota, Kentucky, Louisiana, Pennsylvania, North Dakota, Oregon,
-Oklahoma, Arizona, and Indiana. In estimating the state-by-state
-regressions, we exclude any states where our F-statistic is below
-conventional weak instrument thresholds (F statistics \textless= 12 and
-p-value \textless{} 0.05) and the p-value of the second stage
-coefficient of interest is \textless{} 0.1.
+of the effect for 11 states: Colorado, Florida, South Dakota, Kentucky,
+Louisiana, Pennsylvania, North Dakota, Oregon, Oklahoma, Arizona, and
+Indiana. In estimating the state-by-state regressions, we exclude any
+states where our F-statistic is below conventional weak instrument
+thresholds (F statistics \textless= 12 and p-value \textless{} 0.05) and
+the p-value of the second stage coefficient of interest is \textless{}
+0.1.
 
 Examining various characteristics of these states, we find that they
 vary widely in demographic composition, enrollment levels, and wage
@@ -1530,68 +1559,71 @@ of interest is \textless{} 0.1).
 
 \FloatBarrier
 
-\subsection{Additional Analysis
-Inventory}\label{additional-analysis-inventory}
-
-In the Appendices we include:
-
-\begin{itemize}
-  \item Panel VAR Estimation
-  \item Quantile regression estimation
-  \item Exclusion of high-income CZ outliers
-  \item Implementation of a wage-based (rather than VA-based) shift-share instrument
-  \item National average treatment effects for all econometric estimation strategies outlined in the main text
-  \item Information about the construction of the shift-share instrument
-\end{itemize}
-
 \FloatBarrier
 
-\section{Conclusion}\label{conclusion}
+\section{Conclusion}\label{sec-conclusion}
 
 \subsection{Discussion}\label{discussion}
 
-This work establishes a causal link between local wage growth and public
-education expenditure. Our baseline estimates reveal a short-run wage
-elasticity of 0.23, with a long-run cumulative effect of approximately
-0.46. The dynamic components of the econometric specification indicate
-significant persistence in local public education budgets, indicating
-both institutional inertia but also the likely rare revision of local
-tax rates allowing local wage growth to boost education spending. This
-persistence indicates potential for asymmetric adjustment likely
-correlated with local growth trajectories, wherein communities
-experiencing wage growth are likely to see gradual spending increases,
-while declining communities could experience the opposite effect.
+This paper set out to examine whether local wage growth translates into
+higher local public education expenditure across US commuting zones, and
+whether this relationship varies across institutional environments,
+labor-market conditions, and long-run regional trajectories. Motivated
+by the persistent divergence between productivity growth and wage gains
+for typical workers, we asked whether the decoupling of wages from
+productivity has implications beyond household well-being and
+specifically, whether uneven wage growth shapes the fiscal capacity of
+communities to invest in public education.
 
-This positive elasticity is concentrated in a third of the states in the
-sample (New Hampshire, Colorado, Florida, South Dakota, Kentucky,
-Louisiana, Pennsylvania, North Dakota, Oregon, Oklahoma, Arizona, and
-India), whereas other states exhibit minimal or insignificant
-responsiveness.
+We establish a causal link between local wage growth and public
+education expenditure. We show that public education expenditure is not
+insulated from local labor-market conditions. In the baseline
+specification, a 10 percent increase in local wages generates a 2.2
+percent increase in education spending in the short run and a 4.6
+percent increase in the long run. The dynamic components of the
+econometric specification indicate significant persistence in local
+public education budgets. This persistence likely reflects institutional
+inertia but also the infrequency with which local tax rates are revised,
+allowing local wage growth to boost education spending. It also suggests
+asymmetric adjustment: communities experiencing wage growth are likely
+to see gradual increases in education spending as higher incomes
+strengthen their revenue base, while declining communities could
+experience the opposite effect.
+
+Importantly, the positive elasticity we document is not uniform across
+the country. It is concentrated in a third of the states in the sample
+(New Hampshire, Colorado, Florida, South Dakota, Kentucky, Louisiana,
+Pennsylvania, North Dakota, Oregon, Oklahoma, Arizona, and Indiana).
+Many other states exhibit minimal or insignificant responsiveness,
+suggesting that where reliance on state or federal transfers is higher,
+local wage shocks translate less directly into school budgets. These
+findings underscore that the structure of financing systems mediates the
+extent to which local economic conditions affect public goods provision.
 
 Though outcomes measured in this study are not direct inequality
-metrics, our findings reveal that the decentralised school financing
-system in the US has the potential to exacerbate inequalities in local
-public well-being by failing to equalise across regions experiencing
-diverging growth trajectories. As a result, in the states in which local
-spending is responsive to changes in local wages, the quality of early
-childhood education might be compromised by macroeconomic trends and
-industry-specific shocks beyond local control. Thus, equalisation
-formulas at the state and federal level that fail to account for wage
-trends and fiscal multipliers may contribute to disparities in public
-goods delivery. Theories of effective equalisation, and indeed
-preferences for redistribution, differ especially across regions of the
-the United States. However, equalisation efforts should at least aim to
-insulate communities from potential downward pressures on public
-education expenditure.
+metrics, the results have clear implications for spatial disparities in
+local public well-being. Our findings reveal that the decentralised
+school financing system in the US has the potential to exacerbate
+inequalities in local public well-being by failing to equalise across
+regions experiencing diverging growth trajectories. As a result, in the
+states in which local spending is responsive to changes in local wages,
+the quality of early childhood education might be compromised by
+macroeconomic trends and industry-specific shocks beyond local control.
+Thus, equalisation formulas at the state and federal level that fail to
+account for wage trends and fiscal multipliers may contribute to
+disparities in public goods delivery. Theories of effective
+equalisation, and indeed preferences for redistribution, differ
+especially across regions of the the United States. However,
+equalisation efforts should at least aim to insulate communities from
+potential downward pressures on public education expenditure.
 
 The determinants of inequality in public education delivery in the US
 are multiple and complex. Significant evidence exists of the role of
 historically discriminatory policies related to congressional
 districting, under-investment in low-income areas of color
-\citet{trounstine2016} \citet{trounstine2021} \citet{sosina2019} .
-Though this work does not directly inform this debate, further work
-could explore the extent to which wage growth interacts with such
-structural policies.
+\autocite{trounstine2016,trounstine2021,sosina2019}. Though this work
+does not directly inform this debate, further work could explore the
+extent to which wage growth interacts with such structural policies.
 
 Addressing structural inequality requires rethinking education finance,
 taking the decentralised American context as given. Ensuring educational
@@ -1609,7 +1641,7 @@ heterogeneously.
   Data limits true consideration of non-stationarity issues. Estimating
   this model in first differences or growth rates would be preferable to
   address non-stationarity concerns as well as allow for asymmetric
-  treatmetn estimation to distinguish between negative and positive wage
+  treatment estimation to distinguish between negative and positive wage
   pressures. However, this would require improvements in data collection
   of the required variables.
 \item
@@ -1618,23 +1650,33 @@ heterogeneously.
 
 \section{Data and Code Availability}\label{data-and-code-availability}
 
-\textcolor{red}{Code and data to reproduce the analysis will be made available on Github or Zenodo.}
+Code and data to reproduce the analysis will be made available on
+Zenodo. A working version of the database and code is currently public
+on {[}Github{]}(https://github.com/ebbam/pub\_fin\_schools).
 
 \section{Use of AI}\label{use-of-ai}
+
+Below, we provide a summary of the tasks where AI has been used. We
+limited its use to debugging and efficiency improvements during data
+cleaning and analysis, formatting of tables and figures, and helping
+with compatiblity between various typesetting tools:
 
 \begin{itemize}
 \tightlist
 \item
-  Used ChatGPT to help improve readability of plots (formatting,
-  margins, labeling, font size).
+  Used ChatGPT or Claude to help improve readability of plots
+  (formatting, margins, labeling, font size, distinguishing between
+  model fit and testing values).
 \item
-  Used ChatGPT to debug errors in R during data cleaning and plotting.
+  Used ChatGPT or Claude to debug errors in R during data cleaning and
+  plotting.
+\item
+  Used ChatGPT to improve compatibility between Quarto Markdown and
+  Latex integrations.
 \item
   Used ChatGPT to provide suggestions for reducing run time of
   repetitive tasks (ex. downloading and processing multiple data files).
 \end{itemize}
-
-\section{Acknowledgements}\label{acknowledgements}
 
 \section*{Appendices}\label{appendices}
 \addcontentsline{toc}{section}{Appendices}
@@ -1643,8 +1685,1187 @@ heterogeneously.
 
 \input{/Users/ebbamark/Documents/Documents - Nuff-Malham/GitHub/pub_fin_schools/code/si_tex_docs/si.tex}
 
+\section{Key Relationships between Economic
+Variables}\label{key-relationships-between-economic-variables}
 
-\bibliography{pub\_fin\_md.bib}
+Below we display key relationships between several of the economic
+variables in our study. All economic indicators (house prices, private
+industry GDP, and wages are positively associated with education
+expenditure, whereas enrollment is negatively associated with education
+expenditure per pupil.
+
+We report descriptive regressions in this section to establish
+relationships between property taxes, education expenditure, private
+industry GDP, and house prices. All regression models are estimated
+using two-way fixed effects and standard errors clustered by commuting
+zone.
+
+\pandocbounded{\includegraphics[keepaspectratio]{regressions_files/figure-pdf/unnamed-chunk-99-1.png}}
+
+\pandocbounded{\includegraphics[keepaspectratio]{regressions_files/figure-pdf/unnamed-chunk-99-2.png}}
+
+\FloatBarrier
+
+\subsection{Property Tax \textasciitilde{} GDP}\label{property-tax-gdp}
+
+GDP has a highly relevant relationship to property taxes. A 1\% increase
+in GDP (per capita) is assocaited with a 0.38\% (0.32\%) increase in
+property taxes collected (per capita) (\autoref{tbl_proptax_gdp}).
+
+\begin{table}[htbp]
+   \caption{\label{tbl_proptax_gdp} no title}
+   \centering
+   \begin{adjustbox}{width = \textwidth, center}
+      \begin{tabular}{lcccc}
+         \tabularnewline \midrule \midrule
+         Dependent Variables: & \multicolumn{2}{c}{(log) Prop Tax} & \multicolumn{2}{c}{(log) Prop Tax pp}\\
+         Model:               & (1)            & (2)            & (3)            & (4)\\  
+         \midrule
+         \emph{Variables}\\
+         (log) Real GDP       & 0.3854$^{***}$ & 0.1226$^{***}$ &                &   \\   
+                              & (0.0480)       & (0.0325)       &                &   \\   
+         (log,l1) Real GDP    &                & 0.1193$^{***}$ &                &   \\   
+                              &                & (0.0274)       &                &   \\   
+         (log,l2) Real GDP    &                & 0.0697$^{**}$  &                &   \\   
+                              &                & (0.0285)       &                &   \\   
+         (log,l3) Real GDP    &                & 0.0790$^{***}$ &                &   \\   
+                              &                & (0.0183)       &                &   \\   
+         (log,l4) Real GDP    &                & 0.1198$^{***}$ &                &   \\   
+                              &                & (0.0384)       &                &   \\   
+         (log) Real GDP pc    &                &                & 0.3151$^{***}$ & 0.1212$^{***}$\\   
+                              &                &                & (0.0616)       & (0.0366)\\   
+         (log,l1) Real GDP pc &                &                &                & 0.0929$^{***}$\\   
+                              &                &                &                & (0.0271)\\   
+         (log,l2) Real GDP pc &                &                &                & 0.0677$^{**}$\\   
+                              &                &                &                & (0.0328)\\   
+         (log,l3) Real GDP pc &                &                &                & 0.0731$^{***}$\\   
+                              &                &                &                & (0.0229)\\   
+         (log,l4) Real GDP pc &                &                &                & 0.0624$^{*}$\\   
+                              &                &                &                & (0.0351)\\   
+         \midrule
+         \emph{Fixed-effects}\\
+         unit                 & Yes            & Yes            & Yes            & Yes\\  
+         year                 & Yes            & Yes            & Yes            & Yes\\  
+         \midrule
+         \emph{Fit statistics}\\
+         Observations         & 13,356         & 10,812         & 13,356         & 10,812\\  
+         R$^2$                & 0.99175        & 0.99329        & 0.93467        & 0.94256\\  
+         Within R$^2$         & 0.10787        & 0.15702        & 0.06308        & 0.08956\\  
+         \midrule \midrule
+         \multicolumn{5}{l}{\emph{Clustered (unit) standard-errors in parentheses}}\\
+         \multicolumn{5}{l}{\emph{Signif. Codes: ***: 0.01, **: 0.05, *: 0.1}}\\
+      \end{tabular}
+   \end{adjustbox}
+\end{table}
+
+\FloatBarrier
+
+\subsection{Education Expenditure \textasciitilde{} Revenue
+Sources}\label{education-expenditure-revenue-sources}
+
+The below regressions are included to establish the relationship between
+education expenditure and its component parts (ie. the largest form of
+IG revenue is state funding and Own Source revenue is largely sourced
+from Property Taxes).
+
+\begingroup
+\centering
+\begin{adjustbox}{width = \textwidth, center}
+   \begin{tabular}{lcccccccc}
+      \tabularnewline \midrule \midrule
+      Dependent Variables: & \multicolumn{4}{c}{(log) Elem.Ed.Exp.pp} & \multicolumn{4}{c}{(log) Elem.Ed.Exp.}\\
+      Model:                    & (1)            & (2)            & (3)            & (4)            & (5)            & (6)            & (7)            & (8)\\  
+      \midrule
+      \emph{Variables}\\
+      (log) Rev. Own Sources pp & 0.3604$^{***}$ &                &                &                &                &                &                &   \\   
+                                & (0.0190)       &                &                &                &                &                &                &   \\   
+      (log) IG Revenue pp       & 0.4469$^{***}$ &                & 0.4532$^{***}$ &                &                &                &                &   \\   
+                                & (0.0244)       &                & (0.0265)       &                &                &                &                &   \\   
+      (log) Prop Tax pp         &                & 0.2266$^{***}$ & 0.2871$^{***}$ & 0.2897$^{***}$ &                &                &                &   \\   
+                                &                & (0.0180)       & (0.0185)       & (0.0181)       &                &                &                &   \\   
+      (log) Fed IG Rev pp       &                &                &                & 0.0019         &                &                &                &   \\   
+                                &                &                &                & (0.0019)       &                &                &                &   \\   
+      (log) State IG Rev pp     &                &                &                & 0.4307$^{***}$ &                &                &                &   \\   
+                                &                &                &                & (0.0283)       &                &                &                &   \\   
+      (log) Prop Tax            &                &                &                &                & 0.2565$^{***}$ & 0.3014$^{***}$ & 0.3070$^{***}$ &   \\   
+                                &                &                &                &                & (0.0195)       & (0.0194)       & (0.0192)       &   \\   
+      (log) IG Revenue          &                &                &                &                &                & 0.5020$^{***}$ &                & 0.4853$^{***}$\\   
+                                &                &                &                &                &                & (0.0252)       &                & (0.0234)\\   
+      (log) Fed IG Rev          &                &                &                &                &                &                & 0.0005         &   \\   
+                                &                &                &                &                &                &                & (0.0007)       &   \\   
+      (log) State IG Rev        &                &                &                &                &                &                & 0.4823$^{***}$ &   \\   
+                                &                &                &                &                &                &                & (0.0269)       &   \\   
+      (log) Rev. Own Sources    &                &                &                &                &                &                &                & 0.3760$^{***}$\\   
+                                &                &                &                &                &                &                &                & (0.0191)\\   
+      \midrule
+      \emph{Fixed-effects}\\
+      unit                      & Yes            & Yes            & Yes            & Yes            & Yes            & Yes            & Yes            & Yes\\  
+      year                      & Yes            & Yes            & Yes            & Yes            & Yes            & Yes            & Yes            & Yes\\  
+      \midrule
+      \emph{Fit statistics}\\
+      Observations              & 13,356         & 13,356         & 13,356         & 13,356         & 13,356         & 13,356         & 13,356         & 13,356\\  
+      R$^2$                     & 0.89075        & 0.82859        & 0.88016        & 0.87791        & 0.99566        & 0.99738        & 0.99732        & 0.99763\\  
+      Within R$^2$              & 0.45044        & 0.13778        & 0.39717        & 0.38586        & 0.14427        & 0.48315        & 0.47095        & 0.53223\\  
+      \midrule \midrule
+      \multicolumn{9}{l}{\emph{Clustered (unit) standard-errors in parentheses}}\\
+      \multicolumn{9}{l}{\emph{Signif. Codes: ***: 0.01, **: 0.05, *: 0.1}}\\
+   \end{tabular}
+\end{adjustbox}
+\par\endgroup
+
+\FloatBarrier
+
+\section{Baseline Descriptive
+Estimates}\label{baseline-descriptive-estimates}
+
+We descriptively establish foundational relationships between local
+economic conditions that seem to reasonably generalise across the
+country using an AR(1) two-way fixed effects ordinary least-squares
+panel model with standard errors clustered by commuting zone. We outline
+the model specification immediately below:
+
+\begin{equation}\phantomsection\label{eq-desc_function}{
+Y_{it} = \beta_{0} + \beta_{x}X_{it} + \theta Y_{it-1} + \delta_1 Enrollment_{it} + \delta_2 IGR_{it} + \delta_3 Black_{it} + \delta_3 Hispanic_{it} + \alpha_i + \gamma_t + \varepsilon_{it}
+}\end{equation}
+
+\(Y_{it}\) is the natural logarithm of elementary (serving ages 6-12)
+education expenditure per pupil for CZ \(i\) in year \(t\). \(\alpha_i\)
+represents a CZ fixed effect and \(\gamma_t\) represents year-fixed
+effects, respectively. \(\varepsilon_{it}\) represents the error term.
+We control for enrollment to account for scaling factors in education
+expenditure and intergovernmental transfers to account for the
+significant role of such transfers in funding education expenditure.
+\(X_{it}\) takes three forms represented by
+Equation~\ref{eq-gdp-function}, Equation~\ref{eq-wage-function},
+Equation~\ref{eq-hpi-function} where \(h\) represents \(h\)-year time
+lags. We estimate all equations in levels and growth rates.
+
+\begin{equation}\phantomsection\label{eq-gdp-function}{
+X_{it}^{GDP} = \sum_{h=0}^{2} \beta_h^{\text{GDP}} \log(\text{GDP}_{i,t-h})
+}\end{equation}
+
+\begin{equation}\phantomsection\label{eq-wage-function}{
+X_{it}^{Wage} = \sum_{h=0}^{2} \beta_h^{\text{Wage}} \log(\text{Wage}_{i,t-h})
+}\end{equation}
+
+\begin{equation}\phantomsection\label{eq-hpi-function}{
+X_{it}^{HPI} = \sum_{h=0}^{2} \beta_h^{\text{HPI}} \log(\text{HPI}_{i,t-h})
+}\end{equation}
+
+\autoref{tbl_desc_res_lev} reports the results from regressions of log
+elementary education expenditure per pupil on contemporaneous and lagged
+measures of local economic activity. \autoref{tbl_desc_res_gr} presents
+the analogous specifications using annualized growth rates to capture
+short-run dynamics. The estimates in \autoref{tbl_desc_res_lev} show
+that per-pupil education spending is systematically higher in commuting
+zones with `stronger' local economies measured in local wages,
+industrial GDP, and house prices.
+
+Lagged economic indicators, particularly private industry GDP and
+average weekly wages, are positively and significantly associated with
+education spending. In the baseline specification (Column 1), the
+elasticity of education spending with respect to local GDP per capita
+(private industry) is positive and statistically significant once lagged
+values are included.
+
+A ten-percent increase in local GDP per capita two years prior is
+associated with roughly a 1\% increase in current education expenditure
+per pupil, suggesting that fiscal capacity effects unfold gradually over
+time. In the case of industry GDP, the magnitude of the coefficients
+increases with the number of lags, suggesting a gradual adjustment
+process by which local economic growth translates into higher public
+investment in education over time. For example, a 10\% increase in
+lagged (t--2) real private GDP per capita is associated with a 0.6\%
+increase in per-pupil spending. The house price index also enters
+positively and significantly but only contemporaneously reflecting the
+immediate link between house prices and the property taxes that fund
+public education. This points to the fundamental relationship between
+community asset wealth and public education expenditure.
+
+Intergovernmental revenue per pupil emerges as the strongest and most
+consistent predictor of education expenditure after the auto-regressive
+coefficient. A 10\% increase in intergovernmental transfers is
+associated with approximately a 2\% increase in per-pupil education
+spending, controlling for CZ and year fixed effects. This finding
+highlights the importance of state and federal aid in sustaining local
+education budgets.
+
+The growth rate regressions, while explaining less variance overall,
+largely confirm the patterns observed in the level specifications.
+Intergovernmental revenue growth remains a strong and highly significant
+determinant of education expenditure growth. Lagged wage and GDP growth
+also emerge as important predictors, particularly at longer lags.
+Notably, wage growth two years prior is associated with a 0.31\%
+increase in education spending growth, suggesting that labor market
+improvements take at least a year to materialize in local education
+budgets hinting at the relevance of our primary identifying
+relationship.
+
+Taken together, these results offer three key insights. First, public
+education investment is strongly mediated by external fiscal flows,
+reaffirming the role of intergovernmental transfers in equalizing local
+education finance. Second, local labor market conditions, captured
+through wages and GDP, exert lagged effects on education spending
+consistent with lagged effects of local economic conditions to
+industrial change. Third, local housing markets play a significant role
+shaping education budgets, reflecting the link between property values
+and tax revenues which respond contemporaneously as a result of the
+direct mechanical link between property values and local public revenue
+generation.
+
+Additionally, in both levels and growth rates, the consistently negative
+coefficient on enrollment indicates a scaling relationship in which
+expenditure per pupil declines as enrollment sizes grow.
+
+\begin{table}[htbp]
+   \caption{\label{tbl_desc_res_lev} Descriptive Results in Levels}
+   \centering
+   \begin{adjustbox}{width = \textwidth, center}
+      \begin{tabular}{lcccc}
+         \tabularnewline \midrule \midrule
+         Dependent Variable: & \multicolumn{4}{c}{(log) Elem.Ed.Exp.pp}\\
+         Model:                              & (1)             & (2)             & (3)             & (4)\\  
+         \midrule
+         \emph{Variables}\\
+         (log) Real GDP Priv. Industry pc    & 0.0135          &                 &                 & 0.0092\\   
+                                             & (0.0152)        &                 &                 & (0.0164)\\   
+         (log,l1) Real GDP Priv. Industry pc & 0.0519$^{***}$  &                 &                 & 0.0345$^{**}$\\   
+                                             & (0.0155)        &                 &                 & (0.0173)\\   
+         (log,l2) Real GDP Priv. Industry pc & 0.0578$^{***}$  &                 &                 & 0.0492$^{***}$\\   
+                                             & (0.0138)        &                 &                 & (0.0128)\\   
+         (l1, log) Elem.Ed.Exp.pp            & 0.5069$^{***}$  & 0.5281$^{***}$  & 0.5315$^{***}$  & 0.4920$^{***}$\\   
+                                             & (0.0142)        & (0.0176)        & (0.0178)        & (0.0145)\\   
+         (log) IG Revenue pp                 & 0.2352$^{***}$  & 0.2088$^{***}$  & 0.2088$^{***}$  & 0.2332$^{***}$\\   
+                                             & (0.0204)        & (0.0229)        & (0.0219)        & (0.0204)\\   
+         (log) Enrollment                    & -0.1839$^{***}$ & -0.1999$^{***}$ & -0.2174$^{***}$ & -0.2153$^{***}$\\   
+                                             & (0.0149)        & (0.0145)        & (0.0162)        & (0.0176)\\   
+         \% Black                            & 0.2051          & 0.2227          & 0.2817$^{*}$    & 0.1950\\   
+                                             & (0.1834)        & (0.1724)        & (0.1689)        & (0.1810)\\   
+         \% Hispanic                         & 0.0548          & 0.1131          & 0.1957          & 0.0044\\   
+                                             & (0.1436)        & (0.1470)        & (0.1280)        & (0.1355)\\   
+         (log) Annual Avg. Wkly. Wage        &                 & 0.0639          &                 & -0.0309\\   
+                                             &                 & (0.0491)        &                 & (0.0614)\\   
+         (log, l1) Annual Avg. Wkly. Wage    &                 & 0.1926$^{***}$  &                 & 0.1442$^{**}$\\   
+                                             &                 & (0.0547)        &                 & (0.0612)\\   
+         (log, l2) Annual Avg. Wkly. Wage    &                 & 0.0512          &                 & -0.0420\\   
+                                             &                 & (0.0484)        &                 & (0.0453)\\   
+         (log) House Price Index             &                 &                 & 0.1098$^{***}$  & 0.0708$^{***}$\\   
+                                             &                 &                 & (0.0208)        & (0.0202)\\   
+         (log, l1) House Price Index         &                 &                 & 0.0294          & 0.0132\\   
+                                             &                 &                 & (0.0325)        & (0.0348)\\   
+         (log, l2) House Price Index         &                 &                 & -0.0020         & -0.0054\\   
+                                             &                 &                 & (0.0212)        & (0.0225)\\   
+         \midrule
+         \emph{Fixed-effects}\\
+         unit                                & Yes             & Yes             & Yes             & Yes\\  
+         year                                & Yes             & Yes             & Yes             & Yes\\  
+         \midrule
+         \emph{Fit statistics}\\
+         Observations                        & 12,084          & 12,720          & 12,078          & 11,493\\  
+         R$^2$                               & 0.90689         & 0.90577         & 0.90936         & 0.91151\\  
+         Within R$^2$                        & 0.52075         & 0.52326         & 0.52459         & 0.52726\\  
+         \midrule \midrule
+         \multicolumn{5}{l}{\emph{Clustered (unit) standard-errors in parentheses}}\\
+         \multicolumn{5}{l}{\emph{Signif. Codes: ***: 0.01, **: 0.05, *: 0.1}}\\
+      \end{tabular}
+   \end{adjustbox}
+\end{table}
+\begin{table}[htbp]
+   \caption{\label{tbl_desc_res_gr} Descriptive Results in Growth Rates}
+   \centering
+   \begin{adjustbox}{width = \textwidth, center}
+      \begin{tabular}{lcccc}
+         \tabularnewline \midrule \midrule
+         Dependent Variable: & \multicolumn{4}{c}{(GR) Elem.Ed.Exp.pp}\\
+         Model:                             & (1)             & (2)            & (3)            & (4)\\  
+         \midrule
+         \emph{Variables}\\
+         (GR) Real GDP Priv. Industry pc    & 0.0047          &                &                & -0.0127\\   
+                                            & (0.0137)        &                &                & (0.0152)\\   
+         (GR,l1) Real GDP Priv. Industry pc & 0.0508$^{***}$  &                &                & 0.0249\\   
+                                            & (0.0148)        &                &                & (0.0154)\\   
+         (GR,l2) Real GDP Priv. Industry pc & 0.0184$^{***}$  &                &                & 0.0104$^{*}$\\   
+                                            & (0.0071)        &                &                & (0.0054)\\   
+         (GR) IG Revenue pp                 & 0.3064$^{***}$  & 0.3275$^{***}$ & 0.3321$^{***}$ & 0.3013$^{***}$\\   
+                                            & (0.0321)        & (0.0223)       & (0.0225)       & (0.0317)\\   
+         (GR) Enrollment                    & -0.5994$^{***}$ & -0.0146$^{**}$ & -0.0079        & -0.6194$^{***}$\\   
+                                            & (0.0421)        & (0.0064)       & (0.0067)       & (0.0465)\\   
+         \% Black                           & 0.0950          & 0.0236         & 0.0261         & 0.1351\\   
+                                            & (0.1327)        & (0.2001)       & (0.1954)       & (0.1213)\\   
+         \% Hispanic                        & -0.1428$^{*}$   & -0.2636$^{**}$ & -0.2558$^{**}$ & -0.1754$^{***}$\\   
+                                            & (0.0796)        & (0.1084)       & (0.1118)       & (0.0600)\\   
+         (GR) Annual Avg. Wkly. Wage        &                 & -0.0317        &                & 0.0071\\   
+                                            &                 & (0.0547)       &                & (0.0528)\\   
+         (GR, l1) Annual Avg. Wkly. Wage    &                 & 0.2021$^{***}$ &                & 0.1229$^{**}$\\   
+                                            &                 & (0.0500)       &                & (0.0499)\\   
+         (GR, l2) Annual Avg. Wkly. Wage    &                 & 0.3087$^{***}$ &                & 0.2357$^{***}$\\   
+                                            &                 & (0.0600)       &                & (0.0524)\\   
+         (GR) House Price Index             &                 &                & 0.0515$^{**}$  & 0.0774$^{***}$\\   
+                                            &                 &                & (0.0240)       & (0.0215)\\   
+         (GR, l1) House Price Index         &                 &                & 0.1125$^{***}$ & 0.0572$^{**}$\\   
+                                            &                 &                & (0.0280)       & (0.0260)\\   
+         (GR, l2) House Price Index         &                 &                & 0.0669$^{***}$ & 0.0517$^{***}$\\   
+                                            &                 &                & (0.0198)       & (0.0197)\\   
+         \midrule
+         \emph{Fixed-effects}\\
+         unit                               & Yes             & Yes            & Yes            & Yes\\  
+         year                               & Yes             & Yes            & Yes            & Yes\\  
+         \midrule
+         \emph{Fit statistics}\\
+         Observations                       & 12,083          & 13,355         & 12,637         & 11,467\\  
+         R$^2$                              & 0.26823         & 0.35172        & 0.36223        & 0.28775\\  
+         Within R$^2$                       & 0.22116         & 0.15439        & 0.15065        & 0.23614\\  
+         \midrule \midrule
+         \multicolumn{5}{l}{\emph{Clustered (unit) standard-errors in parentheses}}\\
+         \multicolumn{5}{l}{\emph{Signif. Codes: ***: 0.01, **: 0.05, *: 0.1}}\\
+      \end{tabular}
+   \end{adjustbox}
+\end{table}
+
+\FloatBarrier
+
+\subsection{Including State Fixed
+Effects}\label{including-state-fixed-effects}
+
+Regressions establishing baseline relationships between local economic
+variables and elementary education expenditure using state-fixed effects
+rather than commuting-zone level effects.
+
+\begin{table}[htbp]
+   \caption{\label{tbl_desc_res_lev} Descriptive Results in Levels}
+   \centering
+   \begin{adjustbox}{width = \textwidth, center}
+      \begin{tabular}{lcccc}
+         \tabularnewline \midrule \midrule
+         Dependent Variable: & \multicolumn{4}{c}{(log) Elem.Ed.Exp.pp}\\
+         Model:                              & (1)             & (2)             & (3)             & (4)\\  
+         \midrule
+         \emph{Variables}\\
+         (log) Real GDP Priv. Industry pc    & 0.0096          &                 &                 & -0.0011\\   
+                                             & (0.0147)        &                 &                 & (0.0158)\\   
+         (log,l1) Real GDP Priv. Industry pc & 0.0401$^{**}$   &                 &                 & 0.0333$^{*}$\\   
+                                             & (0.0186)        &                 &                 & (0.0202)\\   
+         (log,l2) Real GDP Priv. Industry pc & 0.0049          &                 &                 & 0.0122\\   
+                                             & (0.0134)        &                 &                 & (0.0145)\\   
+         (l1, log) Elem.Ed.Exp.pp            & 0.7681$^{***}$  & 0.7920$^{***}$  & 0.8039$^{***}$  & 0.7568$^{***}$\\   
+                                             & (0.0118)        & (0.0144)        & (0.0121)        & (0.0118)\\   
+         (log) IG Revenue pp                 & 0.0965$^{***}$  & 0.0733$^{***}$  & 0.0714$^{***}$  & 0.0963$^{***}$\\   
+                                             & (0.0091)        & (0.0080)        & (0.0087)        & (0.0092)\\   
+         (log) Enrollment                    & -0.0074$^{***}$ & -0.0142$^{***}$ & -0.0083$^{***}$ & -0.0117$^{***}$\\   
+                                             & (0.0011)        & (0.0014)        & (0.0013)        & (0.0015)\\   
+         \% Black                            & -0.0048         & -0.0100         & 0.0125          & 0.0015\\   
+                                             & (0.0124)        & (0.0120)        & (0.0106)        & (0.0120)\\   
+         \% Hispanic                         & -0.0348$^{**}$  & 0.0085          & -0.0105         & -0.0379$^{***}$\\   
+                                             & (0.0139)        & (0.0153)        & (0.0148)        & (0.0127)\\   
+         (log) Annual Avg. Wkly. Wage        &                 & 0.0453          &                 & -0.0163\\   
+                                             &                 & (0.0489)        &                 & (0.0543)\\   
+         (log, l1) Annual Avg. Wkly. Wage    &                 & 0.2028$^{***}$  &                 & 0.1518$^{**}$\\   
+                                             &                 & (0.0621)        &                 & (0.0708)\\   
+         (log, l2) Annual Avg. Wkly. Wage    &                 & -0.1284$^{***}$ &                 & -0.1167$^{***}$\\   
+                                             &                 & (0.0405)        &                 & (0.0438)\\   
+         (log) House Price Index             &                 &                 & 0.1031$^{***}$  & 0.0853$^{***}$\\   
+                                             &                 &                 & (0.0210)        & (0.0217)\\   
+         (log, l1) House Price Index         &                 &                 & 0.0125          & 0.0071\\   
+                                             &                 &                 & (0.0380)        & (0.0403)\\   
+         (log, l2) House Price Index         &                 &                 & -0.0780$^{***}$ & -0.0607$^{***}$\\   
+                                             &                 &                 & (0.0221)        & (0.0234)\\   
+         \midrule
+         \emph{Fixed-effects}\\
+         state                               & Yes             & Yes             & Yes             & Yes\\  
+         year                                & Yes             & Yes             & Yes             & Yes\\  
+         \midrule
+         \emph{Fit statistics}\\
+         Observations                        & 12,084          & 12,720          & 12,078          & 11,493\\  
+         R$^2$                               & 0.88140         & 0.88108         & 0.88464         & 0.88697\\  
+         Within R$^2$                        & 0.74455         & 0.74269         & 0.71388         & 0.72072\\  
+         \midrule \midrule
+         \multicolumn{5}{l}{\emph{Clustered (unit) standard-errors in parentheses}}\\
+         \multicolumn{5}{l}{\emph{Signif. Codes: ***: 0.01, **: 0.05, *: 0.1}}\\
+      \end{tabular}
+   \end{adjustbox}
+\end{table}
+\begin{table}[htbp]
+   \caption{\label{tbl_desc_res_gr} Descriptive Results in Growth Rates}
+   \centering
+   \begin{adjustbox}{width = \textwidth, center}
+      \begin{tabular}{lcccc}
+         \tabularnewline \midrule \midrule
+         Dependent Variable: & \multicolumn{4}{c}{(GR) Elem.Ed.Exp.pp}\\
+         Model:                             & (1)             & (2)            & (3)            & (4)\\  
+         \midrule
+         \emph{Variables}\\
+         (GR) Real GDP Priv. Industry pc    & 0.0084          &                &                & -0.0098\\   
+                                            & (0.0134)        &                &                & (0.0149)\\   
+         (GR,l1) Real GDP Priv. Industry pc & 0.0540$^{***}$  &                &                & 0.0274$^{*}$\\   
+                                            & (0.0148)        &                &                & (0.0152)\\   
+         (GR,l2) Real GDP Priv. Industry pc & 0.0197$^{***}$  &                &                & 0.0116$^{**}$\\   
+                                            & (0.0070)        &                &                & (0.0052)\\   
+         (GR) IG Revenue pp                 & 0.3086$^{***}$  & 0.3259$^{***}$ & 0.3299$^{***}$ & 0.3042$^{***}$\\   
+                                            & (0.0317)        & (0.0223)       & (0.0226)       & (0.0312)\\   
+         (GR) Enrollment                    & -0.5759$^{***}$ & -0.0144$^{**}$ & -0.0080        & -0.5952$^{***}$\\   
+                                            & (0.0398)        & (0.0063)       & (0.0067)       & (0.0443)\\   
+         \% Black                           & -0.0104$^{***}$ & 0.0138$^{**}$  & 0.0138$^{**}$  & -0.0065$^{*}$\\   
+                                            & (0.0038)        & (0.0066)       & (0.0065)       & (0.0038)\\   
+         \% Hispanic                        & 0.0085$^{*}$    & -0.0014        & -0.0063        & 0.0033\\   
+                                            & (0.0048)        & (0.0053)       & (0.0050)       & (0.0037)\\   
+         (GR) Annual Avg. Wkly. Wage        &                 & -0.0253        &                & 0.0091\\   
+                                            &                 & (0.0544)       &                & (0.0515)\\   
+         (GR, l1) Annual Avg. Wkly. Wage    &                 & 0.2088$^{***}$ &                & 0.1225$^{**}$\\   
+                                            &                 & (0.0494)       &                & (0.0497)\\   
+         (GR, l2) Annual Avg. Wkly. Wage    &                 & 0.3112$^{***}$ &                & 0.2320$^{***}$\\   
+                                            &                 & (0.0592)       &                & (0.0516)\\   
+         (GR) House Price Index             &                 &                & 0.0525$^{**}$  & 0.0781$^{***}$\\   
+                                            &                 &                & (0.0241)       & (0.0213)\\   
+         (GR, l1) House Price Index         &                 &                & 0.1132$^{***}$ & 0.0569$^{**}$\\   
+                                            &                 &                & (0.0281)       & (0.0260)\\   
+         (GR, l2) House Price Index         &                 &                & 0.0669$^{***}$ & 0.0520$^{***}$\\   
+                                            &                 &                & (0.0197)       & (0.0196)\\   
+         \midrule
+         \emph{Fixed-effects}\\
+         state                              & Yes             & Yes            & Yes            & Yes\\  
+         year                               & Yes             & Yes            & Yes            & Yes\\  
+         \midrule
+         \emph{Fit statistics}\\
+         Observations                       & 12,083          & 13,355         & 12,637         & 11,467\\  
+         R$^2$                              & 0.26170         & 0.34062        & 0.35073        & 0.28153\\  
+         Within R$^2$                       & 0.21915         & 0.15393        & 0.14949        & 0.23417\\  
+         \midrule \midrule
+         \multicolumn{5}{l}{\emph{Clustered (unit) standard-errors in parentheses}}\\
+         \multicolumn{5}{l}{\emph{Signif. Codes: ***: 0.01, **: 0.05, *: 0.1}}\\
+      \end{tabular}
+   \end{adjustbox}
+\end{table}
+
+\FloatBarrier
+
+\subsection{Including State Funding Share Interaction
+Term}\label{including-state-funding-share-interaction-term}
+
+Furthermore, given the heterogeneity in reliance on intergovernmental
+transfers (largely coming from the state), we interact all economic
+predictors above with a variable that represents the share of total
+elementary education expenditure (as a continuous variable) coming from
+state-level funding.
+
+\begin{table}[htbp]
+   \caption{Descriptive Results with Funding Source Interaction Effects}
+   \centering
+   \begin{adjustbox}{width = \textwidth, center}
+      \begin{tabular}{lccccc}
+         \tabularnewline \midrule \midrule
+         Dependent Variable: & \multicolumn{5}{c}{(log) Elem.Ed.Exp.pp}\\
+         Model:                                                                & (1)             & (2)             & (3)             & (4)             & (5)\\  
+         \midrule
+         \emph{Variables}\\
+         (log) Real GDP Priv. Industry pc                                      &                 &                 & -0.2219$^{***}$ &                 &   \\   
+                                                                               &                 &                 & (0.0735)        &                 &   \\   
+         (log,l1) Real GDP Priv. Industry pc                                   &                 &                 & 0.1022$^{*}$    &                 &   \\   
+                                                                               &                 &                 & (0.0585)        &                 &   \\   
+         (log,l2) Real GDP Priv. Industry pc                                   &                 &                 & 0.3272$^{***}$  &                 &   \\   
+                                                                               &                 &                 & (0.0771)        &                 &   \\   
+         Funding Share\_{state} $\times$ (log) Real GDP Priv. Industry pc      &                 &                 & 0.3946$^{***}$  &                 &   \\   
+                                                                               &                 &                 & (0.1198)        &                 &   \\   
+         Funding Share\_{state} $\times$ (log,l1) Real GDP Priv. Industry pc   &                 &                 & -0.1113         &                 &   \\   
+                                                                               &                 &                 & (0.0941)        &                 &   \\   
+         Funding Share\_{state} $\times$ (log,l2) Real GDP Priv. Industry pc   &                 &                 & -0.4261$^{***}$ &                 &   \\   
+                                                                               &                 &                 & (0.1176)        &                 &   \\   
+         (log) Annual Avg. Wkly. Wage                                          & 0.0031          &                 &                 & 0.0031          &   \\   
+                                                                               & (0.2218)        &                 &                 & (0.2218)        &   \\   
+         (log, l1) Annual Avg. Wkly. Wage                                      & 0.2176          &                 &                 & 0.2176          &   \\   
+                                                                               & (0.1487)        &                 &                 & (0.1487)        &   \\   
+         (log, l2) Annual Avg. Wkly. Wage                                      & 0.4606$^{**}$   &                 &                 & 0.4606$^{**}$   &   \\   
+                                                                               & (0.2232)        &                 &                 & (0.2232)        &   \\   
+         Funding Share\_{state} $\times$ (log) Annual Avg. Wkly. Wage          & 0.4692          &                 &                 & 0.4692          &   \\   
+                                                                               & (0.3484)        &                 &                 & (0.3484)        &   \\   
+         Funding Share\_{state} $\times$ (log, l1) Annual Avg. Wkly. Wage      & -0.0685         &                 &                 & -0.0685         &   \\   
+                                                                               & (0.2359)        &                 &                 & (0.2359)        &   \\   
+         Funding Share\_{state} $\times$ (log, l2) Annual Avg. Wkly. Wage      & -0.5923$^{*}$   &                 &                 & -0.5923$^{*}$   &   \\   
+                                                                               & (0.3508)        &                 &                 & (0.3508)        &   \\   
+         (log) House Price Index                                               &                 & -0.0741         &                 &                 & -0.0741\\   
+                                                                               &                 & (0.1037)        &                 &                 & (0.1037)\\   
+         (log, l1) House Price Index                                           &                 & 0.1510          &                 &                 & 0.1510\\   
+                                                                               &                 & (0.1316)        &                 &                 & (0.1316)\\   
+         (log, l2) House Price Index                                           &                 & 0.3736$^{***}$  &                 &                 & 0.3736$^{***}$\\   
+                                                                               &                 & (0.1009)        &                 &                 & (0.1009)\\   
+         (log, l3) House Price Index                                           &                 & 0.0015          &                 &                 & 0.0015\\   
+                                                                               &                 & (0.1208)        &                 &                 & (0.1208)\\   
+         (log, l4) House Price Index                                           &                 & -0.1466         &                 &                 & -0.1466\\   
+                                                                               &                 & (0.0944)        &                 &                 & (0.0944)\\   
+         Funding Share\_{state} $\times$ (log) House Price Index               &                 & 0.4725$^{***}$  &                 &                 & 0.4725$^{***}$\\   
+                                                                               &                 & (0.1646)        &                 &                 & (0.1646)\\   
+         Funding Share\_{state} $\times$ (log, l1) House Price Index           &                 & -0.1587         &                 &                 & -0.1587\\   
+                                                                               &                 & (0.2008)        &                 &                 & (0.2008)\\   
+         Funding Share\_{state} $\times$ (log, l2) House Price Index           &                 & -0.4995$^{***}$ &                 &                 & -0.4995$^{***}$\\   
+                                                                               &                 & (0.1536)        &                 &                 & (0.1536)\\   
+         Funding Share\_{state} $\times$ (log, l3) House Price Index           &                 & 0.0354          &                 &                 & 0.0354\\   
+                                                                               &                 & (0.1879)        &                 &                 & (0.1879)\\   
+         Funding Share\_{state} $\times$ (log, l4) House Price Index           &                 & 0.1343          &                 &                 & 0.1343\\   
+                                                                               &                 & (0.1483)        &                 &                 & (0.1483)\\   
+         Funding Share\_{state}                                                & 0.5937          & -0.5972         & 0.8604          & 0.5937          & -0.5972\\   
+                                                                               & (0.4862)        & (0.3661)        & (0.5614)        & (0.4862)        & (0.3661)\\   
+         (log) Fed IG Rev pp                                                   & -0.0014         & -0.0018         & -0.0030         & -0.0014         & -0.0018\\   
+                                                                               & (0.0021)        & (0.0020)        & (0.0024)        & (0.0021)        & (0.0020)\\   
+         (log) Enrollment                                                      & -0.3831$^{***}$ & -0.4186$^{***}$ & -0.3917$^{***}$ & -0.3831$^{***}$ & -0.4186$^{***}$\\   
+                                                                               & (0.0271)        & (0.0280)        & (0.0271)        & (0.0271)        & (0.0280)\\   
+         \% Black                                                              & 1.366$^{***}$   & 1.679$^{***}$   & 1.323$^{***}$   & 1.366$^{***}$   & 1.679$^{***}$\\   
+                                                                               & (0.4114)        & (0.4564)        & (0.4891)        & (0.4114)        & (0.4564)\\   
+         \% Hispanic                                                           & 0.4890$^{**}$   & 0.6243$^{***}$  & 0.8102$^{***}$  & 0.4890$^{**}$   & 0.6243$^{***}$\\   
+                                                                               & (0.2303)        & (0.2072)        & (0.2408)        & (0.2303)        & (0.2072)\\   
+         \midrule
+         \emph{Fixed-effects}\\
+         unit                                                                  & Yes             & Yes             & Yes             & Yes             & Yes\\  
+         year                                                                  & Yes             & Yes             & Yes             & Yes             & Yes\\  
+         \midrule
+         \emph{Fit statistics}\\
+         Observations                                                          & 13,356          & 12,588          & 12,084          & 13,356          & 12,588\\  
+         R$^2$                                                                 & 0.86011         & 0.87031         & 0.86240         & 0.86011         & 0.87031\\  
+         Within R$^2$                                                          & 0.29630         & 0.32234         & 0.29180         & 0.29630         & 0.32234\\  
+         \midrule \midrule
+         \multicolumn{6}{l}{\emph{Clustered (unit) standard-errors in parentheses}}\\
+         \multicolumn{6}{l}{\emph{Signif. Codes: ***: 0.01, **: 0.05, *: 0.1}}\\
+      \end{tabular}
+   \end{adjustbox}
+\end{table}
+
+\FloatBarrier
+
+\section{Shift-Share Instrument}\label{shift-share-instrument-1}
+
+The following section provides further detail on the shift-share
+instrument as well as supplementary regressions estimated using a
+wage-based shift share instrument rather than the value-added based
+shift-share instrument in the main text. We use the abbreviation
+\texttt{SS} to refer to the shift-share instrument.
+
+\FloatBarrier
+
+\subsection{Data Inputs to the SS
+Instrument}\label{data-inputs-to-the-ss-instrument}
+
+Plots of the data inputs to the shift-share instrument. This inputs
+include national and county-level employment and average weekly wage
+levels by 2-digit NAICS industry code.
+
+\pandocbounded{\includegraphics[keepaspectratio]{regressions_files/figure-pdf/unnamed-chunk-106-1.png}}
+
+\pandocbounded{\includegraphics[keepaspectratio]{regressions_files/figure-pdf/unnamed-chunk-106-2.png}}
+
+\pandocbounded{\includegraphics[keepaspectratio]{regressions_files/figure-pdf/unnamed-chunk-106-3.png}}
+
+\FloatBarrier
+
+\subsection{Results Using the Wage-based Shift-Share
+Instrument}\label{results-using-the-wage-based-shift-share-instrument}
+
+First, we display the results for a 2SLS estimation using our wage-based
+shift-share instrument.
+
+The instrumental variable estimates provide similar evidence of a robust
+causal relationship between local wages and public education
+expenditure. Utilising our wage-based shift-share instrument we see
+highly significant and relevant first-stage relationships when the
+shift-share instrument is imposed in levels (except in column 5). In
+each case except columns 5-6 (l1 SS, CZ FE), the first-stage regression
+yields a statistically significant and economically large coefficient.
+Varying the time-lag and inclusion of state or commuting zone fixed
+effects, we see that a 10\% increase in the shift-share measure (which
+can be interpreted as a natural logarithm) is associated with a 2-6\%
+increase in average weekly wages (p \textless{} 0.01), with an
+F-statistic well above conventional weak instrument thresholds
+confirming instrument relevance. The Wu-Hausman tests reject the null of
+exogeneity, confirming that OLS estimates are biased and IV estimation
+is appropriate. Wald tests of joint significance further support the
+strength of the instruments.
+
+Using wage shocks in levels yields strong instruments, high first-stage
+F-statistics, and stable second-stage estimates: higher local wages
+robustly increase education spending. Furthermore, given the dependent
+variable measures per pupil expenditure, this result implies direct
+effects in experience per student. In contrast, when shocks are measured
+in growth rates, though the F-statistic remains strong, the second-stage
+coefficients become statistically insignificant. This suggests that the
+growth-rate specification is poorly identified and cannot provide
+reliable causal inference, whereas the level specification produces
+credible and consistent results.
+
+The specification that uses wage shocks in levels provides the most
+credible identification strategy. Since levels capture the
+cross-sectional fiscal variation that drives differences in property
+values and school spending, the level specification is more consistent
+with the economic mechanisms of interest and delivers more reliable
+causal estimates. Simultaneously, the weakness of the growth-rate
+specification does raise concerns about the robustness of the results.
+If the relationship between wages, house prices, and education
+expenditure is driven by common non-stationary trends, then regressions
+in levels risk spurious correlation. The fact that the IV design loses
+power when variables are differenced into growth rates may suggest that
+part of the strong level results reflect long-run trends rather than
+short-run causal shocks. However, examining the structure of the growth
+rate shock, the instability of the variable is likely causing the poor
+identification in the growth rate regressions.
+
+\begin{table}[htbp]
+   \caption{IV Estimation Using Wage-based Shift-share instrument (l0, l1, l2) in Levels varying state and CZ fixed effects and lags.}
+   \centering
+   \begin{adjustbox}{width = \textwidth, center}
+      \begin{tabular}{lcccccccc}
+         \tabularnewline \midrule \midrule
+         Dependent Variables:                                      & (log) Annual Avg. Wkly. Wage & (log) Elem.Ed.Exp.pp   & (log) Annual Avg. Wkly. Wage & (log) Elem.Ed.Exp.pp   & (GR) Annual Avg. Wkly. Wage & (GR) Elem.Ed.Exp.pp    & (log) Annual Avg. Wkly. Wage & (log) House Price Index\\  
+         IV stages                                                 & First                        & Second                 & First                        & Second                 & First                       & Second                 & First                        & Second \\   
+         Model:                                                    & (1)                          & (2)                    & (3)                          & (4)                    & (5)                         & (6)                    & (7)                          & (8)\\  
+         \midrule
+         \emph{Variables}\\
+         (log, l1) Annual Avg. Wkly. Wage                          & 0.7838$^{***}$               &                        & 0.7860$^{***}$               &                        &                             &                        & 0.7802$^{***}$               &   \\   
+                                                                   & (0.0120)                     &                        & (0.0112)                     &                        &                             &                        & (0.0119)                     &   \\   
+         Wage SS (lvl)                                             & 0.0519$^{*}$                 &                        & 0.0538$^{**}$                &                        &                             &                        & 0.0841$^{***}$               &   \\   
+                                                                   & (0.0274)                     &                        & (0.0274)                     &                        &                             &                        & (0.0274)                     &   \\   
+         Wage SS (lvl,l1)                                          & -0.1690$^{***}$              &                        & -0.1693$^{***}$              &                        &                             &                        & -0.1824$^{***}$              &   \\   
+                                                                   & (0.0413)                     &                        & (0.0414)                     &                        &                             &                        & (0.0427)                     &   \\   
+         Wage SS (lvl,l2)                                          & 0.1063$^{***}$               &                        & 0.1056$^{***}$               &                        &                             &                        & 0.1079$^{**}$                &   \\   
+                                                                   & (0.0371)                     &                        & (0.0371)                     &                        &                             &                        & (0.0422)                     &   \\   
+         (l1, log) Elem.Ed.Exp.pp                                  & 0.0043                       & 0.5085$^{***}$         &                              &                        &                             &                        &                              &   \\   
+                                                                   & (0.0042)                     & (0.0156)               &                              &                        &                             &                        &                              &   \\   
+         (log) IG Revenue pp                                       & 0.0131$^{***}$               & 0.2230$^{***}$         & 0.0140$^{***}$               & 0.3213$^{***}$         &                             &                        &                              &   \\   
+                                                                   & (0.0030)                     & (0.0211)               & (0.0028)                     & (0.0316)               &                             &                        &                              &   \\   
+         (log) Real GDP Priv. Industry pc                          & 0.0388$^{***}$               & 0.0660$^{***}$         & 0.0392$^{***}$               & 0.0948$^{***}$         &                             &                        & 0.0406$^{***}$               & 0.0379$^{***}$\\   
+                                                                   & (0.0044)                     & (0.0144)               & (0.0044)                     & (0.0244)               &                             &                        & (0.0060)                     & (0.0082)\\   
+         (log) Enrollment                                          & 0.0096$^{**}$                & -0.1959$^{***}$        & 0.0085$^{**}$                & -0.3306$^{***}$        &                             &                        &                              &   \\   
+                                                                   & (0.0045)                     & (0.0157)               & (0.0042)                     & (0.0282)               &                             &                        &                              &   \\   
+         \% Black                                                  & -0.1761$^{**}$               & 0.3337$^{*}$           & -0.1738$^{**}$               & 0.6539$^{*}$           &                             &                        & -0.0993                      & -0.4357$^{***}$\\   
+                                                                   & (0.0713)                     & (0.1925)               & (0.0707)                     & (0.3622)               &                             &                        & (0.0726)                     & (0.1587)\\   
+         \% Hispanic                                               & -0.0566$^{*}$                & 0.0480                 & -0.0570$^{*}$                & 0.0383                 &                             &                        & -0.0528                      & -0.0219\\   
+                                                                   & (0.0335)                     & (0.1510)               & (0.0334)                     & (0.2516)               &                             &                        & (0.0361)                     & (0.0594)\\   
+         (log) Annual Avg. Wkly. Wage                              &                              & 0.2288$^{***}$         &                              & 0.5610$^{***}$         &                             &                        &                              & 0.0885$^{**}$\\   
+                                                                   &                              & (0.0480)               &                              & (0.0767)               &                             &                        &                              & (0.0404)\\   
+         Wage SS (GR)                                              &                              &                        &                              &                        & 0.0481                      &                        &                              &   \\   
+                                                                   &                              &                        &                              &                        & (0.0312)                    &                        &                              &   \\   
+         Wage SS (GR,l1)                                           &                              &                        &                              &                        & -0.1187$^{**}$              &                        &                              &   \\   
+                                                                   &                              &                        &                              &                        & (0.0466)                    &                        &                              &   \\   
+         Wage SS (GR,l2)                                           &                              &                        &                              &                        & 0.0145                      &                        &                              &   \\   
+                                                                   &                              &                        &                              &                        & (0.0347)                    &                        &                              &   \\   
+         (GR) IG Revenue pp                                        &                              &                        &                              &                        & 0.0029                      & 0.3077$^{***}$         &                              &   \\   
+                                                                   &                              &                        &                              &                        & (0.0028)                    & (0.0319)               &                              &   \\   
+         (GR) Real GDP Priv. Industry pc                           &                              &                        &                              &                        & 0.0579$^{***}$              & 0.0359                 &                              &   \\   
+                                                                   &                              &                        &                              &                        & (0.0077)                    & (0.0404)               &                              &   \\   
+         (GR) Enrollment                                           &                              &                        &                              &                        & 0.0123$^{*}$                & -0.5901$^{***}$        &                              &   \\   
+                                                                   &                              &                        &                              &                        & (0.0064)                    & (0.0420)               &                              &   \\   
+         fd\_pct\_black                                            &                              &                        &                              &                        & -0.7066$^{***}$             & -0.8133                &                              &   \\   
+                                                                   &                              &                        &                              &                        & (0.2635)                    & (1.304)                &                              &   \\   
+         fd\_pct\_hispanic                                         &                              &                        &                              &                        & 0.3057                      & 1.621$^{*}$            &                              &   \\   
+                                                                   &                              &                        &                              &                        & (0.2976)                    & (0.8331)               &                              &   \\   
+         (GR) Annual Avg. Wkly. Wage                               &                              &                        &                              &                        &                             & -0.6453                &                              &   \\   
+                                                                   &                              &                        &                              &                        &                             & (0.6719)               &                              &   \\   
+         (log, l1) House Price Index                               &                              &                        &                              &                        &                             &                        & 0.0134$^{***}$               & 0.8376$^{***}$\\   
+                                                                   &                              &                        &                              &                        &                             &                        & (0.0049)                     & (0.0098)\\   
+         \midrule
+         \emph{Fixed-effects}\\
+         unit                                                      & Yes                          & Yes                    & Yes                          & Yes                    & Yes                         & Yes                    & Yes                          & Yes\\  
+         year                                                      & Yes                          & Yes                    & Yes                          & Yes                    & Yes                         & Yes                    & Yes                          & Yes\\  
+         \midrule
+         \emph{Fit statistics}\\
+         Observations                                              & 12,084                       & 12,084                 & 12,084                       & 12,084                 & 12,084                      & 12,084                 & 11,509                       & 11,509\\  
+         R$^2$                                                     & 0.99248                      & 0.90637                & 0.99248                      & 0.86538                & 0.29883                     & 0.26592                & 0.99339                      & 0.99074\\  
+         Within R$^2$                                              & 0.77657                      & 0.51811                & 0.77649                      & 0.30709                & 0.04956                     & 0.21870                & 0.78900                      & 0.78570\\  
+         Wu-Hausman                                                &                              & 46.934                 &                              & 137.81                 &                             & 1.5265                 &                              & 113.27\\  
+         Wu-Hausman, p-value                                       &                              & $7.72\times 10^{-12}$  &                              & $1.22\times 10^{-31}$  &                             & 0.21666                &                              & $2.54\times 10^{-26}$\\   
+         Wald (IV only)                                            & 1,262.2                      & 22.696                 & 1,454.0                      & 53.437                 & 5.0709                      & 0.92252                & 1,235.9                      & 4.8071\\  
+         Wald (IV only), p-value                                   & $0\times 10^{-16}$           & $1.92\times 10^{-6}$   & $0\times 10^{-16}$           & $2.84\times 10^{-13}$  & 0.00165                     & 0.33683                & $0\times 10^{-16}$           & 0.02836\\  
+         F-test (1st stage)                                        & 5,986.0                      &                        & 6,275.1                      &                        & 15.760                      &                        & 5,034.1                      & \\  
+         F-test (1st stage), (log) Annual Avg. Wkly. Wage          &                              & 5,986.0                &                              & 6,275.1                &                             &                        &                              & 5,034.1\\  
+         F-test (1st stage), (GR) Annual Avg. Wkly. Wage           &                              &                        &                              &                        &                             & 15.760                 &                              & \\  
+         F-test (1st stage), p-value                               & $0\times 10^{-16}$           &                        & $0\times 10^{-16}$           &                        & $3.17\times 10^{-10}$       &                        & $0\times 10^{-16}$           & \\  
+         F-test (1st stage), p-value, (log) Annual Avg. Wkly. Wage &                              & $0\times 10^{-16}$     &                              & $0\times 10^{-16}$     &                             &                        &                              & $0\times 10^{-16}$\\   
+         F-test (1st stage), p-value, (GR) Annual Avg. Wkly. Wage  &                              &                        &                              &                        &                             & $3.17\times 10^{-10}$  &                              & \\  
+         \midrule \midrule
+         \multicolumn{9}{l}{\emph{Clustered (unit) standard-errors in parentheses}}\\
+         \multicolumn{9}{l}{\emph{Signif. Codes: ***: 0.01, **: 0.05, *: 0.1}}\\
+      \end{tabular}
+   \end{adjustbox}
+\end{table}
+
+\FloatBarrier
+
+\section{Growth Rate Sample
+Partitioning}\label{growth-rate-sample-partitioning}
+
+In the following section, we provide supplementary information and
+econometric estimation details and results not included in the main text
+pertaining to the sample partitioning exercise by commuting zone level
+growth rates.
+
+\FloatBarrier
+
+\subsection{Baseline Models for Growth Rate Sample
+Partitioning}\label{baseline-models-for-growth-rate-sample-partitioning}
+
+\begin{table}[htbp]
+   \caption{\label{tab:baseline_gdp_subsamples} Baseline Regression Applied to Declining GDP vs. Growing GDP Regions}
+   \centering
+   \begin{adjustbox}{width = \textwidth, center}
+      \begin{tabular}{lcccccccccccc}
+         \tabularnewline \midrule \midrule
+         Dependent Variable: & \multicolumn{12}{c}{(log) Elem.Ed.Exp.pp}\\
+          & \multicolumn{3}{c}{Declining} & \multicolumn{3}{c}{Hyper-Declining} & \multicolumn{3}{c}{Growing} & \multicolumn{3}{c}{Hyper-Growing} \\ 
+         Model:                              & (1)             & (2)             & (3)             & (4)             & (5)             & (6)             & (7)             & (8)             & (9)             & (10)            & (11)            & (12)\\  
+         \midrule
+         \emph{Variables}\\
+         (log) Real GDP Priv. Industry pc    & 0.0687$^{**}$   &                 &                 & 0.0700$^{**}$   &                 &                 & 0.0009          &                 &                 & -0.0088         &                 &   \\   
+                                             & (0.0278)        &                 &                 & (0.0312)        &                 &                 & (0.0169)        &                 &                 & (0.0209)        &                 &   \\   
+         (log,l1) Real GDP Priv. Industry pc & -0.0095         &                 &                 & -0.0165         &                 &                 & 0.0626$^{***}$  &                 &                 & 0.0650$^{***}$  &                 &   \\   
+                                             & (0.0337)        &                 &                 & (0.0376)        &                 &                 & (0.0163)        &                 &                 & (0.0201)        &                 &   \\   
+         (log,l2) Real GDP Priv. Industry pc & 0.0389          &                 &                 & 0.0354          &                 &                 & 0.0599$^{***}$  &                 &                 & 0.0853$^{***}$  &                 &   \\   
+                                             & (0.0245)        &                 &                 & (0.0275)        &                 &                 & (0.0157)        &                 &                 & (0.0183)        &                 &   \\   
+         (l1, log) Elem.Ed.Exp.pp            & 0.5433$^{***}$  & 0.5352$^{***}$  & 0.5443$^{***}$  & 0.5593$^{***}$  & 0.5484$^{***}$  & 0.5552$^{***}$  & 0.4856$^{***}$  & 0.5182$^{***}$  & 0.5147$^{***}$  & 0.4714$^{***}$  & 0.5174$^{***}$  & 0.5283$^{***}$\\   
+                                             & (0.0194)        & (0.0203)        & (0.0206)        & (0.0207)        & (0.0226)        & (0.0227)        & (0.0192)        & (0.0249)        & (0.0261)        & (0.0244)        & (0.0320)        & (0.0389)\\   
+         (log) IG Revenue pp                 & 0.2628$^{***}$  & 0.2579$^{***}$  & 0.2374$^{***}$  & 0.2339$^{***}$  & 0.2302$^{***}$  & 0.2097$^{***}$  & 0.2233$^{***}$  & 0.1872$^{***}$  & 0.1953$^{***}$  & 0.2126$^{***}$  & 0.1638$^{***}$  & 0.1595$^{***}$\\   
+                                             & (0.0337)        & (0.0339)        & (0.0342)        & (0.0394)        & (0.0396)        & (0.0397)        & (0.0263)        & (0.0303)        & (0.0285)        & (0.0374)        & (0.0420)        & (0.0422)\\   
+         (log) Enrollment                    & -0.1758$^{***}$ & -0.1860$^{***}$ & -0.2082$^{***}$ & -0.1880$^{***}$ & -0.2013$^{***}$ & -0.2241$^{***}$ & -0.1925$^{***}$ & -0.2083$^{***}$ & -0.2167$^{***}$ & -0.2249$^{***}$ & -0.2451$^{***}$ & -0.2574$^{***}$\\   
+                                             & (0.0219)        & (0.0216)        & (0.0240)        & (0.0308)        & (0.0294)        & (0.0342)        & (0.0200)        & (0.0199)        & (0.0231)        & (0.0291)        & (0.0293)        & (0.0433)\\   
+         \% Black                            & 0.0411          & 0.1851          & 0.3205$^{*}$    & 0.0614          & 0.2138          & 0.3777          & 0.4372          & 0.3804          & 0.3402          & 0.3804          & 0.1681          & 0.9634\\   
+                                             & (0.1798)        & (0.1818)        & (0.1857)        & (0.1868)        & (0.2196)        & (0.2297)        & (0.3310)        & (0.3130)        & (0.2928)        & (0.7297)        & (0.7498)        & (0.8856)\\   
+         \% Hispanic                         & 0.0388          & 0.0430          & 0.0669          & -0.0980         & -0.0225         & -0.0291         & 0.0587          & 0.1315          & 0.2251          & -0.0259         & 0.0529          & 0.2028\\   
+                                             & (0.1585)        & (0.1519)        & (0.1536)        & (0.2051)        & (0.1967)        & (0.2004)        & (0.1862)        & (0.1913)        & (0.1684)        & (0.2217)        & (0.2169)        & (0.2181)\\   
+         (log) Annual Avg. Wkly. Wage        &                 & 0.0678          &                 &                 & 0.0704          &                 &                 & 0.0572          &                 &                 & 0.0114          &   \\   
+                                             &                 & (0.0698)        &                 &                 & (0.0830)        &                 &                 & (0.0614)        &                 &                 & (0.1024)        &   \\   
+         (log, l1) Annual Avg. Wkly. Wage    &                 & 0.1269          &                 &                 & 0.1422          &                 &                 & 0.1973$^{***}$  &                 &                 & 0.2848$^{***}$  &   \\   
+                                             &                 & (0.0997)        &                 &                 & (0.1357)        &                 &                 & (0.0651)        &                 &                 & (0.1050)        &   \\   
+         (log, l2) Annual Avg. Wkly. Wage    &                 & 0.1080          &                 &                 & 0.0728          &                 &                 & 0.0267          &                 &                 & 0.0583          &   \\   
+                                             &                 & (0.0835)        &                 &                 & (0.1129)        &                 &                 & (0.0608)        &                 &                 & (0.0923)        &   \\   
+         (log) House Price Index             &                 &                 & 0.0835$^{***}$  &                 &                 & 0.0595$^{**}$   &                 &                 & 0.1129$^{***}$  &                 &                 & 0.1402$^{***}$\\   
+                                             &                 &                 & (0.0219)        &                 &                 & (0.0285)        &                 &                 & (0.0280)        &                 &                 & (0.0498)\\   
+         (log, l1) House Price Index         &                 &                 & 0.0629$^{*}$    &                 &                 & 0.1333$^{***}$  &                 &                 & 0.0116          &                 &                 & 0.0210\\   
+                                             &                 &                 & (0.0326)        &                 &                 & (0.0418)        &                 &                 & (0.0419)        &                 &                 & (0.0691)\\   
+         (log, l2) House Price Index         &                 &                 & -0.0298         &                 &                 & -0.0642$^{**}$  &                 &                 & -0.0004         &                 &                 & -0.0208\\   
+                                             &                 &                 & (0.0240)        &                 &                 & (0.0300)        &                 &                 & (0.0287)        &                 &                 & (0.0450)\\   
+         \midrule
+         \emph{Fixed-effects}\\
+         unit                                & Yes             & Yes             & Yes             & Yes             & Yes             & Yes             & Yes             & Yes             & Yes             & Yes             & Yes             & Yes\\  
+         year                                & Yes             & Yes             & Yes             & Yes             & Yes             & Yes             & Yes             & Yes             & Yes             & Yes             & Yes             & Yes\\  
+         \midrule
+         \emph{Fit statistics}\\
+         Observations                        & 5,016           & 5,280           & 5,239           & 3,021           & 3,180           & 3,139           & 7,068           & 7,440           & 6,839           & 3,021           & 3,180           & 2,727\\  
+         R$^2$                               & 0.90665         & 0.90781         & 0.90943         & 0.90254         & 0.90417         & 0.90691         & 0.90511         & 0.90325         & 0.90886         & 0.86162         & 0.85654         & 0.85323\\  
+         Within R$^2$                        & 0.55110         & 0.56615         & 0.57079         & 0.53705         & 0.55560         & 0.56306         & 0.48702         & 0.48202         & 0.47095         & 0.49494         & 0.47612         & 0.44737\\  
+         \midrule \midrule
+         \multicolumn{13}{l}{\emph{Clustered (unit) standard-errors in parentheses}}\\
+         \multicolumn{13}{l}{\emph{Signif. Codes: ***: 0.01, **: 0.05, *: 0.1}}\\
+      \end{tabular}
+   \end{adjustbox}
+\end{table}
+\begin{table}[htbp]
+   \caption{\label{tab:baseline_wage_subsamples} Baseline Regression Applied to Declining Wage vs. Growing Wage Regions}
+   \centering
+   \begin{adjustbox}{width = \textwidth, center}
+      \begin{tabular}{lcccccccccccc}
+         \tabularnewline \midrule \midrule
+         Dependent Variable: & \multicolumn{12}{c}{(log) Elem.Ed.Exp.pp}\\
+          & \multicolumn{3}{c}{Declining} & \multicolumn{3}{c}{Hyper-Declining} & \multicolumn{3}{c}{Growing} & \multicolumn{3}{c}{Hyper-Growing} \\ 
+         Model:                              & (1)             & (2)             & (3)             & (4)             & (5)             & (6)             & (7)             & (8)             & (9)             & (10)            & (11)            & (12)\\  
+         \midrule
+         \emph{Variables}\\
+         (log) Real GDP Priv. Industry pc    & 0.0187          &                 &                 & 0.0133          &                 &                 & 0.0115          &                 &                 & -0.0175         &                 &   \\   
+                                             & (0.0489)        &                 &                 & (0.0339)        &                 &                 & (0.0159)        &                 &                 & (0.0202)        &                 &   \\   
+         (log,l1) Real GDP Priv. Industry pc & 0.1233$^{***}$  &                 &                 & 0.1210$^{***}$  &                 &                 & 0.0454$^{***}$  &                 &                 & 0.0499$^{**}$   &                 &   \\   
+                                             & (0.0458)        &                 &                 & (0.0301)        &                 &                 & (0.0161)        &                 &                 & (0.0215)        &                 &   \\   
+         (log,l2) Real GDP Priv. Industry pc & -0.0471         &                 &                 & -0.0521         &                 &                 & 0.0684$^{***}$  &                 &                 & 0.0851$^{***}$  &                 &   \\   
+                                             & (0.0418)        &                 &                 & (0.0329)        &                 &                 & (0.0145)        &                 &                 & (0.0167)        &                 &   \\   
+         (l1, log) Elem.Ed.Exp.pp            & 0.5756$^{***}$  & 0.5669$^{***}$  & 0.5945$^{***}$  & 0.5294$^{***}$  & 0.5271$^{***}$  & 0.5290$^{***}$  & 0.4968$^{***}$  & 0.5226$^{***}$  & 0.5213$^{***}$  & 0.5044$^{***}$  & 0.5666$^{***}$  & 0.5604$^{***}$\\   
+                                             & (0.0319)        & (0.0329)        & (0.0340)        & (0.0259)        & (0.0256)        & (0.0267)        & (0.0155)        & (0.0197)        & (0.0200)        & (0.0246)        & (0.0341)        & (0.0406)\\   
+         (log) IG Revenue pp                 & 0.2190$^{***}$  & 0.2047$^{***}$  & 0.1876$^{***}$  & 0.2848$^{***}$  & 0.2718$^{***}$  & 0.2511$^{***}$  & 0.2373$^{***}$  & 0.2082$^{***}$  & 0.2116$^{***}$  & 0.1770$^{***}$  & 0.1274$^{***}$  & 0.1293$^{***}$\\   
+                                             & (0.0319)        & (0.0288)        & (0.0286)        & (0.0335)        & (0.0313)        & (0.0325)        & (0.0230)        & (0.0260)        & (0.0253)        & (0.0354)        & (0.0426)        & (0.0341)\\   
+         (log) Enrollment                    & -0.1708$^{***}$ & -0.1951$^{***}$ & -0.2233$^{***}$ & -0.1994$^{***}$ & -0.2192$^{***}$ & -0.2418$^{***}$ & -0.1854$^{***}$ & -0.1999$^{***}$ & -0.2158$^{***}$ & -0.2016$^{***}$ & -0.2099$^{***}$ & -0.2083$^{***}$\\   
+                                             & (0.0325)        & (0.0307)        & (0.0348)        & (0.0242)        & (0.0227)        & (0.0249)        & (0.0168)        & (0.0163)        & (0.0182)        & (0.0313)        & (0.0327)        & (0.0432)\\   
+         \% Black                            & -0.0444         & 0.0683          & -0.0895         & 0.0416          & 0.1238          & 0.0038          & 0.2672          & 0.2714          & 0.3569$^{*}$    & 0.9080$^{*}$    & 0.6110          & 1.245$^{**}$\\   
+                                             & (0.3023)        & (0.2677)        & (0.2635)        & (0.2515)        & (0.2241)        & (0.1938)        & (0.2191)        & (0.2107)        & (0.2037)        & (0.5066)        & (0.5661)        & (0.6130)\\   
+         \% Hispanic                         & 0.2651          & 0.2707          & 0.2915$^{*}$    & 0.2226          & 0.2715          & 0.0073          & 0.0197          & 0.0899          & 0.1916          & 0.1892          & 0.1584          & 0.5310$^{*}$\\   
+                                             & (0.2040)        & (0.1664)        & (0.1728)        & (0.2298)        & (0.2274)        & (0.1727)        & (0.1696)        & (0.1756)        & (0.1534)        & (0.2892)        & (0.3254)        & (0.3137)\\   
+         (log) Annual Avg. Wkly. Wage        &                 & 0.0631          &                 &                 & 0.0670          &                 &                 & 0.0621          &                 &                 & -0.0256         &   \\   
+                                             &                 & (0.1036)        &                 &                 & (0.0823)        &                 &                 & (0.0547)        &                 &                 & (0.0831)        &   \\   
+         (log, l1) Annual Avg. Wkly. Wage    &                 & 0.2533          &                 &                 & 0.1561          &                 &                 & 0.1863$^{***}$  &                 &                 & 0.2397$^{**}$   &   \\   
+                                             &                 & (0.1712)        &                 &                 & (0.0977)        &                 &                 & (0.0577)        &                 &                 & (0.0924)        &   \\   
+         (log, l2) Annual Avg. Wkly. Wage    &                 & 0.0179          &                 &                 & 0.0925          &                 &                 & 0.0556          &                 &                 & 0.0526          &   \\   
+                                             &                 & (0.1351)        &                 &                 & (0.0879)        &                 &                 & (0.0533)        &                 &                 & (0.0826)        &   \\   
+         (log) House Price Index             &                 &                 & 0.1038$^{**}$   &                 &                 & 0.0644          &                 &                 & 0.1108$^{***}$  &                 &                 & 0.1171$^{**}$\\   
+                                             &                 &                 & (0.0436)        &                 &                 & (0.0406)        &                 &                 & (0.0235)        &                 &                 & (0.0502)\\   
+         (log, l1) House Price Index         &                 &                 & 0.0555          &                 &                 & 0.1089          &                 &                 & 0.0235          &                 &                 & -0.0513\\   
+                                             &                 &                 & (0.0743)        &                 &                 & (0.0704)        &                 &                 & (0.0355)        &                 &                 & (0.0716)\\   
+         (log, l2) House Price Index         &                 &                 & -0.0304         &                 &                 & -0.0495         &                 &                 & 0.0047          &                 &                 & 0.0356\\   
+                                             &                 &                 & (0.0485)        &                 &                 & (0.0431)        &                 &                 & (0.0235)        &                 &                 & (0.0450)\\   
+         \midrule
+         \emph{Fixed-effects}\\
+         unit                                & Yes             & Yes             & Yes             & Yes             & Yes             & Yes             & Yes             & Yes             & Yes             & Yes             & Yes             & Yes\\  
+         year                                & Yes             & Yes             & Yes             & Yes             & Yes             & Yes             & Yes             & Yes             & Yes             & Yes             & Yes             & Yes\\  
+         \midrule
+         \emph{Fit statistics}\\
+         Observations                        & 1,520           & 1,600           & 1,520           & 3,021           & 3,180           & 3,058           & 10,564          & 11,120          & 10,558          & 3,021           & 3,180           & 2,788\\  
+         R$^2$                               & 0.94127         & 0.94215         & 0.94235         & 0.92038         & 0.92081         & 0.92209         & 0.89898         & 0.89729         & 0.90151         & 0.90426         & 0.89961         & 0.90309\\  
+         Within R$^2$                        & 0.58355         & 0.60273         & 0.61588         & 0.56824         & 0.57899         & 0.59033         & 0.51202         & 0.51130         & 0.50968         & 0.51719         & 0.50212         & 0.45257\\  
+         \midrule \midrule
+         \multicolumn{13}{l}{\emph{Clustered (unit) standard-errors in parentheses}}\\
+         \multicolumn{13}{l}{\emph{Signif. Codes: ***: 0.01, **: 0.05, *: 0.1}}\\
+      \end{tabular}
+   \end{adjustbox}
+\end{table}
+
+\FloatBarrier
+
+\subsection{Wage-based SS Instrument for Growth Rate Sample
+Partitioning}\label{wage-based-ss-instrument-for-growth-rate-sample-partitioning}
+
+When applying our instrumental variable design we find that the signal
+is consistent across various GDP growth trajectories, but the
+relationship weakens as communities are defined by higher rates of wage
+growth.
+
+\begingroup
+\centering
+\begin{adjustbox}{width = \textwidth, center}
+   \begin{tabular}{lccccc}
+      \tabularnewline \midrule \midrule
+      Dependent Variable: & \multicolumn{5}{c}{(log) Elem.Ed.Exp.pp}\\
+                                                                & All                    & Hyper-Declining (GDP) & Declining (GDP)       & Growing (GDP)         & Hyper-Growing (GDP) \\   
+      Model:                                                    & (1)                    & (2)                   & (3)                   & (4)                   & (5)\\  
+      \midrule
+      \emph{Variables}\\
+      (log) Annual Avg. Wkly. Wage                              & 0.2269$^{***}$         & 0.2785$^{***}$        & 0.2912$^{***}$        & 0.1874$^{***}$        & 0.2532$^{***}$\\   
+                                                                & (0.0477)               & (0.0737)              & (0.0648)              & (0.0595)              & (0.0822)\\   
+      (l1, log) Elem.Ed.Exp.pp                                  & 0.5086$^{***}$         & 0.5430$^{***}$        & 0.5286$^{***}$        & 0.4937$^{***}$        & 0.4893$^{***}$\\   
+                                                                & (0.0156)               & (0.0212)              & (0.0193)              & (0.0218)              & (0.0282)\\   
+      (log) IG Revenue pp                                       & 0.2230$^{***}$         & 0.2290$^{***}$        & 0.2575$^{***}$        & 0.2086$^{***}$        & 0.1911$^{***}$\\   
+                                                                & (0.0211)               & (0.0405)              & (0.0345)              & (0.0275)              & (0.0397)\\   
+      (log) Real GDP Priv. Industry pc                          & 0.0662$^{***}$         & 0.0378                & 0.0398                & 0.0714$^{***}$        & 0.0759$^{***}$\\   
+                                                                & (0.0144)               & (0.0358)              & (0.0320)              & (0.0160)              & (0.0172)\\   
+      (log) Enrollment                                          & -0.1957$^{***}$        & -0.2011$^{***}$       & -0.1911$^{***}$       & -0.2017$^{***}$       & -0.2353$^{***}$\\   
+                                                                & (0.0157)               & (0.0332)              & (0.0238)              & (0.0209)              & (0.0295)\\   
+      \% Black                                                  & 0.3333$^{*}$           & 0.1517                & 0.1511                & 0.6266$^{*}$          & 0.7367\\   
+                                                                & (0.1924)               & (0.2226)              & (0.1964)              & (0.3421)              & (0.7621)\\   
+      \% Hispanic                                               & 0.0483                 & -0.1417               & -0.0061               & 0.0687                & -0.0070\\   
+                                                                & (0.1509)               & (0.2286)              & (0.1702)              & (0.1938)              & (0.2165)\\   
+      \midrule
+      \emph{Fixed-effects}\\
+      unit                                                      & Yes                    & Yes                   & Yes                   & Yes                   & Yes\\  
+      year                                                      & Yes                    & Yes                   & Yes                   & Yes                   & Yes\\  
+      \midrule
+      \emph{Fit statistics}\\
+      Observations                                              & 12,084                 & 3,021                 & 5,016                 & 7,068                 & 3,021\\  
+      R$^2$                                                     & 0.90636                & 0.90369               & 0.90765               & 0.90377               & 0.85786\\  
+      Within R$^2$                                              & 0.51804                & 0.54248               & 0.55592               & 0.47980               & 0.48120\\  
+      Wu-Hausman                                                & 44.905                 & 10.070                & 18.286                & 20.577                & 22.401\\  
+      Wu-Hausman, p-value                                       & $2.17\times 10^{-11}$  & 0.00152               & $1.94\times 10^{-5}$  & $5.83\times 10^{-6}$  & $2.32\times 10^{-6}$\\   
+      Wald (IV only)                                            & 22.645                 & 14.299                & 20.216                & 9.9366                & 9.5022\\  
+      Wald (IV only), p-value                                   & $1.97\times 10^{-6}$   & 0.00016               & $7.07\times 10^{-6}$  & 0.00163               & 0.00207\\  
+      F-test (1st stage), (log) Annual Avg. Wkly. Wage          & 5,972.4                & 1,846.6               & 2,651.0               & 3,287.8               & 1,501.4\\  
+      F-test (1st stage), p-value, (log) Annual Avg. Wkly. Wage & $0\times 10^{-16}$     & $0\times 10^{-16}$    & $0\times 10^{-16}$    & $0\times 10^{-16}$    & $0\times 10^{-16}$\\   
+      \midrule \midrule
+      \multicolumn{6}{l}{\emph{Clustered (unit) standard-errors in parentheses}}\\
+      \multicolumn{6}{l}{\emph{Signif. Codes: ***: 0.01, **: 0.05, *: 0.1}}\\
+   \end{tabular}
+\end{adjustbox}
+\par\endgroup
+\begingroup
+\centering
+\begin{adjustbox}{width = \textwidth, center}
+   \begin{tabular}{lccccc}
+      \tabularnewline \midrule \midrule
+      Dependent Variable: & \multicolumn{5}{c}{(log) Elem.Ed.Exp.pp}\\
+                                                                & All                    & Hyper-Declining (Wage) & Declining (Wage)      & Growing (Wage)        & Hyper-Growing (Wage) \\   
+      Model:                                                    & (1)                    & (2)                    & (3)                   & (4)                   & (5)\\  
+      \midrule
+      \emph{Variables}\\
+      (log) Annual Avg. Wkly. Wage                              & 0.2269$^{***}$         & 0.3277$^{***}$         & 0.3394$^{***}$        & 0.2128$^{***}$        & 0.1551$^{*}$\\   
+                                                                & (0.0477)               & (0.0683)               & (0.0861)              & (0.0527)              & (0.0830)\\   
+      (l1, log) Elem.Ed.Exp.pp                                  & 0.5086$^{***}$         & 0.5148$^{***}$         & 0.5543$^{***}$        & 0.5019$^{***}$        & 0.5311$^{***}$\\   
+                                                                & (0.0156)               & (0.0267)               & (0.0332)              & (0.0173)              & (0.0290)\\   
+      (log) IG Revenue pp                                       & 0.2230$^{***}$         & 0.2800$^{***}$         & 0.2101$^{***}$        & 0.2245$^{***}$        & 0.1553$^{***}$\\   
+                                                                & (0.0211)               & (0.0341)               & (0.0317)              & (0.0239)              & (0.0391)\\   
+      (log) Real GDP Priv. Industry pc                          & 0.0662$^{***}$         & 0.0156                 & 0.0220                & 0.0703$^{***}$        & 0.0685$^{***}$\\   
+                                                                & (0.0144)               & (0.0238)               & (0.0313)              & (0.0150)              & (0.0160)\\   
+      (log) Enrollment                                          & -0.1957$^{***}$        & -0.2269$^{***}$        & -0.1995$^{***}$       & -0.1941$^{***}$       & -0.2001$^{***}$\\   
+                                                                & (0.0157)               & (0.0254)               & (0.0351)              & (0.0175)              & (0.0332)\\   
+      \% Black                                                  & 0.3333$^{*}$           & 0.2172                 & 0.2137                & 0.3892$^{*}$          & 1.193$^{**}$\\   
+                                                                & (0.1924)               & (0.2664)               & (0.3680)              & (0.2294)              & (0.5557)\\   
+      \% Hispanic                                               & 0.0483                 & 0.2597                 & 0.2509                & 0.0110                & 0.1335\\   
+                                                                & (0.1509)               & (0.2566)               & (0.1897)              & (0.1781)              & (0.3037)\\   
+      \midrule
+      \emph{Fixed-effects}\\
+      unit                                                      & Yes                    & Yes                    & Yes                   & Yes                   & Yes\\  
+      year                                                      & Yes                    & Yes                    & Yes                   & Yes                   & Yes\\  
+      \midrule
+      \emph{Fit statistics}\\
+      Observations                                              & 12,084                 & 3,021                  & 1,520                 & 10,564                & 3,021\\  
+      R$^2$                                                     & 0.90636                & 0.92102                & 0.94210               & 0.89805               & 0.90098\\  
+      Within R$^2$                                              & 0.51804                & 0.57170                & 0.58942               & 0.50752               & 0.50064\\  
+      Wu-Hausman                                                & 44.905                 & 12.495                 & 8.9646                & 36.833                & 18.989\\  
+      Wu-Hausman, p-value                                       & $2.17\times 10^{-11}$  & 0.00041                & 0.00280               & $1.33\times 10^{-9}$  & $1.36\times 10^{-5}$\\   
+      Wald (IV only)                                            & 22.645                 & 23.023                 & 15.549                & 16.276                & 3.4973\\  
+      Wald (IV only), p-value                                   & $1.97\times 10^{-6}$   & $1.68\times 10^{-6}$   & $8.41\times 10^{-5}$  & $5.52\times 10^{-5}$  & 0.06157\\  
+      F-test (1st stage), (log) Annual Avg. Wkly. Wage          & 5,972.4                & 1,354.5                & 813.43                & 5,156.1               & 1,214.4\\  
+      F-test (1st stage), p-value, (log) Annual Avg. Wkly. Wage & $0\times 10^{-16}$     & $0\times 10^{-16}$     & $0\times 10^{-16}$    & $0\times 10^{-16}$    & $0\times 10^{-16}$\\   
+      \midrule \midrule
+      \multicolumn{6}{l}{\emph{Clustered (unit) standard-errors in parentheses}}\\
+      \multicolumn{6}{l}{\emph{Signif. Codes: ***: 0.01, **: 0.05, *: 0.1}}\\
+   \end{tabular}
+\end{adjustbox}
+\par\endgroup
+
+\FloatBarrier
+
+\section{State-by-State Estimation}\label{state-by-state-estimation-1}
+
+In the following section, we provide additional detail on the estimated
+state-by-state models outlined in the main text. We also provide
+descriptive regression results as benchmarks for comparison with the
+instrumental variable approach.
+
+\FloatBarrier
+
+\subsection{Wage Effect Using Descriptive Estimation
+Strategy}\label{wage-effect-using-descriptive-estimation-strategy}
+
+We report the effect of a 1\% increase in Wage on education expenditure
+per pupil as defined in Equation~\ref{eq-desc_function} where
+\(X_{i,t}\) takes on the values in Equation~\ref{eq-wage-function}.
+First, we re-employ our baseline regression in which we regress our
+outcome variable on wage levels at time \(t-h\) where \(h = [0,2]\). The
+plot below displays the cumulative effect of a 1\% increase in wage
+levels on education expenditure per pupil in purple. The X marks
+represent the individual coefficients on each time lag of the treatment
+variable, the linear combination of which form the total dynamic effect
+represented by the purple dots. Majority of states see positive
+elasticities in relation to wage changes in this descriptive
+specification, but some (South Carolina, Missouri, Kentucky, Washington)
+see negative elasticities.
+
+\pandocbounded{\includegraphics[keepaspectratio]{regressions_files/figure-pdf/unnamed-chunk-112-1.png}}
+
+\FloatBarrier
+
+\subsection{Instrumental Variable versus Descriptive
+Relationship}\label{instrumental-variable-versus-descriptive-relationship}
+
+The below plots displays the descriptive regression estimate compared to
+the IV fitted regression coefficient, describing the effect of a 1\%
+increase in local wages on education expenditure per pupil. Majority of
+states find at least a coefficient of equal sign. Interestingly though,
+the valid and statistically significant instrumental variable
+coefficients only ever identify positive elasticities.
+
+\pandocbounded{\includegraphics[keepaspectratio]{regressions_files/figure-pdf/unnamed-chunk-113-1.png}}
+
+\FloatBarrier
+
+\section{Industry-by-Industry
+Estimation}\label{industry-by-industry-estimation}
+
+In the following section, we provide additional detail about the
+estimated industry-by-industry models in the main text.
+
+\FloatBarrier
+
+\subsection{Wage-based SS in Industry-by-Industry
+Estimation}\label{wage-based-ss-in-industry-by-industry-estimation}
+
+Using our wage-based shift share instrument, the below demonstrates the
+overall treatment effect of local wage changes instrumented via our
+wage-based shift-share shock.
+
+\pandocbounded{\includegraphics[keepaspectratio]{regressions_files/figure-pdf/unnamed-chunk-115-1.png}}
+
+\FloatBarrier
+
+\section{Robustness Checks and Additional
+Analyses}\label{robustness-checks-and-additional-analyses}
+
+In the following section, we report various robustness checks and
+additional analyses conducted to illuminate patterns in the data and
+additional heterogeneity. These include additional panel econometric
+estimations via quantile regressions, vector auto regressions, and some
+outlier testing.
+
+\FloatBarrier
+
+\subsection{Quantile Regression}\label{quantile-regression}
+
+We perform a comparative quantile regression, where commuting zones are
+grouped by their levels of per pupil expenditure. We group them into the
+10th, 25th, median, 75th, and 90th percentiles. We find that all
+coefficients are relatively stable apart from the relationship between
+per pupil expenditure and race, where the regression coefficient notably
+switches sign from negative to positive as the level of expenditure
+increases. Additionally, examining the central relationship of interest
+in this work, we find that the effect of wages on expenditure is
+significant contemporaneously in those commuting zones near the median
+level of expenditure, whereas those spending a relatively high amount of
+resources on local education, see a delayed effect.
+
+\pandocbounded{\includegraphics[keepaspectratio]{regressions_files/figure-pdf/unnamed-chunk-117-1.png}}
+
+\FloatBarrier
+
+\subsection{High-Income Outliers}\label{high-income-outliers}
+
+There is a somewhat non-linear relationship between property taxes and
+elementary expenditure as property taxes collected rise as represented
+in the figure below. This happens largely as a result of very
+high-income commuting zones. Therefore, we exclude any commuting zone
+that spends more than 22k per pupil to avoid any distorting effects.
+This removes 12 CZs (\textasciitilde2\% of the sample). To assess
+whether the main results are driven by a small number of very
+high-income jurisdictions, I re-estimate the baseline and IV
+specifications excluding such outliers. The findings are fully
+consistent with the baseline analysis: house prices remain a strong
+predictor of local education spending, and the IV estimates continue to
+imply that a 10\% increase in house prices raises per-pupil expenditure
+by roughly 4--6\%. The wage-based shift-share instrument yields somewhat
+larger point estimates, though with wider standard errors, while the
+VA-based instrument produces effects in line with earlier results.
+Overall, this robustness exercise confirms that the causal relationship
+between housing wealth and education spending is not confined to
+affluent areas but reflects a broader, generalizable pattern. These
+findings confirm that the main result is not driven solely by affluent
+jurisdictions, but reflects a more general relationship between local
+housing wealth and education spending.
+
+\pandocbounded{\includegraphics[keepaspectratio]{regressions_files/figure-pdf/unnamed-chunk-118-1.png}}\begingroup
+\centering
+
+\begin{adjustbox}{width = \textwidth, center}
+   \begin{tabular}{lccccc}
+      \tabularnewline \midrule \midrule
+      Dependent Variable: & \multicolumn{5}{c}{(log) Elem.Ed.Exp.pp}\\
+                                                                & Baseline 1      & Baseline 2      & Baseline 3      & Wage-based SS          & VA-based SS \\   
+      Model:                                                    & (1)             & (2)             & (3)             & (4)                    & (5)\\  
+      \midrule
+      \emph{Variables}\\
+      (log) Real GDP Priv. Industry pc                          & 0.0263$^{**}$   &                 &                 & 0.0429$^{***}$         & 0.0434$^{***}$\\   
+                                                                & (0.0126)        &                 &                 & (0.0108)               & (0.0108)\\   
+      (log,l1) Real GDP Priv. Industry pc                       & 0.0320$^{**}$   &                 &                 &                        &   \\   
+                                                                & (0.0142)        &                 &                 &                        &   \\   
+      (log,l2) Real GDP Priv. Industry pc                       & 0.0396$^{***}$  &                 &                 &                        &   \\   
+                                                                & (0.0129)        &                 &                 &                        &   \\   
+      (l1, log) Elem.Ed.Exp.pp                                  & 0.5163$^{***}$  & 0.5200$^{***}$  & 0.5283$^{***}$  & 0.5046$^{***}$         & 0.5049$^{***}$\\   
+                                                                & (0.0139)        & (0.0140)        & (0.0149)        & (0.0136)               & (0.0136)\\   
+      (log) IG Revenue pp                                       & 0.2251$^{***}$  & 0.2130$^{***}$  & 0.2025$^{***}$  & 0.2195$^{***}$         & 0.2196$^{***}$\\   
+                                                                & (0.0164)        & (0.0166)        & (0.0181)        & (0.0160)               & (0.0160)\\   
+      (log) Enrollment                                          & -0.1595$^{***}$ & -0.1796$^{***}$ & -0.2012$^{***}$ & -0.1775$^{***}$        & -0.1773$^{***}$\\   
+                                                                & (0.0143)        & (0.0132)        & (0.0138)        & (0.0147)               & (0.0147)\\   
+      \% Black                                                  & 0.0457          & 0.0817          & 0.2051          & 0.1182                 & 0.1173\\   
+                                                                & (0.1666)        & (0.1517)        & (0.1555)        & (0.1703)               & (0.1702)\\   
+      \% Hispanic                                               & 0.0522          & 0.0842          & 0.1515          & 0.0253                 & 0.0261\\   
+                                                                & (0.1272)        & (0.1207)        & (0.1238)        & (0.1289)               & (0.1288)\\   
+      (log) Annual Avg. Wkly. Wage                              &                 & 0.1097$^{**}$   &                 & 0.2702$^{***}$         & 0.2665$^{***}$\\   
+                                                                &                 & (0.0463)        &                 & (0.0382)               & (0.0380)\\   
+      (log, l1) Annual Avg. Wkly. Wage                          &                 & 0.1439$^{**}$   &                 &                        &   \\   
+                                                                &                 & (0.0565)        &                 &                        &   \\   
+      (log, l2) Annual Avg. Wkly. Wage                          &                 & 0.0537          &                 &                        &   \\   
+                                                                &                 & (0.0427)        &                 &                        &   \\   
+      (log) House Price Index                                   &                 &                 & 0.1091$^{***}$  &                        &   \\   
+                                                                &                 &                 & (0.0182)        &                        &   \\   
+      (log, l1) House Price Index                               &                 &                 & 0.0381          &                        &   \\   
+                                                                &                 &                 & (0.0291)        &                        &   \\   
+      (log, l2) House Price Index                               &                 &                 & -0.0134         &                        &   \\   
+                                                                &                 &                 & (0.0208)        &                        &   \\   
+      \midrule
+      \emph{Fixed-effects}\\
+      unit                                                      & Yes             & Yes             & Yes             & Yes                    & Yes\\  
+      year                                                      & Yes             & Yes             & Yes             & Yes                    & Yes\\  
+      \midrule
+      \emph{Fit statistics}\\
+      Observations                                              & 11,248          & 11,840          & 11,496          & 11,248                 & 11,248\\  
+      R$^2$                                                     & 0.90241         & 0.90325         & 0.90362         & 0.90304                & 0.90301\\  
+      Within R$^2$                                              & 0.51047         & 0.52242         & 0.52121         & 0.51363                & 0.51346\\  
+      Wu-Hausman                                                &                 &                 &                 & 33.448                 & 30.202\\  
+      Wu-Hausman, p-value                                       &                 &                 &                 & $7.52\times 10^{-9}$   & $3.98\times 10^{-8}$\\   
+      Wald (IV only)                                            &                 &                 &                 & 50.051                 & 49.282\\  
+      Wald (IV only), p-value                                   &                 &                 &                 & $1.59\times 10^{-12}$  & $2.34\times 10^{-12}$\\   
+      F-test (1st stage), (log) Annual Avg. Wkly. Wage          &                 &                 &                 & 5,524.3                & 5,506.7\\  
+      F-test (1st stage), p-value, (log) Annual Avg. Wkly. Wage &                 &                 &                 & $0\times 10^{-16}$     & $0\times 10^{-16}$\\   
+      \midrule \midrule
+      \multicolumn{6}{l}{\emph{Clustered (unit) standard-errors in parentheses}}\\
+      \multicolumn{6}{l}{\emph{Signif. Codes: ***: 0.01, **: 0.05, *: 0.1}}\\
+   \end{tabular}
+\end{adjustbox}
+\par\endgroup
+
+\FloatBarrier
+
+\subsection{Panel VAR Specification}\label{panel-var-specification}
+
+\[
+Y_{it} = \alpha_i +  \sum_{k = 1}^{4} \gamma_{k}A_{i,t-k} + \beta X_{it} + \varepsilon_{it}
+\]
+
+Where we approach a level and per capita value expression of the
+relationship between total education expenditure, intergovernmental
+revenue, house prices conditioned on GDP and wage levels.
+
+\[
+Y_{it} =
+\begin{bmatrix}
+\log(\text{real Total Educ. Exp.})_{it} \\
+\log(\text{real Total IG Revenue})_{it} \\
+\log(\text{HPI})_{it}
+\end{bmatrix},
+\quad
+X_{it} =
+\begin{bmatrix}
+\log(\text{real GDP})_{it} \\
+\log(\text{wage})_{it}
+\end{bmatrix}
+\]
+
+\begin{itemize}
+\tightlist
+\item
+  \(A_1, A_2, A_3, A_4\) are \(3 \times 3\) coefficient matrices
+\item
+  \(\beta\) is a \(3 \times 2\) matrix of coefficients on the exogenous
+  variables
+\item
+  \(\alpha_i\) is a vector of unit fixed effects
+\item
+  \(\varepsilon_{it}\) is the error term
+\end{itemize}
+
+Where
+
+\[
+Y_{it} =
+\begin{bmatrix}
+\log(\text{real Own Source Rev. per person})_{it} \\
+\log(\text{real IG Revenue per person})_{it} \\
+\log(\text{wage})_{it} \\
+\log(\text{HPI})_{it}
+\end{bmatrix},
+\quad
+X_{it} =
+\begin{bmatrix}
+\log(\text{real GDP per capita})_{it}
+\end{bmatrix}
+\]
+
+\begin{itemize}
+\tightlist
+\item
+  \(A_1, A_2, A_3, A_4\) are \(4 \times 4\) coefficient matrices
+\item
+  \(B\) is a \(4 \times 1\) coefficient matrix
+\item
+  \(\alpha_i\) unit fixed effects
+\item
+  \(\varepsilon_{it}\) error term
+\end{itemize}
+
+\pandocbounded{\includegraphics[keepaspectratio]{regressions_files/figure-pdf/unnamed-chunk-119-1.png}}
+
+\pandocbounded{\includegraphics[keepaspectratio]{regressions_files/figure-pdf/unnamed-chunk-119-2.png}}
+
+\FloatBarrier
+
+\clearpage
+
+
+\printbibliography
 
 
 
