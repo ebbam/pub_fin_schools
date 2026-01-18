@@ -228,6 +228,15 @@ bibliography: references.bib
 ## Notes on Accessing Papers
 
 -   **Open Access**: Papers from EPI, Federal Reserve Banks, and NBER working papers are freely available
+
 -   **Journal Access**: Papers from Quarterly Journal of Economics, American Economic Review, and other top journals may require institutional access or individual purchase
+
 -   **Working Paper Versions**: Many published papers have free working paper versions available through NBER, SSRN, or author websites
+
 -   **Google Scholar**: Search for paper titles on Google Scholar to often find free PDF versions from author websites or repositories
+
+-   <div>
+
+    # 
+
+    </div>

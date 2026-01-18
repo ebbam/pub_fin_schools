@@ -4,9 +4,20 @@
 \appendix
 ```
 
-
 ```{=latex}
 \input{/Users/ebbamark/Documents/Documents - Nuff-Malham/GitHub/pub_fin_schools/code/si_tex_docs/si.tex}
+```
+
+```{=latex}
+\FloatBarrier
+```
+
+# Data
+
+{{< include ../data/raw/QCEW/data_desc_qcew_cz_ind_wage_stats.md >}}
+
+```{=latex}
+\FloatBarrier
 ```
 
 # Key Relationships between Economic Variables
@@ -48,7 +59,7 @@ The below regressions are included to establish the relationship between educati
 # Baseline Descriptive Estimates
 
 We descriptively establish foundational relationships between
-local economic conditions that seem to reasonably generalise across the
+local economic conditions that seem to reasonably generalize across the
 country using an AR(1) two-way fixed effects ordinary least-squares
 panel model with standard errors clustered by commuting zone. We outline
 the model specification immediately below:
@@ -223,7 +234,7 @@ shift-share instrument.
 
 The instrumental variable estimates provide similar evidence of a
 robust causal relationship between local wages and public education
-expenditure. Utilising our wage-based shift-share instrument we see
+expenditure. Utilizing our wage-based shift-share instrument we see
 highly significant and relevant first-stage relationships when the
 shift-share instrument is imposed in levels (except in column 5). In
 each case except columns 5-6 (l1 SS, CZ FE), the first-stage regression
@@ -367,6 +378,17 @@ overall treatment effect of local wage changes instrumented via our
 wage-based shift-share shock.
 
 ```{r, ref.label='wage_ss_ind_by_ind', echo = FALSE, eval=TRUE, results = 'asis'}
+```
+
+```{=latex}
+\FloatBarrier
+```
+
+## Industry-by-Industry Estimation Using Industry-Specific GDP SS
+
+In the following section, we provide an additional alternative estimation to that described in @sec-indbyind of the main text. In this case, we instrument local industry-specific wages using our decomposed industry-specific estimation as designed in @eq-bartik-decomposed.
+
+```{r, ref.label='indind_new_2', echo = FALSE, eval=TRUE, results = 'asis'}
 ```
 
 ```{=latex}

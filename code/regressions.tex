@@ -197,7 +197,7 @@
 \makeatother
 \subtitle{The Case of US Public Education}
 \author{Ebba Mark}
-\date{2026-01-16}
+\date{2026-01-18}
 \begin{document}
 \maketitle
 
@@ -285,7 +285,7 @@ characterized by a high degree of spatial heterogeneity}
 \autocite{manduca2025,obrien2025,feler2017,chetty2026}. Evidence of how
 income inequality perpetuates other forms of inequality (opportunity,
 health, infrastructure quality, and broader well-being) is steadily
-increasing
+increasing.
 \autocite{chetty2016,logan2012,semuels2016,Avancena2021,flavin2009,boustanEffectRisingIncome2013}
 find that greater income inequality leads to higher public expenditure
 across all public goods indicating that a presence of higher-earners in
@@ -296,7 +296,7 @@ public expenditure raising the potential for ``superstar'' and ``left
 behind'' regions to emerge absent even income growth.
 
 \textbf{Local public education is particularly relevant in this
-context.} Public schools are responsible for education over 80\% of
+context.} Public schools are responsible for educating over 80\% of
 American school-age children. In 2019, governments around the US
 (including the federal government) spent a total of \$870 billion on
 public education, roughly \$17,013 per pupil
@@ -307,7 +307,7 @@ lacking, or at best under-performing, federal equalization system
 perpetuates this structural force
 \autocite{beland2017,biasi2023,hoxby1998,mccabe2019,baker2016,aesa2024}.
 Take Connecticut for example. In 2016, according to the Connecticut
-State Department of Education, the town of Greenwich town, one of the
+State Department of Education, the town of Greenwich, one of the
 highest-income towns in the country, spent \$22,000 per pupil while
 Bridgeport, although only located 40 kilometers away, spent \$14,000
 \autocite{semuels2016}.
@@ -375,15 +375,14 @@ construct a shift-share instrument that combines fixed local industry
 employment shares with national industry-level changes in real value
 added using data from the US Bureau of Labor Statistics and Bureau of
 Economic Analysis. This instrument generates plausibly exogenous local
-variation by exploiting how different regions are differentially exposed
-to common national trends, while abstracting from endogenous local
-dynamics. It is particularly well suited in this setting, since the
-local tax base, and thus education spending, likely depends on
-industries that are unevenly distributed across regions but subject to
-similar industry-specific wage shocks. We use this instrument to
-identify the effect of wage shocks on local public education expenditure
-as reported by the US Census Bureau's Annual Survey of State and Local
-Government Finances.
+variation by exploiting how regions are differentially exposed to common
+national trends, while abstracting from endogenous local dynamics. It is
+particularly well suited in this setting, since the local tax base, and
+thus education spending, likely depends on industries that are unevenly
+distributed across regions but subject to similar industry-specific wage
+shocks. We use this instrument to identify the effect of wage shocks on
+local public education expenditure as reported by the US Census Bureau's
+Annual Survey of State and Local Government Finances.
 
 Given the substantial heterogeneity across U.S. states arising both from
 structural sources (such as differences in tax systems, regulatory
@@ -496,7 +495,7 @@ on elementary education.
 
 \textbf{Population controls:} We source commuting-zone level population
 statistics by aggregating data from county-level populations statistics
-from the US Census Bureau
+from the US Census Bureau.
 
 \textbf{Local GDP:} We gather local GDP control variables by aggregating
 county-level GDP data from the Bureau of Economic Analysis (BEA). This
@@ -526,12 +525,12 @@ optionally by Hispanic or non-Hispanic origin
 Though the US Census Bureau provides county-level estimates of racial
 make-up of local areas in the American Community Survey, this data is
 unavailable prior to 2009 and is considered less accurate than those
-provided by the National Cancer Institute's SEER Database.
+provided by the SEER Database.
 
 \textbf{Adequate Education Spending}: The University of Wisconsin's
-School Finance Indicators Database provides provides detailed data on
-School Funding Adequacy, measured as the dollar estimate needed per
-pupil to achieve U.S. average test scores \autocite{baker}.
+School Finance Indicators Database provides detailed data on School
+Funding Adequacy, measured as the dollar estimate needed per pupil to
+achieve U.S. average test scores \autocite{baker}.
 
 This data aggregation results in a complete and balanced panel of 636 US
 commuting zones across 40 states between 2001-2021. \footnote{20\% of US
@@ -555,7 +554,7 @@ thousands except for the House Price Index.
 integration of relevant variables calculated using a unit root test
 designed for heterogeneous panels \autocite{im2003}. All variables are
 integrated I(0) indicating minimal concern for non-stationarity except
-in the case of enrollment and population numbers.
+in the case of enrollment and population.
 
 \begin{table}[!htbp] \centering 
   \caption{} 
@@ -622,7 +621,7 @@ arrows. Majority of states fall short of the deemed adequate expenditure
 value. Mississippi boasts the greatest shortfall in spending while
 Wyoming boasts the greatest overshoot in spending. Figure 1 demonstrates
 the considerable within state variability in spending rates as well as
-between state variation in levels and student needs.
+between-state variation in levels and student needs.
 
 \begin{figure}[H]
 
@@ -638,8 +637,8 @@ Figure 2 demonstrates the trajectories of local wages from an initial
 level in 2001, demonstrating, the diverging wage growth trajectories of
 commuting zones in our sample. Blue commuting zones represents those
 exhibiting relatively high wage growth trajectories as deemed by the
-calculation in Section~\ref{sec-growthrates}. The black dashed line
-represents the annual national wage growth rate.
+calculation outlined in Section~\ref{sec-growthrates}. The black dashed
+line represents the annual national wage growth rate.
 
 \begin{figure}
 
@@ -659,8 +658,8 @@ represents the annual national wage growth rate.
 
 We are centrally interested in the effect of changes in local wages on
 public education expenditure where there is an evident endogeneity
-concern between public education expenditure and wage. First, there is a
-likely attracting factor of high levels of education expenditure for
+concern between public education expenditure and wages. First, there is
+a likely attracting factor of high levels of education expenditure for
 higher-income families. Second, absent migration, education systems
 provision local labor markets with individuals with diverse human
 capital.
@@ -710,7 +709,7 @@ space and time. In doing so, it provides a defensible strategy for
 respect to contemporaneous shocks. Moreover, by construction, the
 approach enables the examination of how macro-level phenomena propagate
 to and affect local units, as it generates local shocks that are driven
-by national industry trends weighted but the community exposure to this
+by national industry trends weighted by the community exposure to this
 industries.\footnote{An additional popular indicator for modelling
   industrial shocks exogenously is \emph{oil price} as these values are
   often assumed to be exogenous to local and even national conditions
@@ -769,8 +768,8 @@ relevance.
 Z_{it} = \sum_{j=1}^{k} S_{0jt}G_{ojt}
 }\end{equation}
 
-Finally, the authors can make an additional design choice about whether
-the effect of these instruments should be assumed common to an aggregate
+Finally, authors can make an additional design choice about whether the
+effect of these instruments should be assumed common to an aggregate
 local-level wage growth indicator or allowed to vary by industry. In
 other words, whether to construct the first-stage relationship of the
 2SLS as\ldots:
@@ -788,14 +787,14 @@ X_{it} = \alpha_i + \sum_{j=1}^{k}\beta_{j}S_{j}G_{jt} + \epsilon_{it}
 We employ the formulation in Equation~\ref{eq-ref-bartik}, assuming that
 base-period local industry shares and time-varying national rates are
 exogenous to local outcomes and construct the former of the first-stage
-relationship assuming a common \(\beta\) to the sum of these shares.
+relationships assuming a common \(\beta\) to the sum of these shares.
 
 Using data from the Bureau of Economic Analysis, we construct a
 shift-share Bartik instrument at the commuting zone level using local
 employment shares by industry and national changes in industry-specific
-real value added represented in Equation~\ref{eq-bartik}. \(G_{njt}\)
-represents national-level changes in value added in industry \(j\) in
-time \(t\) and \(\frac{N_{ij\tau}}{N_{i\tau}}\) represents the
+real value added (VA) represented in Equation~\ref{eq-bartik}.
+\(G_{njt}\) represents national-level changes in value added in industry
+\(j\) in time \(t\) and \(\frac{N_{ij\tau}}{N_{i\tau}}\) represents the
 `sensitivity' of a CZ to these national shocks proxied by an initial
 share of local employment in industry \(j\) in a baseline time period
 \(\tau\). The product of these two values defines the shift-share
@@ -838,13 +837,13 @@ lags as instruments.
 \begin{equation}\phantomsection\label{eq-first-stage}{
 \textbf{(First stage)}\qquad
 X_{it} \;=\; \rho\,X_{i,t-1} \;+\; \phi \,Y_{i,t-1} \;+\; \sum_{\ell=0}^{2}\pi_{\ell}\,\tilde Z_{i,t-\ell}
-\;+\; \boldsymbol{\theta}\mathbf{W}_{it}' \;+\; \alpha_i \;+\; \lambda_t \;+\; u_{it},
+\;+\; \boldsymbol{\theta}\mathbf{W}_{it}' \;+\; \alpha_i^{FS} \;+\; \lambda_t^{FS} \;+\; u_{it},
 }\end{equation}
 
 \begin{equation}\phantomsection\label{eq-second-stage}{
 \textbf{(Second stage)}\qquad
 Y_{it} \;=\; \phi^\ast \,Y_{i,t-1} \;+\; \beta\,\widehat{X}_{it}
-\;+\; \boldsymbol{\delta}\mathbf{W}_{it}'\;+\;  \alpha_i \;+\; \lambda_t \;+\; \varepsilon_{it}
+\;+\; \boldsymbol{\delta}\mathbf{W}_{it}'\;+\;  \alpha_i^{SS} \;+\; \lambda_t^{SS} \;+\; \varepsilon_{it}
 }\end{equation}
 
 where \(W_{it}\) is a vector of control variables. We control for
@@ -860,12 +859,12 @@ education expenditure per pupil for CZ \(i\) in year \(t\). We focus on
 elementary education for two reasons. First, this restriction partly
 shields against a justifiable concern about the endogeneity between
 wages and quality of local public education. Whereas funding for high
-school could likely affect local wages given such students are of
-working age, funding for elementary education is unlikely to impact wage
-rates via a human capital or skills channel. Second, in terms of public
-impact, elementary education is of foundational importance in the lives
-of children. Slips in public education provision at a young age could
-have scarring effects.
+school could likely affect local wages given such students are of or
+near working age, funding for elementary education is unlikely to impact
+wage rates via a human capital or skills channel. Second, in terms of
+public impact, elementary education is of foundational importance in the
+lives of children. Slips in public education provision at a young age
+could have scarring effects.
 
 \(\alpha_i\) represents a CZ fixed effect and \(\lambda_t\) represents
 year-fixed effects, with stage-relevant superscripts.
@@ -1033,13 +1032,9 @@ increase in local wages leads to a 2.23\% increase in per-pupil
 education expenditure in the short run. The first-stage F-statistic
 substantially exceeds conventional weak instrument thresholds. The
 Wu-Hausman test definitively rejects the exogeneity of wages, validating
-our instrumental variable approach. However, the Wald
-over-identification test suggests potential instrument invalidity,
-though this is likely an artifact of the inclusion of AR(1) terms in the
-first-stage and not an indictment of the exclusion restriction itself.
-The implied long-run elasticity is near 0.46, indicating that the
-cumulative effect of a 10\% wage increase is a 4.6\% increase in
-education spending.
+our instrumental variable approach. The implied long-run elasticity is
+near 0.46, indicating that the cumulative effect of a 10\% wage increase
+is a 4.6\% increase in education spending.
 
 In Columns 3-4, we corroborate this long-run effect by removing the
 AR(1) term in the second-stage regression. The statistically significant
@@ -1088,26 +1083,28 @@ see their educational spending erode as a result.
          Model:                                                    & (1)                          & (2)                    & (3)                          & (4)                    & (5)                          & (6)\\  
          \midrule
          \emph{Variables}\\
-         (log, l1) Annual Avg. Wkly. Wage                          & 0.7826$^{***}$               &                        & 0.7847$^{***}$               &                        & 0.7791$^{***}$               &   \\   
-                                                                   & (0.0121)                     &                        & (0.0114)                     &                        & (0.0121)                     &   \\   
-         VA SS (Lvl, l1)                                           & -0.1923$^{***}$              &                        & -0.1962$^{***}$              &                        & -0.1592$^{***}$              &   \\   
-                                                                   & (0.0513)                     &                        & (0.0527)                     &                        & (0.0425)                     &   \\   
-         VA SS (Lvl, l2)                                           & 0.1564$^{***}$               &                        & 0.1612$^{***}$               &                        & 0.1390$^{***}$               &   \\   
-                                                                   & (0.0477)                     &                        & (0.0494)                     &                        & (0.0412)                     &   \\   
+         (log, l1) Annual Avg. Wkly. Wage                          & 0.7826$^{***}$               &                        & 0.7848$^{***}$               &                        & 0.7791$^{***}$               &   \\   
+                                                                   & (0.0121)                     &                        & (0.0113)                     &                        & (0.0121)                     &   \\   
+         VA SS (Lvl, l1)                                           & -0.1923$^{***}$              &                        & -0.1831$^{***}$              &                        & -0.1592$^{***}$              &   \\   
+                                                                   & (0.0513)                     &                        & (0.0600)                     &                        & (0.0425)                     &   \\   
+         VA SS (Lvl, l2)                                           & 0.1564$^{***}$               &                        & 0.1668$^{***}$               &                        & 0.1390$^{***}$               &   \\   
+                                                                   & (0.0477)                     &                        & (0.0516)                     &                        & (0.0412)                     &   \\   
          (l1, log) Elem.Ed.Exp.pp                                  & 0.0039                       & 0.5086$^{***}$         &                              &                        &                              &   \\   
                                                                    & (0.0041)                     & (0.0156)               &                              &                        &                              &   \\   
          (log) IG Revenue pp                                       & 0.0135$^{***}$               & 0.2230$^{***}$         & 0.0143$^{***}$               & 0.3213$^{***}$         &                              &   \\   
                                                                    & (0.0030)                     & (0.0211)               & (0.0028)                     & (0.0316)               &                              &   \\   
-         (log) Real GDP Priv. Industry pc                          & 0.0391$^{***}$               & 0.0663$^{***}$         & 0.0394$^{***}$               & 0.0947$^{***}$         & 0.0403$^{***}$               & 0.0383$^{***}$\\   
+         (log) Real GDP Priv. Industry pc                          & 0.0391$^{***}$               & 0.0663$^{***}$         & 0.0394$^{***}$               & 0.0946$^{***}$         & 0.0403$^{***}$               & 0.0383$^{***}$\\   
                                                                    & (0.0044)                     & (0.0144)               & (0.0044)                     & (0.0243)               & (0.0060)                     & (0.0083)\\   
-         (log) Enrollment                                          & 0.0108$^{**}$                & -0.1957$^{***}$        & 0.0098$^{**}$                & -0.3306$^{***}$        &                              &   \\   
-                                                                   & (0.0044)                     & (0.0157)               & (0.0041)                     & (0.0282)               &                              &   \\   
-         \% Black                                                  & -0.1684$^{**}$               & 0.3332$^{*}$           & -0.1667$^{**}$               & 0.6540$^{*}$           & -0.0916                      & -0.4354$^{***}$\\   
-                                                                   & (0.0724)                     & (0.1924)               & (0.0719)                     & (0.3622)               & (0.0745)                     & (0.1586)\\   
-         \% Hispanic                                               & -0.0526                      & 0.0484                 & -0.0530                      & 0.0382                 & -0.0429                      & -0.0214\\   
+         (log) Enrollment                                          & 0.0108$^{**}$                & -0.1957$^{***}$        & 0.0099$^{**}$                & -0.3306$^{***}$        &                              &   \\   
+                                                                   & (0.0044)                     & (0.0157)               & (0.0042)                     & (0.0282)               &                              &   \\   
+         \% Black                                                  & -0.1684$^{**}$               & 0.3332$^{*}$           & -0.1668$^{**}$               & 0.6541$^{*}$           & -0.0916                      & -0.4354$^{***}$\\   
+                                                                   & (0.0724)                     & (0.1924)               & (0.0720)                     & (0.3622)               & (0.0745)                     & (0.1586)\\   
+         \% Hispanic                                               & -0.0526                      & 0.0484                 & -0.0529                      & 0.0381                 & -0.0429                      & -0.0214\\   
                                                                    & (0.0327)                     & (0.1509)               & (0.0326)                     & (0.2516)               & (0.0345)                     & (0.0594)\\   
-         (log) Annual Avg. Wkly. Wage                              &                              & 0.2266$^{***}$         &                              & 0.5613$^{***}$         &                              & 0.0861$^{**}$\\   
+         (log) Annual Avg. Wkly. Wage                              &                              & 0.2266$^{***}$         &                              & 0.5618$^{***}$         &                              & 0.0861$^{**}$\\   
                                                                    &                              & (0.0477)               &                              & (0.0765)               &                              & (0.0404)\\   
+         VA SS (Lvl)                                               &                              &                        & -0.0203                      &                        &                              &   \\   
+                                                                   &                              &                        & (0.0485)                     &                        &                              &   \\   
          (log, l1) House Price Index                               &                              &                        &                              &                        & 0.0141$^{***}$               & 0.8380$^{***}$\\   
                                                                    &                              &                        &                              &                        & (0.0049)                     & (0.0098)\\   
          \midrule
@@ -1117,18 +1114,16 @@ see their educational spending erode as a result.
          \midrule
          \emph{Fit statistics}\\
          Observations                                              & 12,084                       & 12,084                 & 12,084                       & 12,084                 & 11,509                       & 11,509\\  
-         R$^2$                                                     & 0.99247                      & 0.90636                & 0.99247                      & 0.86538                & 0.99337                      & 0.99074\\  
-         Within R$^2$                                              & 0.77623                      & 0.51803                & 0.77616                      & 0.30710                & 0.78831                      & 0.78567\\  
-         Wu-Hausman                                                &                              & 44.650                 &                              & 137.99                 &                              & 118.10\\  
-         Wu-Hausman, p-value                                       &                              & $2.47\times 10^{-11}$  &                              & $1.11\times 10^{-31}$  &                              & $2.28\times 10^{-27}$\\   
-         Wald (IV only)                                            & 1,734.5                      & 22.603                 & 1,944.0                      & 53.881                 & 1,445.7                      & 4.5411\\  
-         Wald (IV only), p-value                                   & $0\times 10^{-16}$           & $2.01\times 10^{-6}$   & $0\times 10^{-16}$           & $2.27\times 10^{-13}$  & $0\times 10^{-16}$           & 0.03311\\  
-         F-test (1st stage)                                        & 7,963.5                      &                        & 8,349.3                      &                        & 6,678.2                      & \\  
-         F-test (1st stage), (log) Annual Avg. Wkly. Wage          &                              & 7,963.5                &                              & 8,349.3                &                              & 6,678.2\\  
+         R$^2$                                                     & 0.99247                      & 0.90636                & 0.99247                      & 0.86539                & 0.99337                      & 0.99074\\  
+         Within R$^2$                                              & 0.77623                      & 0.51803                & 0.77617                      & 0.30715                & 0.78831                      & 0.78567\\  
+         Wu-Hausman                                                &                              & 44.650                 &                              & 138.75                 &                              & 118.10\\  
+         Wu-Hausman, p-value                                       &                              & $2.47\times 10^{-11}$  &                              & $7.64\times 10^{-32}$  &                              & $2.28\times 10^{-27}$\\   
+         Wald (IV only)                                            & 1,734.5                      & 22.603                 & 1,517.9                      & 53.948                 & 1,445.7                      & 4.5411\\  
+         Wald (IV only), p-value                                   & $0\times 10^{-16}$           & $2.01\times 10^{-6}$   & $0\times 10^{-16}$           & $2.19\times 10^{-13}$  & $0\times 10^{-16}$           & 0.03311\\  
+         F-test (1st stage)                                        & 7,963.5                      &                        & 6,261.7                      &                        & 6,678.2                      & \\  
+         F-test (1st stage), (log) Annual Avg. Wkly. Wage          &                              & 7,963.5                &                              & 6,261.7                &                              & 6,678.2\\  
          F-test (1st stage), p-value                               & $0\times 10^{-16}$           &                        & $0\times 10^{-16}$           &                        & $0\times 10^{-16}$           & \\  
          F-test (1st stage), p-value, (log) Annual Avg. Wkly. Wage &                              & $0\times 10^{-16}$     &                              & $0\times 10^{-16}$     &                              & $0\times 10^{-16}$\\   
-         Partial F (Wald)                                          &                              & 7.0351                 &                              & 6.9417                 &                              & 7.2141\\  
-         Partial F p-val                                           &                              & 0.00088                &                              & 0.00097                &                              & 0.00074\\  
          \midrule \midrule
          \multicolumn{7}{l}{\emph{Clustered (unit) standard-errors in parentheses}}\\
          \multicolumn{7}{l}{\emph{Signif. Codes: ***: 0.01, **: 0.05, *: 0.1}}\\
@@ -1143,16 +1138,16 @@ see their educational spending erode as a result.
 \subsection{Accounting for
 Heterogeneity}\label{accounting-for-heterogeneity}
 
-In order to make meaningful policy-related insights, we need to unmask
+In order to make meaningful policy-relevant insights, we need to unmask
 the substantial heterogeneity obscured by national-level average
 treatment effects. These national-level estimates are unlikely to apply
 uniformly across states and commuting zones, especially given
 heterogeneity in local tax regimes.
 
 Therefore, we (1) use data on local wages and GDP to create indicators
-for whether regions are exhibiting relative decline or growth compared
+for whether regions have exhibited relative decline or growth compared
 to other commuting zones to partition our sample in a data-driven
-manner, employ (2) industry-by-industry and (2) state-by-state
+manner, employ (2) state-by-state and (3) industry-by-industry
 estimations in our IV specifications using our VA-based shift-share
 instrument.
 
@@ -1242,9 +1237,9 @@ outstanding positive outliers in the distribution whereas Kentucky,
 Louisiana, South Dakota have outstanding negative outliers. The grey
 lines represent the commuting zones value of \(\alpha_w\), indicating
 that in a large share of cases, wage growth rates are defined by a
-different sign than the GDP growth rates, indicating even potential
-local divergence in growth rates. Though the calculations above could
-lead to insignificant such relationships because the growth rates are
+different sign than the GDP per capita growth rates, indicating local
+divergence between these rates. Though the calculations above could lead
+to insignificant such relationships because the growth rates are
 calculated in reference to different data (indeed the distributions
 represented in the top left panel of Figure 5 have different median
 values), the volume of states exhibiting diverging wage and GDP per
@@ -1336,22 +1331,21 @@ declining size and significance in the explanatory variable accounting
 for inter-governmental revenue, indicating that these revenues play a
 smaller role in regions exhibiting above-average wage growth.
 
-In \autoref{tbl_gdp_ss_gdp_subsamples} partitions CZs by long-run GDP
-per capita trends. The statistical significance and magnitude variations
-in the wage response tell a less monotonic story here, likely mirroring
-the lack of systematic correlation between \(\alpha_w\) and
-\(\alpha_g\). When partitioning the sample by GDP growth rates, the
-interpretation is more straight-forward.
+\autoref{tbl_gdp_ss_gdp_subsamples} partitions CZs by long-run GDP per
+capita trends. The statistical significance and magnitude variations in
+the wage response tell a less monotonic story here, likely mirroring the
+lack of systematic correlation between \(\alpha_w\) and \(\alpha_g\).
 
-Regardless, all models remain well-identified, with high first stage F
-statistics, convincing performance on the Wu-Hausman endogeneity tests
-and Wald tests. Combined, these results indicate that partitioning by
-background wage growth rates provides greater insight into the sample's
-heterogeneity than diversity in GDP per capita growth rates. More
-precisely, given communities feel wage growth more directly than GDP per
-capita improvements, it is likely that the relationship between public
-education and wage changes is better captured by sub-sampling by wage
-growth rates.
+Regardless, all models except Column 5 in
+\autoref{tbl_gdp_ss_wage_subsamples} remain well-identified, with high
+first stage F statistics, convincing performance on the Wu-Hausman
+endogeneity tests and Wald tests. Combined, these results indicate that
+partitioning by background wage growth rates provides greater insight
+into the sample's heterogeneity than diversity in GDP per capita growth
+rates. More precisely, given communities feel wage growth more directly
+than GDP per capita improvements, it is likely that the relationship
+between public education and wage changes is better captured by
+sub-sampling by wage growth rates.
 
 \FloatBarrier
 
@@ -1397,8 +1391,6 @@ growth rates.
          Wald (IV only), p-value                                   & $2.01\times 10^{-6}$   & $1.79\times 10^{-6}$   & $6.6\times 10^{-5}$  & $5.68\times 10^{-5}$  & 0.06057\\  
          F-test (1st stage), (log) Annual Avg. Wkly. Wage          & 7,963.5                & 1,806.3                & 1,083.3              & 6,874.1               & 1,617.8\\  
          F-test (1st stage), p-value, (log) Annual Avg. Wkly. Wage & $0\times 10^{-16}$     & $0\times 10^{-16}$     & $0\times 10^{-16}$   & $0\times 10^{-16}$    & $0\times 10^{-16}$\\   
-         Partial F (Wald)                                          &                        & 5.4757                 & 6.4666               &                       & 1.6361\\  
-         Partial F p-val                                           &                        & 0.00423                & 0.00160              &                       & 0.19493\\  
          \midrule \midrule
          \multicolumn{6}{l}{\emph{Clustered (unit) standard-errors in parentheses}}\\
          \multicolumn{6}{l}{\emph{Signif. Codes: ***: 0.01, **: 0.05, *: 0.1}}\\
@@ -1445,8 +1437,6 @@ growth rates.
          Wald (IV only), p-value                                   & $2.01\times 10^{-6}$   & 0.00018               & $8.1\times 10^{-6}$   & 0.00158               & 0.00187\\  
          F-test (1st stage), (log) Annual Avg. Wkly. Wage          & 7,963.5                & 2,458.2               & 3,528.8               & 4,382.2               & 1,996.6\\  
          F-test (1st stage), p-value, (log) Annual Avg. Wkly. Wage & $0\times 10^{-16}$     & $0\times 10^{-16}$    & $0\times 10^{-16}$    & $0\times 10^{-16}$    & $0\times 10^{-16}$\\   
-         Partial F (Wald)                                          &                        & 3.9826                &                       &                       & 3.1849\\  
-         Partial F p-val                                           &                        & 0.01874               &                       &                       & 0.04153\\  
          \midrule \midrule
          \multicolumn{6}{l}{\emph{Clustered (unit) standard-errors in parentheses}}\\
          \multicolumn{6}{l}{\emph{Signif. Codes: ***: 0.01, **: 0.05, *: 0.1}}\\
@@ -1463,13 +1453,13 @@ Next, given the substantial heterogeneity in state-level economic makeup
 and public finance regimes, we investigate state-specific relationships
 between our variables of interest.
 
-First, states vary in the number of commuting zones they contain. Figure
-12 demonstrates that states have anywhere between 2 (Delaware) and 58
+States vary in the number of commuting zones they contain. Figure 12
+demonstrates that states have anywhere between 2 (Delaware) and 58
 (Texas) commuting zones. This allows us to estimate panel-style
 regressions within each state to net out between-state variation that
 might be confounding our current treatment estimates. We exclude any
-states that contain less than 5 commuting zones due to sample size
-concerns.
+states that contain less than 5 commuting zones (Delaware, Maine,
+Nevada, New Hampshire, New Jersey) due to sample size concerns.
 
 \begin{figure}[H]
 
@@ -1487,19 +1477,19 @@ concerns.
 
 Using our instrumental variable approach with a value-added based
 shift-share instrument, we corroborate the directionality and magnitude
-of the effect for 11 states: Colorado, Florida, South Dakota, Kentucky,
-Louisiana, Pennsylvania, North Dakota, Oregon, Oklahoma, Arizona, and
-Indiana. In estimating the state-by-state regressions, we exclude any
-states where our F-statistic is below conventional weak instrument
-thresholds (F statistics \textless= 12 and p-value \textless{} 0.05) and
-the p-value of the second stage coefficient of interest is \textless{}
+of the effect for 10 states: Colorado, Florida, South Dakota, Kentucky,
+North Dakota, Louisiana, Pennsylvania, Oregon, Oklahoma, and Indiana. In
+estimating the state-by-state regressions, we only present the results
+for states that exceed conventional weak instrument thresholds (F
+statistic \textgreater= 12 and p-value \textless{} 0.05) and whose
+p-values for the second stage coefficient of interest is \textless{}
 0.1.
 
 Examining various characteristics of these states, we find that they
 vary widely in demographic composition, enrollment levels, and wage
 levels indicating that the detected effects are not attributable to any
-extremes in these values. Notably, they even vary in reliance on local
-sources educational expenditure.
+extremes in these values. Notably, these states even vary in reliance on
+local versus intergovernmental sources for public education expenditure.
 
 \begin{figure}[H]
 
@@ -1511,10 +1501,10 @@ sources educational expenditure.
 
 \end{figure}%
 
-\subsubsection{Industry by Industry}\label{industry-by-industry}
+\subsubsection{Industry by Industry}\label{sec-indbyind}
 
 Finally, given our shift-share instruments are the composite effect of
-shifts in industry-level real value added (VA), we can decompose this
+shifts in industry-level real value added, we can decompose this
 instrument into industry-specific real value added shocks. This
 decomposition allows us to examine the effect of industry-specific
 changes across states in a more explicit manner. In other words, we
@@ -1527,7 +1517,7 @@ re-design our instrument as\ldots{}
 \ldots rather than the sum of all industry-level shocks.
 
 We estimate separate panel regressions using the full commuting zone
-sample and then grouping commuting zones by state instrumenting local
+sample and then grouping commuting zones by state, instrumenting local
 level wages by these decomposed shift-share shocks by industry.
 
 Using our value added-based shift share instrument, Figure 10
@@ -1535,72 +1525,14 @@ demonstrates the overall treatment effect of local wage changes
 instrumented via an industry-specific GDP shock. We find that regardless
 of the instrument design, the coefficient estimate is consistent with
 the baseline results, where the estimated effect of a 10\% change to
-local wages on public education expenditure is a 2.2\% increase, with
-the effect's magnitude varying meaningfully for several states. We plot
-the relevant state-level effects for those states whose estimations pass
-the same restriction criteria as above (F statistics \textless= 12 and
-p-value \textless{} 0.05 and the p-value of the second stage coefficient
-of interest is \textless{} 0.05).
-
-\begin{verbatim}
-[1] "lev_gdp_ss_11"
-\end{verbatim}
-
-\begin{verbatim}
-[1] "lev_gdp_ss_21"
-\end{verbatim}
-
-\begin{verbatim}
-[1] "lev_gdp_ss_22"
-\end{verbatim}
-
-\begin{verbatim}
-[1] "lev_gdp_ss_23"
-\end{verbatim}
-
-\begin{verbatim}
-[1] "lev_gdp_ss_42"
-\end{verbatim}
-
-\begin{verbatim}
-[1] "lev_gdp_ss_51"
-\end{verbatim}
-
-\begin{verbatim}
-[1] "lev_gdp_ss_52"
-\end{verbatim}
-
-\begin{verbatim}
-[1] "lev_gdp_ss_53"
-\end{verbatim}
-
-\begin{verbatim}
-[1] "lev_gdp_ss_56"
-\end{verbatim}
-
-\begin{verbatim}
-[1] "lev_gdp_ss_62"
-\end{verbatim}
-
-\begin{verbatim}
-[1] "lev_gdp_ss_71"
-\end{verbatim}
-
-\begin{verbatim}
-[1] "lev_gdp_ss_72"
-\end{verbatim}
-
-\begin{verbatim}
-[1] "lev_gdp_ss_81"
-\end{verbatim}
-
-\begin{verbatim}
-[1] "lev_gdp_ss_54"
-\end{verbatim}
-
-\begin{verbatim}
-[1] "lev_gdp_ss_55"
-\end{verbatim}
+local wages on public education expenditure is approximately a 2\%
+increase, with the effect's magnitude varying meaningfully for several
+states. We plot the relevant state-level effects for those states whose
+estimations pass the same restriction criteria as above (F statistics
+\textless= 12 and p-value \textless{} 0.05 and the p-value of the second
+stage coefficient of interest is \textless{} 0.05). This estimation
+provides a view on the strength of our chosen instrument. Regardless of
+instrument choice, the detected effect should be consistent.
 
 \begin{figure}[H]
 
@@ -1614,85 +1546,21 @@ of interest is \textless{} 0.05).
 
 \FloatBarrier
 
-\begin{verbatim}
-[1] "annual_avg_wkly_wage_measure_11"
-\end{verbatim}
-
-\begin{verbatim}
-[1] "annual_avg_wkly_wage_measure_21"
-\end{verbatim}
-
-\begin{verbatim}
-[1] "annual_avg_wkly_wage_measure_22"
-\end{verbatim}
-
-\begin{verbatim}
-[1] "annual_avg_wkly_wage_measure_23"
-\end{verbatim}
-
-\begin{verbatim}
-[1] "annual_avg_wkly_wage_measure_31_33"
-\end{verbatim}
-
-\begin{verbatim}
-[1] "annual_avg_wkly_wage_measure_42"
-\end{verbatim}
-
-\begin{verbatim}
-[1] "annual_avg_wkly_wage_measure_44_45"
-\end{verbatim}
-
-\begin{verbatim}
-[1] "annual_avg_wkly_wage_measure_48_49"
-\end{verbatim}
-
-\begin{verbatim}
-[1] "annual_avg_wkly_wage_measure_51"
-\end{verbatim}
-
-\begin{verbatim}
-[1] "annual_avg_wkly_wage_measure_52"
-\end{verbatim}
-
-\begin{verbatim}
-[1] "annual_avg_wkly_wage_measure_53"
-\end{verbatim}
-
-\begin{verbatim}
-[1] "annual_avg_wkly_wage_measure_54"
-\end{verbatim}
-
-\begin{verbatim}
-[1] "annual_avg_wkly_wage_measure_71"
-\end{verbatim}
-
-\begin{verbatim}
-[1] "annual_avg_wkly_wage_measure_72"
-\end{verbatim}
-
-\begin{verbatim}
-[1] "annual_avg_wkly_wage_measure_81"
-\end{verbatim}
-
-\begin{verbatim}
-[1] "annual_avg_wkly_wage_measure_92"
-\end{verbatim}
-
-\begin{verbatim}
-[1] "annual_avg_wkly_wage_measure_55"
-\end{verbatim}
-
-\begin{verbatim}
-[1] "annual_avg_wkly_wage_measure_56"
-\end{verbatim}
-
-\begin{verbatim}
-[1] "annual_avg_wkly_wage_measure_61"
-\end{verbatim}
-
-\begin{verbatim}
-[1] "annual_avg_wkly_wage_measure_62"
-\end{verbatim}
+The previous estimation only provides additional confidence in our
+instrument choice, indicating that our effect is consistent across
+various instruments. However, we are interested in industry-specific
+wage elasticities. Therefore, we attempt an alternative estimation in
+which we instrument local \emph{industry-specific} wages using our
+general shift-share instrument. More precisely, we instrument
+industry-specific local wages using our original shift-share instrument
+as designed in Equation~\ref{eq-bartik}. Figure 11 demonstrates the
+results of a full-sample estimation (dots) and state sub-samples (text
+labels of state names). We only display coefficient estimates whose
+p-value \textless{} 0.05 and first-stage F-statistic \textgreater= 12.
+This specification demonstrates that industry-level wages have different
+effects on education expenditure per pupil. Though the estimated effect
+remains positive for all full-sample estimations, states demonstrate
+diverse relationships that vary in both magnitude and sign.
 
 \begin{figure}[H]
 
@@ -1701,82 +1569,6 @@ of interest is \textless{} 0.05).
 }
 
 \caption{Industry-Specific Wage Effect via General VA SS Shock}
-
-\end{figure}%
-
-\begin{verbatim}
-[1] "annual_avg_wkly_wage_measure_11"
-\end{verbatim}
-
-\begin{verbatim}
-[1] "annual_avg_wkly_wage_measure_21"
-\end{verbatim}
-
-\begin{verbatim}
-[1] "annual_avg_wkly_wage_measure_22"
-\end{verbatim}
-
-\begin{verbatim}
-[1] "annual_avg_wkly_wage_measure_23"
-\end{verbatim}
-
-\begin{verbatim}
-[1] "annual_avg_wkly_wage_measure_31_33"
-[1] "annual_avg_wkly_wage_measure_42"
-\end{verbatim}
-
-\begin{verbatim}
-[1] "annual_avg_wkly_wage_measure_44_45"
-[1] "annual_avg_wkly_wage_measure_48_49"
-[1] "annual_avg_wkly_wage_measure_51"
-\end{verbatim}
-
-\begin{verbatim}
-[1] "annual_avg_wkly_wage_measure_52"
-\end{verbatim}
-
-\begin{verbatim}
-[1] "annual_avg_wkly_wage_measure_53"
-\end{verbatim}
-
-\begin{verbatim}
-[1] "annual_avg_wkly_wage_measure_54"
-\end{verbatim}
-
-\begin{verbatim}
-[1] "annual_avg_wkly_wage_measure_71"
-\end{verbatim}
-
-\begin{verbatim}
-[1] "annual_avg_wkly_wage_measure_72"
-\end{verbatim}
-
-\begin{verbatim}
-[1] "annual_avg_wkly_wage_measure_81"
-\end{verbatim}
-
-\begin{verbatim}
-[1] "annual_avg_wkly_wage_measure_92"
-[1] "annual_avg_wkly_wage_measure_55"
-\end{verbatim}
-
-\begin{verbatim}
-[1] "annual_avg_wkly_wage_measure_56"
-\end{verbatim}
-
-\begin{verbatim}
-[1] "annual_avg_wkly_wage_measure_61"
-[1] "annual_avg_wkly_wage_measure_62"
-\end{verbatim}
-
-\begin{figure}[H]
-
-{\centering \pandocbounded{\includegraphics[keepaspectratio]{regressions_files/figure-pdf/indind_new_2-1.png}}
-
-}
-
-\caption{Industry-Specific Wage Effect via Industry-Specific VA SS
-Shock}
 
 \end{figure}%
 
@@ -1814,11 +1606,11 @@ experience the opposite effect.
 Importantly, the positive elasticity we document is not uniform across
 the country. It is concentrated in less than a third of the states in
 the sample (Colorado, Florida, South Dakota, Kentucky, Louisiana,
-Pennsylvania, North Dakota, Oregon, Oklahoma, Arizona, and Indiana).
-Many other states exhibit minimal or insignificant responsiveness,
-suggesting that these risks are not uniformly distributed. These
-findings underscore that equalization programmes need to consider
-different types of risks facing communities when designing their work.
+Pennsylvania, North Dakota, Oregon, Oklahoma, and Indiana). Many other
+states exhibit minimal or insignificant responsiveness, suggesting that
+these risks are not uniformly distributed. These findings underscore
+that equalization programmes need to consider different types of risks
+facing communities when designing their work.
 
 Though outcomes measured in this study are not direct inequality
 metrics, the results have clear implications for spatial disparities in
@@ -1840,7 +1632,7 @@ potential downward pressures on public education expenditure.
 The determinants of inequality in public education delivery in the US
 are multiple and complex. Significant evidence exists of the role of
 historically discriminatory policies related to congressional
-districting, under-investment in low-income areas of color
+districting in driving under-investment in low-income areas of color
 \autocite{trounstine2016,trounstine2021,sosina2019}. Though this work
 does not directly inform this debate, further work could explore the
 extent to which wage growth interacts with such structural policies.
@@ -1858,7 +1650,8 @@ heterogeneously.
 \item
   Though we have attempted to bypass deep endogeneity issues in the
   relationship between wages and public education expenditure, our
-  excludability assumptions about local industry composition are strong.
+  excludability assumptions about local industrial composition are
+  strong.
 \item
   Data limits true consideration of non-stationarity issues. Estimating
   this model in first differences or growth rates would be preferable to
@@ -1881,13 +1674,26 @@ intend to:
 \begin{itemize}
 \tightlist
 \item
-  Revise the industry-by-industry estimation. The industry-by-industry
-  estimation in the main text could benefit from revision. Rather than
-  instrumenting local wage levels, we intend to instrument
-  \emph{industry-specific} wages using the described industry-specific
-  shocks. We believe this could link well to the intro in which only
-  those regressions in which there is a strong first stage (i.e., GDP
-  changes predict local wages well) would qualify for analysis.
+  Finalize the industry-by-industry estimation. The main
+  industry-by-industry estimation presented in Figure 10, by design,
+  demonstrates the reliability of our headline coefficient estimate. In
+  other words, our coefficient estimate is consistent for a wide variety
+  of instruments. However, we are more interested in determining
+  industry-specific wage elasticities. Therefore, we provide two
+  alternative estimations, the first of which is presented in the
+  current draft (Figure 12) and the second in the Appendix. Rather than
+  instrumenting overall local wage levels, we instrument
+  \emph{industry-specific} wages using either the general shift-share
+  instrument designed in Equation~\ref{eq-bartik} or the
+  industry-specific shift-share instruments as designed in
+  Equation~\ref{eq-bartik-decomposed}. We believe that this revision
+  could link well to the introduction in which only those regressions in
+  which there is a strong first stage (i.e., GDP changes predict local
+  wages well) would qualify for analysis. Though we have estimated both
+  alternatives, the estimation in which we use the industry-specific
+  shift-share instrument needs further data work to ensure accuracy. We
+  therefore present the preliminary results from this estimation in the
+  Appendix only.
 \item
   Explore the states in which we detect a statistically significant
   effect in greater detail. We plan to evaluate their industrial
@@ -1904,7 +1710,7 @@ intend to:
   education budgets in terms of staff, food, or other resource costs
   using data from the SLGF. Additionally, we might be able to speak to
   the potential for such a change in expenditure per pupil to reduce
-  class sizes or fund salary increase for teachers, for example.
+  class sizes or fund salary increases for teachers, for example.
 \item
   Report the marginal F-statistic of the instrumental variable
   specifications to demonstrate the relative value of the instruments
@@ -1922,7 +1728,22 @@ intend to:
   rates respond to changes in local wages.
 \item
   Consider additional outcome variables that reflect within commuting
-  zone dynamics (i.e., inequality in expenditure).
+  zone dynamics (i.e., inequality in expenditure). Possible outcome
+  variables to consider:
+
+  \begin{itemize}
+  \tightlist
+  \item
+    Within-commuting zone maximum, minimum, or variance in expenditure
+    levels.
+  \item
+    Using the School Funding Adequacy Data presented in Figure 1,
+    construct indicators of the within-commuting zone proportion of
+    under-, over-, or adequately-funded school districts.
+  \item
+    Private school enrollment to measure potential crowding in and out
+    of public education.
+  \end{itemize}
 \item
   Provide a robustness check using a cross-sectional empirical strategy
   to determine the relative importance of cross-sectional versus time
@@ -1944,10 +1765,11 @@ Stefania Innocenti for comments.
 
 \section{Use of AI}\label{use-of-ai}
 
-Below, we provide a summary of the tasks where AI has been used. We
-limited its use to debugging and efficiency improvements during data
-cleaning and analysis, formatting of tables and figures, and helping
-with compatibility between various typesetting tools:
+Below, we provide a summary of the tasks where AI was used. We limited
+its use to debugging and efficiency improvements during data cleaning
+and analysis, formatting of tables and figures, and helping with
+compatibility between various typesetting tools. We did \emph{not} use
+AI to generate any text for this manuscript.
 
 \begin{itemize}
 \tightlist
@@ -2652,44 +2474,48 @@ identification in the growth rate regressions.
          Model:                                                    & (1)                          & (2)                    & (3)                          & (4)                    & (5)                         & (6)                    & (7)                          & (8)\\  
          \midrule
          \emph{Variables}\\
-         (log, l1) Annual Avg. Wkly. Wage                          & 0.7837$^{***}$               &                        & 0.7860$^{***}$               &                        &                             &                        & 0.7798$^{***}$               &   \\   
-                                                                   & (0.0120)                     &                        & (0.0112)                     &                        &                             &                        & (0.0118)                     &   \\   
-         Wage SS (lvl,l1)                                          & -0.1396$^{***}$              &                        & -0.1388$^{***}$              &                        &                             &                        & -0.1350$^{***}$              &   \\   
-                                                                   & (0.0397)                     &                        & (0.0397)                     &                        &                             &                        & (0.0434)                     &   \\   
-         Wage SS (lvl,l2)                                          & 0.1234$^{***}$               &                        & 0.1233$^{***}$               &                        &                             &                        & 0.1363$^{***}$               &   \\   
-                                                                   & (0.0361)                     &                        & (0.0362)                     &                        &                             &                        & (0.0403)                     &   \\   
-         (l1, log) Elem.Ed.Exp.pp                                  & 0.0045                       & 0.5085$^{***}$         &                              &                        &                             &                        &                              &   \\   
+         (log, l1) Annual Avg. Wkly. Wage                          & 0.7838$^{***}$               &                        & 0.7860$^{***}$               &                        &                             &                        & 0.7802$^{***}$               &   \\   
+                                                                   & (0.0120)                     &                        & (0.0112)                     &                        &                             &                        & (0.0119)                     &   \\   
+         Wage SS (lvl)                                             & 0.0519$^{*}$                 &                        & 0.0538$^{**}$                &                        &                             &                        & 0.0841$^{***}$               &   \\   
+                                                                   & (0.0274)                     &                        & (0.0274)                     &                        &                             &                        & (0.0274)                     &   \\   
+         Wage SS (lvl,l1)                                          & -0.1690$^{***}$              &                        & -0.1693$^{***}$              &                        &                             &                        & -0.1824$^{***}$              &   \\   
+                                                                   & (0.0413)                     &                        & (0.0414)                     &                        &                             &                        & (0.0427)                     &   \\   
+         Wage SS (lvl,l2)                                          & 0.1063$^{***}$               &                        & 0.1056$^{***}$               &                        &                             &                        & 0.1079$^{**}$                &   \\   
+                                                                   & (0.0371)                     &                        & (0.0371)                     &                        &                             &                        & (0.0422)                     &   \\   
+         (l1, log) Elem.Ed.Exp.pp                                  & 0.0043                       & 0.5085$^{***}$         &                              &                        &                             &                        &                              &   \\   
                                                                    & (0.0042)                     & (0.0156)               &                              &                        &                             &                        &                              &   \\   
-         (log) IG Revenue pp                                       & 0.0131$^{***}$               & 0.2230$^{***}$         & 0.0140$^{***}$               & 0.3214$^{***}$         &                             &                        &                              &   \\   
+         (log) IG Revenue pp                                       & 0.0131$^{***}$               & 0.2230$^{***}$         & 0.0140$^{***}$               & 0.3213$^{***}$         &                             &                        &                              &   \\   
                                                                    & (0.0030)                     & (0.0211)               & (0.0028)                     & (0.0316)               &                             &                        &                              &   \\   
-         (log) Real GDP Priv. Industry pc                          & 0.0386$^{***}$               & 0.0660$^{***}$         & 0.0390$^{***}$               & 0.0950$^{***}$         &                             &                        & 0.0403$^{***}$               & 0.0378$^{***}$\\   
+         (log) Real GDP Priv. Industry pc                          & 0.0388$^{***}$               & 0.0660$^{***}$         & 0.0392$^{***}$               & 0.0948$^{***}$         &                             &                        & 0.0406$^{***}$               & 0.0379$^{***}$\\   
                                                                    & (0.0044)                     & (0.0144)               & (0.0044)                     & (0.0244)               &                             &                        & (0.0060)                     & (0.0082)\\   
-         (log) Enrollment                                          & 0.0102$^{**}$                & -0.1958$^{***}$        & 0.0090$^{**}$                & -0.3305$^{***}$        &                             &                        &                              &   \\   
+         (log) Enrollment                                          & 0.0096$^{**}$                & -0.1959$^{***}$        & 0.0085$^{**}$                & -0.3306$^{***}$        &                             &                        &                              &   \\   
                                                                    & (0.0045)                     & (0.0157)               & (0.0042)                     & (0.0282)               &                             &                        &                              &   \\   
-         \% Black                                                  & -0.1790$^{**}$               & 0.3336$^{*}$           & -0.1767$^{**}$               & 0.6537$^{*}$           &                             &                        & -0.1015                      & -0.4358$^{***}$\\   
-                                                                   & (0.0714)                     & (0.1925)               & (0.0709)                     & (0.3621)               &                             &                        & (0.0728)                     & (0.1587)\\   
-         \% Hispanic                                               & -0.0561$^{*}$                & 0.0481                 & -0.0565$^{*}$                & 0.0385                 &                             &                        & -0.0508                      & -0.0221\\   
-                                                                   & (0.0334)                     & (0.1510)               & (0.0333)                     & (0.2516)               &                             &                        & (0.0360)                     & (0.0594)\\   
-         (log) Annual Avg. Wkly. Wage                              &                              & 0.2283$^{***}$         &                              & 0.5597$^{***}$         &                             &                        &                              & 0.0894$^{**}$\\   
+         \% Black                                                  & -0.1761$^{**}$               & 0.3337$^{*}$           & -0.1738$^{**}$               & 0.6539$^{*}$           &                             &                        & -0.0993                      & -0.4357$^{***}$\\   
+                                                                   & (0.0713)                     & (0.1925)               & (0.0707)                     & (0.3622)               &                             &                        & (0.0726)                     & (0.1587)\\   
+         \% Hispanic                                               & -0.0566$^{*}$                & 0.0480                 & -0.0570$^{*}$                & 0.0383                 &                             &                        & -0.0528                      & -0.0219\\   
+                                                                   & (0.0335)                     & (0.1510)               & (0.0334)                     & (0.2516)               &                             &                        & (0.0361)                     & (0.0594)\\   
+         (log) Annual Avg. Wkly. Wage                              &                              & 0.2288$^{***}$         &                              & 0.5610$^{***}$         &                             &                        &                              & 0.0885$^{**}$\\   
                                                                    &                              & (0.0480)               &                              & (0.0767)               &                             &                        &                              & (0.0404)\\   
-         Wage SS (GR,l1)                                           &                              &                        &                              &                        & -0.1392$^{***}$             &                        &                              &   \\   
-                                                                   &                              &                        &                              &                        & (0.0452)                    &                        &                              &   \\   
-         Wage SS (GR,l2)                                           &                              &                        &                              &                        & 0.0069                      &                        &                              &   \\   
-                                                                   &                              &                        &                              &                        & (0.0342)                    &                        &                              &   \\   
-         (GR) IG Revenue pp                                        &                              &                        &                              &                        & 0.0028                      & 0.3068$^{***}$         &                              &   \\   
+         Wage SS (GR)                                              &                              &                        &                              &                        & 0.0481                      &                        &                              &   \\   
+                                                                   &                              &                        &                              &                        & (0.0312)                    &                        &                              &   \\   
+         Wage SS (GR,l1)                                           &                              &                        &                              &                        & -0.1187$^{**}$              &                        &                              &   \\   
+                                                                   &                              &                        &                              &                        & (0.0466)                    &                        &                              &   \\   
+         Wage SS (GR,l2)                                           &                              &                        &                              &                        & 0.0145                      &                        &                              &   \\   
+                                                                   &                              &                        &                              &                        & (0.0347)                    &                        &                              &   \\   
+         (GR) IG Revenue pp                                        &                              &                        &                              &                        & 0.0029                      & 0.3077$^{***}$         &                              &   \\   
                                                                    &                              &                        &                              &                        & (0.0028)                    & (0.0319)               &                              &   \\   
-         (GR) Real GDP Priv. Industry pc                           &                              &                        &                              &                        & 0.0579$^{***}$              & 0.0200                 &                              &   \\   
-                                                                   &                              &                        &                              &                        & (0.0077)                    & (0.0439)               &                              &   \\   
-         (GR) Enrollment                                           &                              &                        &                              &                        & 0.0119$^{*}$                & -0.5937$^{***}$        &                              &   \\   
-                                                                   &                              &                        &                              &                        & (0.0063)                    & (0.0420)               &                              &   \\   
-         fd\_pct\_black                                            &                              &                        &                              &                        & -0.7074$^{***}$             & -0.6163                &                              &   \\   
-                                                                   &                              &                        &                              &                        & (0.2641)                    & (1.365)                &                              &   \\   
-         fd\_pct\_hispanic                                         &                              &                        &                              &                        & 0.3042                      & 1.541$^{*}$            &                              &   \\   
-                                                                   &                              &                        &                              &                        & (0.2978)                    & (0.8134)               &                              &   \\   
-         (GR) Annual Avg. Wkly. Wage                               &                              &                        &                              &                        &                             & -0.3738                &                              &   \\   
-                                                                   &                              &                        &                              &                        &                             & (0.7292)               &                              &   \\   
-         (log, l1) House Price Index                               &                              &                        &                              &                        &                             &                        & 0.0142$^{***}$               & 0.8375$^{***}$\\   
-                                                                   &                              &                        &                              &                        &                             &                        & (0.0048)                     & (0.0098)\\   
+         (GR) Real GDP Priv. Industry pc                           &                              &                        &                              &                        & 0.0579$^{***}$              & 0.0359                 &                              &   \\   
+                                                                   &                              &                        &                              &                        & (0.0077)                    & (0.0404)               &                              &   \\   
+         (GR) Enrollment                                           &                              &                        &                              &                        & 0.0123$^{*}$                & -0.5901$^{***}$        &                              &   \\   
+                                                                   &                              &                        &                              &                        & (0.0064)                    & (0.0420)               &                              &   \\   
+         fd\_pct\_black                                            &                              &                        &                              &                        & -0.7066$^{***}$             & -0.8133                &                              &   \\   
+                                                                   &                              &                        &                              &                        & (0.2635)                    & (1.304)                &                              &   \\   
+         fd\_pct\_hispanic                                         &                              &                        &                              &                        & 0.3057                      & 1.621$^{*}$            &                              &   \\   
+                                                                   &                              &                        &                              &                        & (0.2976)                    & (0.8331)               &                              &   \\   
+         (GR) Annual Avg. Wkly. Wage                               &                              &                        &                              &                        &                             & -0.6453                &                              &   \\   
+                                                                   &                              &                        &                              &                        &                             & (0.6719)               &                              &   \\   
+         (log, l1) House Price Index                               &                              &                        &                              &                        &                             &                        & 0.0134$^{***}$               & 0.8376$^{***}$\\   
+                                                                   &                              &                        &                              &                        &                             &                        & (0.0049)                     & (0.0098)\\   
          \midrule
          \emph{Fixed-effects}\\
          unit                                                      & Yes                          & Yes                    & Yes                          & Yes                    & Yes                         & Yes                    & Yes                          & Yes\\  
@@ -2697,18 +2523,18 @@ identification in the growth rate regressions.
          \midrule
          \emph{Fit statistics}\\
          Observations                                              & 12,084                       & 12,084                 & 12,084                       & 12,084                 & 12,084                      & 12,084                 & 11,509                       & 11,509\\  
-         R$^2$                                                     & 0.99248                      & 0.90637                & 0.99247                      & 0.86535                & 0.29861                     & 0.26586                & 0.99338                      & 0.99074\\  
-         Within R$^2$                                              & 0.77648                      & 0.51809                & 0.77639                      & 0.30697                & 0.04925                     & 0.21863                & 0.78877                      & 0.78571\\  
-         Wu-Hausman                                                &                              & 46.439                 &                              & 135.77                 &                             & 0.48069                &                              & 111.09\\  
-         Wu-Hausman, p-value                                       &                              & $9.93\times 10^{-12}$  &                              & $3.36\times 10^{-31}$  &                             & 0.48813                &                              & $7.54\times 10^{-26}$\\   
-         Wald (IV only)                                            & 1,614.0                      & 22.662                 & 1,838.8                      & 53.297                 & 6.5411                      & 0.26283                & 1,629.6                      & 4.9041\\  
-         Wald (IV only), p-value                                   & $0\times 10^{-16}$           & $1.95\times 10^{-6}$   & $0\times 10^{-16}$           & $3.05\times 10^{-13}$  & 0.00145                     & 0.60819                & $0\times 10^{-16}$           & 0.02681\\  
-         F-test (1st stage)                                        & 7,977.1                      &                        & 8,362.0                      &                        & 21.707                      &                        & 6,701.0                      & \\  
-         F-test (1st stage), (log) Annual Avg. Wkly. Wage          &                              & 7,977.1                &                              & 8,362.0                &                             &                        &                              & 6,701.0\\  
-         F-test (1st stage), (GR) Annual Avg. Wkly. Wage           &                              &                        &                              &                        &                             & 21.707                 &                              & \\  
-         F-test (1st stage), p-value                               & $0\times 10^{-16}$           &                        & $0\times 10^{-16}$           &                        & $3.89\times 10^{-10}$       &                        & $0\times 10^{-16}$           & \\  
+         R$^2$                                                     & 0.99248                      & 0.90637                & 0.99248                      & 0.86538                & 0.29883                     & 0.26592                & 0.99339                      & 0.99074\\  
+         Within R$^2$                                              & 0.77657                      & 0.51811                & 0.77649                      & 0.30709                & 0.04956                     & 0.21870                & 0.78900                      & 0.78570\\  
+         Wu-Hausman                                                &                              & 46.934                 &                              & 137.81                 &                             & 1.5265                 &                              & 113.27\\  
+         Wu-Hausman, p-value                                       &                              & $7.72\times 10^{-12}$  &                              & $1.22\times 10^{-31}$  &                             & 0.21666                &                              & $2.54\times 10^{-26}$\\   
+         Wald (IV only)                                            & 1,262.2                      & 22.696                 & 1,454.0                      & 53.437                 & 5.0709                      & 0.92252                & 1,235.9                      & 4.8071\\  
+         Wald (IV only), p-value                                   & $0\times 10^{-16}$           & $1.92\times 10^{-6}$   & $0\times 10^{-16}$           & $2.84\times 10^{-13}$  & 0.00165                     & 0.33683                & $0\times 10^{-16}$           & 0.02836\\  
+         F-test (1st stage)                                        & 5,986.0                      &                        & 6,275.1                      &                        & 15.760                      &                        & 5,034.1                      & \\  
+         F-test (1st stage), (log) Annual Avg. Wkly. Wage          &                              & 5,986.0                &                              & 6,275.1                &                             &                        &                              & 5,034.1\\  
+         F-test (1st stage), (GR) Annual Avg. Wkly. Wage           &                              &                        &                              &                        &                             & 15.760                 &                              & \\  
+         F-test (1st stage), p-value                               & $0\times 10^{-16}$           &                        & $0\times 10^{-16}$           &                        & $3.17\times 10^{-10}$       &                        & $0\times 10^{-16}$           & \\  
          F-test (1st stage), p-value, (log) Annual Avg. Wkly. Wage &                              & $0\times 10^{-16}$     &                              & $0\times 10^{-16}$     &                             &                        &                              & $0\times 10^{-16}$\\   
-         F-test (1st stage), p-value, (GR) Annual Avg. Wkly. Wage  &                              &                        &                              &                        &                             & $3.89\times 10^{-10}$  &                              & \\  
+         F-test (1st stage), p-value, (GR) Annual Avg. Wkly. Wage  &                              &                        &                              &                        &                             & $3.17\times 10^{-10}$  &                              & \\  
          \midrule \midrule
          \multicolumn{9}{l}{\emph{Clustered (unit) standard-errors in parentheses}}\\
          \multicolumn{9}{l}{\emph{Signif. Codes: ***: 0.01, **: 0.05, *: 0.1}}\\
@@ -2889,8 +2715,6 @@ growth.
       Wald (IV only), p-value                                   & $2.01\times 10^{-6}$   & 0.00018               & $8.1\times 10^{-6}$   & 0.00158               & 0.00187\\  
       F-test (1st stage), (log) Annual Avg. Wkly. Wage          & 7,963.5                & 2,458.2               & 3,528.8               & 4,382.2               & 1,996.6\\  
       F-test (1st stage), p-value, (log) Annual Avg. Wkly. Wage & $0\times 10^{-16}$     & $0\times 10^{-16}$    & $0\times 10^{-16}$    & $0\times 10^{-16}$    & $0\times 10^{-16}$\\   
-      Partial F (Wald)                                          &                        & 3.9826                &                       &                       & 3.1849\\  
-      Partial F p-val                                           &                        & 0.01874               &                       &                       & 0.04153\\  
       \midrule \midrule
       \multicolumn{6}{l}{\emph{Clustered (unit) standard-errors in parentheses}}\\
       \multicolumn{6}{l}{\emph{Signif. Codes: ***: 0.01, **: 0.05, *: 0.1}}\\
@@ -2936,8 +2760,6 @@ growth.
       Wald (IV only), p-value                                   & $2.01\times 10^{-6}$   & $1.79\times 10^{-6}$   & $6.6\times 10^{-5}$  & $5.68\times 10^{-5}$  & 0.06057\\  
       F-test (1st stage), (log) Annual Avg. Wkly. Wage          & 7,963.5                & 1,806.3                & 1,083.3              & 6,874.1               & 1,617.8\\  
       F-test (1st stage), p-value, (log) Annual Avg. Wkly. Wage & $0\times 10^{-16}$     & $0\times 10^{-16}$     & $0\times 10^{-16}$   & $0\times 10^{-16}$    & $0\times 10^{-16}$\\   
-      Partial F (Wald)                                          &                        & 5.4757                 & 6.4666               &                       & 1.6361\\  
-      Partial F p-val                                           &                        & 0.00423                & 0.00160              &                       & 0.19493\\  
       \midrule \midrule
       \multicolumn{6}{l}{\emph{Clustered (unit) standard-errors in parentheses}}\\
       \multicolumn{6}{l}{\emph{Signif. Codes: ***: 0.01, **: 0.05, *: 0.1}}\\
@@ -3006,13 +2828,20 @@ Using our wage-based shift share instrument, the below demonstrates the
 overall treatment effect of local wage changes instrumented via our
 wage-based shift-share shock.
 
-{[}1{]} ``lev\_ss\_11'' {[}1{]} ``lev\_ss\_21'' {[}1{]} ``lev\_ss\_22''
-{[}1{]} ``lev\_ss\_23'' {[}1{]} ``lev\_ss\_42'' {[}1{]} ``lev\_ss\_51''
-{[}1{]} ``lev\_ss\_52'' {[}1{]} ``lev\_ss\_53'' {[}1{]} ``lev\_ss\_56''
-{[}1{]} ``lev\_ss\_62'' {[}1{]} ``lev\_ss\_71'' {[}1{]} ``lev\_ss\_72''
-{[}1{]} ``lev\_ss\_81'' {[}1{]} ``lev\_ss\_92'' {[}1{]} ``lev\_ss\_54''
-{[}1{]} ``lev\_ss\_55'' {[}1{]} ``lev\_ss\_3d''
 \pandocbounded{\includegraphics[keepaspectratio]{regressions_files/figure-pdf/unnamed-chunk-117-1.png}}
+
+\FloatBarrier
+
+\subsection{Industry-by-Industry Estimation Using Industry-Specific GDP
+SS}\label{industry-by-industry-estimation-using-industry-specific-gdp-ss}
+
+In the following section, we provide an additional alternative
+estimation to that described in Section~\ref{sec-indbyind} of the main
+text. In this case, we instrument local industry-specific wages using
+our decomposed industry-specific estimation as designed in
+Equation~\ref{eq-bartik-decomposed}.
+
+\pandocbounded{\includegraphics[keepaspectratio]{regressions_files/figure-pdf/unnamed-chunk-118-1.png}}
 
 \FloatBarrier
 
@@ -3041,7 +2870,7 @@ significant contemporaneously in those commuting zones near the median
 level of expenditure, whereas those spending a relatively high amount of
 resources on local education, see a delayed effect.
 
-\pandocbounded{\includegraphics[keepaspectratio]{regressions_files/figure-pdf/unnamed-chunk-119-1.png}}
+\pandocbounded{\includegraphics[keepaspectratio]{regressions_files/figure-pdf/unnamed-chunk-120-1.png}}
 
 \FloatBarrier
 
@@ -3069,7 +2898,7 @@ findings confirm that the main result is not driven solely by affluent
 jurisdictions, but reflects a more general relationship between local
 housing wealth and education spending.
 
-\pandocbounded{\includegraphics[keepaspectratio]{regressions_files/figure-pdf/unnamed-chunk-120-1.png}}\begingroup
+\pandocbounded{\includegraphics[keepaspectratio]{regressions_files/figure-pdf/unnamed-chunk-121-1.png}}\begingroup
 \centering
 
 \begin{adjustbox}{width = \textwidth, center}
@@ -3092,7 +2921,7 @@ housing wealth and education spending.
                                                                 & (0.0164)        & (0.0166)        & (0.0181)        & (0.0160)               & (0.0160)\\   
       (log) Enrollment                                          & -0.1595$^{***}$ & -0.1796$^{***}$ & -0.2012$^{***}$ & -0.1775$^{***}$        & -0.1773$^{***}$\\   
                                                                 & (0.0143)        & (0.0132)        & (0.0138)        & (0.0147)               & (0.0147)\\   
-      \% Black                                                  & 0.0457          & 0.0817          & 0.2051          & 0.1181                 & 0.1173\\   
+      \% Black                                                  & 0.0457          & 0.0817          & 0.2051          & 0.1182                 & 0.1173\\   
                                                                 & (0.1666)        & (0.1517)        & (0.1555)        & (0.1703)               & (0.1702)\\   
       \% Hispanic                                               & 0.0522          & 0.0842          & 0.1515          & 0.0253                 & 0.0261\\   
                                                                 & (0.1272)        & (0.1207)        & (0.1238)        & (0.1289)               & (0.1288)\\   
@@ -3116,15 +2945,13 @@ housing wealth and education spending.
       \emph{Fit statistics}\\
       Observations                                              & 11,248          & 11,840          & 11,496          & 11,248                 & 11,248\\  
       R$^2$                                                     & 0.90241         & 0.90325         & 0.90362         & 0.90304                & 0.90301\\  
-      Within R$^2$                                              & 0.51047         & 0.52242         & 0.52121         & 0.51362                & 0.51345\\  
-      Wu-Hausman                                                &                 &                 &                 & 33.336                 & 30.159\\  
-      Wu-Hausman, p-value                                       &                 &                 &                 & $7.97\times 10^{-9}$   & $4.07\times 10^{-8}$\\   
-      Wald (IV only)                                            &                 &                 &                 & 50.005                 & 49.262\\  
-      Wald (IV only), p-value                                   &                 &                 &                 & $1.62\times 10^{-12}$  & $2.37\times 10^{-12}$\\   
-      F-test (1st stage), (log) Annual Avg. Wkly. Wage          &                 &                 &                 & 7,359.3                & 7,342.9\\  
+      Within R$^2$                                              & 0.51047         & 0.52242         & 0.52121         & 0.51363                & 0.51345\\  
+      Wu-Hausman                                                &                 &                 &                 & 33.448                 & 30.159\\  
+      Wu-Hausman, p-value                                       &                 &                 &                 & $7.52\times 10^{-9}$   & $4.07\times 10^{-8}$\\   
+      Wald (IV only)                                            &                 &                 &                 & 50.051                 & 49.262\\  
+      Wald (IV only), p-value                                   &                 &                 &                 & $1.59\times 10^{-12}$  & $2.37\times 10^{-12}$\\   
+      F-test (1st stage), (log) Annual Avg. Wkly. Wage          &                 &                 &                 & 5,524.3                & 7,342.9\\  
       F-test (1st stage), p-value, (log) Annual Avg. Wkly. Wage &                 &                 &                 & $0\times 10^{-16}$     & $0\times 10^{-16}$\\   
-      Partial F (Wald)                                          &                 &                 &                 &                        & 7.8611\\  
-      Partial F p-val                                           &                 &                 &                 &                        & 0.00039\\  
       \midrule \midrule
       \multicolumn{6}{l}{\emph{Clustered (unit) standard-errors in parentheses}}\\
       \multicolumn{6}{l}{\emph{Signif. Codes: ***: 0.01, **: 0.05, *: 0.1}}\\
@@ -3201,9 +3028,9 @@ X_{it} =
   \(\varepsilon_{it}\) error term
 \end{itemize}
 
-\pandocbounded{\includegraphics[keepaspectratio]{regressions_files/figure-pdf/unnamed-chunk-121-1.png}}
+\pandocbounded{\includegraphics[keepaspectratio]{regressions_files/figure-pdf/unnamed-chunk-122-1.png}}
 
-\pandocbounded{\includegraphics[keepaspectratio]{regressions_files/figure-pdf/unnamed-chunk-121-2.png}}
+\pandocbounded{\includegraphics[keepaspectratio]{regressions_files/figure-pdf/unnamed-chunk-122-2.png}}
 
 \FloatBarrier
 
