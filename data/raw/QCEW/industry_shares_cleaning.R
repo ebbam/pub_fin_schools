@@ -157,19 +157,19 @@ natl_rates <- natl_rates_plot %>%
 
 p1 <- natl_rates_plot %>% 
   pivot_longer(!c(year, industry_code, agglvl_code, classification)) %>% 
-  mutate(name = gsub("natl_annual_avg_emplvl", "Average Employment Level", gsub("natl_total_annual_wages", "Total Wages", gsub("natl_annual_avg_wkly_wage", "Avg. Weekly Wage", gsub("gr_", "Growth Rate ", name))))) %>% 
+  mutate(name = gsub("natl_annual_avg_emplvl", "Average Employment Level", gsub("natl_total_annual_wages", "Total Wages", gsub("natl_annual_avg_wkly_wage", "Average Weekly Wage", gsub("gr_", "Growth Rate ", gsub("log_", "(log) ",name)))))) %>% 
   filter(industry_code != 10) %>% 
   ggplot(aes(x = year, y = value, color = industry_code)) + 
   geom_point() + 
   facet_wrap(~name, scales = "free_y") +
   theme_minimal()+
   theme(legend.position = "none") + 
-  labs(title = "National Wage and Employment (Levels & Growth Rates by Industry)") 
+  labs(title = "National Wage and Employment (Levels & Growth Rates by Industry)", y = "Value", x = "Year") 
 
 p2 <- natl_rates_plot %>% 
   select(-contains("emp")) %>% 
   pivot_longer(!c(year, industry_code, agglvl_code, classification)) %>% 
-  mutate(name = gsub("natl_total_annual_wages", "Total Wages", gsub("natl_annual_avg_wkly_wage", "Avg. Weekly Wage", gsub("gr_", "Growth Rate ", name))),
+  mutate(name = gsub("natl_total_annual_wages", "Total Wages", gsub("natl_annual_avg_wkly_wage", "Average Weekly Wage", gsub("gr_", "Growth Rate ", gsub("log_", "(log) ", name)))),
          type = case_when(grepl("Growth Rate", name) ~ "Growth Rate",
                           TRUE ~ "Level")) %>% 
   filter(type == "Level") %>% 
@@ -177,7 +177,9 @@ p2 <- natl_rates_plot %>%
   geom_line() + 
   facet_wrap(~  name + classification, scales = "free_y") +
   theme_minimal() +
-  theme(legend.position = "none")
+  theme(legend.position = "none") + 
+  labs(y = "Value", x = "Year") 
+
 
 plot_data <- natl_rates_plot %>% 
   group_by(industry_code, agglvl_code, classification) %>% 
@@ -189,7 +191,7 @@ plot_data <- natl_rates_plot %>%
     Q1 = quantile(value, 0.25, na.rm = TRUE),
     Q3 = quantile(value, 0.75, na.rm = TRUE),
     is_outlier = ((value < 0.9*Q1 | value > Q3*1.1) & !(classification == "C. Disaggregated (3-digit)")) | ((value < 0.75*Q1 | value > Q3*1.25) & classification == "C. Disaggregated (3-digit)"),
-    label = case_when(name == "gr_natl_annual_avg_wkly_wage" ~ "Annual Avg Weekly Wage: Mean Growth Rate (2000-2021) by Industry",
+    label = case_when(name == "gr_natl_annual_avg_wkly_wage" ~ "Annual Average Weekly Wage: Mean Growth Rate (2000-2021) by Industry",
                       TRUE ~ NA)
   ) %>%
   ungroup() %>% 

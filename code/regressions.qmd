@@ -35,7 +35,7 @@ bibliography: references.bib
 ```{r setup-appendix-writer, include=FALSE}
 
 library(here)
-BUILDING_APPENDIX <- FALSE
+BUILDING_APPENDIX <- TRUE
 appendix_file <- "appendix_generated.qmd"
 
 if(BUILDING_APPENDIX){
@@ -84,16 +84,51 @@ append_to_appendix <- function(title, description_lines, float_barrier = TRUE) {
   write(lines, file = here("code", appendix_file), append = TRUE)
 }
 
-# Append additional tex SI files
-append_to_appendix_tex <- function(tex_file) {
+# Append external files (tex or md) to appendix
+append_file_to_appendix <- function(file_path, title = NULL, float_barrier = TRUE) {
   if (!BUILDING_APPENDIX) return(invisible(NULL))
+  
+  lines <- character()
+  
+  # Add optional title
+  if (!is.null(title)) {
+    lines <- c(lines, title, "")
+  }
+  
+  # Determine file type and use appropriate inclusion method
+  file_ext <- tools::file_ext(file_path)
+  
+  if (file_ext == "tex") {
+    # LaTeX file - use \input{}
     lines <- c(
-    "",
-    "```{=latex}",
-    paste0("\\input{", tex_file, "}"),
-    "```",
-    ""
-  )
+      lines,
+      "```{=latex}",
+      paste0("\\input{", file_path, "}"),
+      "```",
+      ""
+    )
+  } else if (file_ext == "md") {
+    # Markdown file - use {{< include >}}
+    lines <- c(
+      lines,
+      sprintf("{{< include %s >}}", file_path),
+      ""
+    )
+  } else {
+    stop("Unsupported file type. Only .tex and .md files are supported.")
+  }
+  
+  # Add FloatBarrier after
+  if (float_barrier) {
+    lines <- c(
+      lines,
+      "```{=latex}",
+      "\\FloatBarrier",
+      "```",
+      ""
+    )
+  }
+  
   write(lines, file = here("code", appendix_file), append = TRUE)
 }
 
@@ -115,7 +150,8 @@ finalize_appendix <- function() {
 
 ```{r si_tex_docs, include = FALSE, echo = FALSE}
 
-append_to_appendix_tex(here("code/si_tex_docs/si.tex"))
+append_file_to_appendix(here("code/si_tex_docs/si.tex"))
+append_file_to_appendix("../data/raw/QCEW/data_desc_qcew_cz_ind_wage_stats.md", float_barrier = TRUE, title = "# Data")
 
 ```
 
@@ -239,11 +275,10 @@ quality of local public services.
     @trounstine2016; @trounstine2021].
 
 **Community well-being and public expenditure in the US is already
-characterized by a high degree of spatial heterogeneity [@manduca2025;
-@obrien2025; @feler2017; @chetty2026].** Evidence of how income
+characterized by a high degree of spatial heterogeneity** [@manduca2025;
+@obrien2025; @feler2017; @chetty2026]. Evidence of how income
 inequality perpetuates other forms of inequality (opportunity, health,
-infrastructure quality, and broader well-being) is steadily increasing
-[@chetty2016; @logan2012; @semuels2016; @Avancena2021; @flavin2009;
+infrastructure quality, and broader well-being) is steadily increasing. [@chetty2016; @logan2012; @semuels2016; @Avancena2021; @flavin2009;
 @boustanEffectRisingIncome2013] find that greater income inequality
 leads to higher public expenditure across all public goods indicating
 that a presence of higher-earners in a local area contributes to higher
@@ -254,7 +289,7 @@ potential for "superstar" and "left behind" regions to emerge absent
 even income growth.
 
 **Local public education is particularly relevant in this context.**
-Public schools are responsible for education over 80% of American
+Public schools are responsible for educating over 80% of American
 school-age children. In 2019, governments around the US (including the
 federal government) spent a total of \$870 billion on public education,
 roughly \$17,013 per pupil [@nationalcenterforeducationstatistics2023;
@@ -264,7 +299,7 @@ sometimes lacking, or at best under-performing, federal equalization
 system perpetuates this structural force [@beland2017; @biasi2023;
 @hoxby1998; @mccabe2019; @baker2016; @aesa2024]. Take Connecticut for
 example. In 2016, according to the Connecticut State Department of
-Education, the town of Greenwich town, one of the highest-income towns
+Education, the town of Greenwich, one of the highest-income towns
 in the country, spent \$22,000 per pupil while Bridgeport, although only
 located 40 kilometers away, spent \$14,000 [@semuels2016].
 
@@ -338,7 +373,7 @@ Although as mentioned above, existing work provides descriptive evidence
 that higher income communities invest more in local services, the causal
 effect of wage growth on education spending is unclear due to
 substantial endogeneity. Any study of the linkage between two or more
-local socio-economic outcomes presents considerable endogeneity
+local socioeconomic outcomes presents considerable endogeneity
 challenges. Higher-wage households select into districts with better
 schools. Education quality affects local human capital and, thus, wages.
 Local fiscal decisions respond to political, demographic, and
@@ -362,7 +397,7 @@ construct a shift-share instrument that combines fixed local industry
 employment shares with national industry-level changes in real value
 added using data from the US Bureau of Labor Statistics and Bureau of
 Economic Analysis. This instrument generates plausibly exogenous local
-variation by exploiting how different regions are differentially exposed
+variation by exploiting how regions are differentially exposed
 to common national trends, while abstracting from endogenous local
 dynamics. It is particularly well suited in this setting, since the
 local tax base, and thus education spending, likely depends on
@@ -436,14 +471,14 @@ weaker equalizing opportunities exacerbating the consequences of wage
 stagnation. Together, these findings show that the wage-productivity
 nexus has implications that go far beyond household earnings: it shapes
 the fiscal foundations of local public education and, through that
-channel, the intergenerational transmission of economic opportunity.
+channel, the inter-generational transmission of economic opportunity.
 
 In the sections that follow, we outline the various data sources used in
 @sec-data; provide a detailed overview of our shift-share construction
 and methodological approach @sec-methods with accompanying results; and
 conclude with a discussion of policy implications in @sec-conclusion.
 
-```{r, echo = FALSE, message = FALSE, cache = FALSE, include = FALSE, eval = TRUE}
+```{r, echo = FALSE, message = FALSE,  include = FALSE, eval = TRUE}
 
 options(width = 500)
 knitr::opts_chunk$set(echo = FALSE, cache = FALSE, warning = FALSE, message = FALSE, fig.width = 10, fig.height = 10, dev = "ragg_png")
@@ -499,6 +534,7 @@ source(here('code/source_code/dicts.R'))
 source(here('code/reg_forms.R'))
 source(here('code/source_code/cz_cleaning.R'))
 conflict_prefer_all("dplyr", quiet = TRUE)
+yes_contemp_ss = TRUE
 
 fitstat_register("iv_fstat", 
                 function(x) if (!is.null(x$iv_fstat)) x$iv_fstat else NA, 
@@ -532,12 +568,118 @@ fitstat_register("iv_fstat_marg",
 fitstat_register("iv_fstat_marg_p", 
                 function(x) if (!is.null(x$iv_fstat_marginal_p)) x$iv_fstat_marginal_p else NA, 
                 "F (marg) p-value")
+# Function that returns both F-stat and p-value
+partial_f_wald <- function(model) {
+  # Check if this is an IV model with first stage
+  if (is.null(model$iv_first_stage)) {
+    return(list(fstat = NA, pval = NA))
+  }
+  
+  # Get first stage model
+  fs <- model$iv_first_stage[[1]]
+  
+  # Define your excluded instruments
+  excluded_instruments <- c("lev_gdp_ss_2d", "l1_lev_gdp_ss_2d", "l2_lev_gdp_ss_2d")
+  
+  # Check if instruments are in the model
+  fs_vars <- names(coef(fs))
+  instruments_present <- excluded_instruments[excluded_instruments %in% fs_vars]
+  
+  if (length(instruments_present) == 0) {
+    return(list(fstat = NA, pval = NA))
+  }
+  
+  tryCatch({
+    # Suppress output from wald()
+    sink(file = nullfile())
+    on.exit(sink(), add = TRUE)
+    
+    # Get Wald test result
+    wald_result <- wald(fs, "ss", cluster = "unit")
+    
+    # Calculate F-statistic and p-value
+    #q <- length(instruments_present)
+    f_stat <- wald_result$stat
+    p_val <- wald_result$p #pchisq(wald_result$stat, df = q, lower.tail = FALSE)
+    
+    # Return both
+    return(list(fstat = f_stat, pval = p_val))
+    
+  }, error = function(e) {
+    return(list(fstat = NA, pval = NA))
+  })
+}
+
+# Register F-statistic
+fitstat_register(
+  "partial_f_wald",
+  function(x) {
+    result <- partial_f_wald(x)
+    return(result$fstat)
+  },
+  "Partial F (Wald)"
+)
+
+# Register p-value
+fitstat_register(
+  "partial_f_wald_p",
+  function(x) {
+    result <- partial_f_wald(x)
+    return(result$pval)
+  },
+  "Partial F p-val"
+)
+
+# # Function to calculate effective F-statistic (Montiel Olea & Pflueger)
+# partial_f_effective <- function(model) {
+#   # Check if this is an IV model with first stage
+#   if (is.null(model$iv_first_stage)) {
+#     return(NA)
+#   }
+#   
+#   # Get first stage model
+#   fs <- model$iv_first_stage[[1]]
+#   
+#   # Define your excluded instruments
+#   excluded_instruments <- c("lev_gdp_ss_2d", "l1_lev_gdp_ss_2d", "l2_lev_gdp_ss_2d")
+#   
+#   tryCatch({
+#     # Get coefficients and variance-covariance matrix
+#     fs_coefs <- coef(fs)
+#     fs_vcov <- vcov(fs)
+#     
+#     # Find indices of excluded instruments
+#     iv_indices <- which(names(fs_coefs) %in% excluded_instruments)
+#     
+#     if (length(iv_indices) == 0) {
+#       return(NA)
+#     }
+#     
+#     # Extract relevant parts
+#     beta_iv <- fs_coefs[iv_indices]
+#     V_iv <- fs_vcov[iv_indices, iv_indices]
+#     
+#     # Calculate Wald statistic
+#     wald_stat <- as.numeric(t(beta_iv) %*% solve(V_iv) %*% beta_iv)
+#     
+#     # Effective F
+#     effective_f <- wald_stat / length(iv_indices)
+#     
+#     return(effective_f)
+#   }, error = function(e) {
+#     return(NA)
+#   })
+# }
+# 
+# fitstat_register("partial_f_effective", 
+#                  partial_f_effective, 
+#                  "Effective F-stat")
 
 setFixest_etable(fitstat = ~ . + ivf1 + ivf1.p + iv_fstat + iv_fstat_p + wh + wh.p + ivwaldall + ivwaldall.p + kpr, se.below = TRUE)
 
 #iv_fitstats = ~ n + r2_firststage + ar2_firststage + ivfall + ivfall.p + iv_fstat + iv_fstat_p + wh + wh.p + ivwaldall + ivwaldall.p
 
-iv_fitstats = c("n", "r2", "wr2","iv_fstat", "iv_fstat_p", "wh", "wh.p", "ivwaldall", "ivwaldall.p", "ivf1", "ivf1.p", "iv_fstat_marg", "iv_fstat_marg_p", "wh_manual", "wh_manual_p", "sargan_manual", "sargan_manual_p")
+iv_fitstats = c("n", "r2", "wr2","iv_fstat", "iv_fstat_p", "wh", "wh.p", "ivwaldall", "ivwaldall.p", "ivf1", "ivf1.p") #"partial_f_wald", "partial_f_wald_p")#, "partial_f_effective") #"iv_fstat_marg", "iv_fstat_marg_p", "wh_manual", "wh_manual_p", "sargan_manual", "sargan_manual_p")
 
 default_iv_note = c("", "Note that the R2 and Adjusted R2 values for second-stage regressions are irrelevant information here. I have not yet figured out how to suppress them from the regression tables but will do so for the final version.")
 
@@ -591,7 +733,7 @@ pupil spending on elementary education.
 
 **Population controls:** We source commuting-zone level population
 statistics by aggregating data from county-level populations statistics
-from the US Census Bureau
+from the US Census Bureau.
 
 **Local GDP:** We gather local GDP control variables by aggregating
 county-level GDP data from the Bureau of Economic Analysis (BEA). This
@@ -619,11 +761,10 @@ optionally by Hispanic or non-Hispanic origin
 [@nationalcancerinstitutedccpssurveillanceresearchprogram]. Though the
 US Census Bureau provides county-level estimates of racial make-up of
 local areas in the American Community Survey, this data is unavailable
-prior to 2009 and is considered less accurate than those provided by the
-National Cancer Institute's SEER Database.
+prior to 2009 and is considered less accurate than those provided by the SEER Database.
 
 **Adequate Education Spending**: The University of Wisconsin's School
-Finance Indicators Database provides provides detailed data on School
+Finance Indicators Database provides detailed data on School
 Funding Adequacy, measured as the dollar estimate needed per pupil to
 achieve U.S. average test scores [@baker].
 
@@ -669,7 +810,7 @@ thousands except for the House Price Index.
 integration of relevant variables calculated using a unit root test
 designed for heterogeneous panels [@im2003]. All variables are
 integrated I(0) indicating minimal concern for non-stationarity except
-in the case of enrollment and population numbers.
+in the case of enrollment and population.
 
 ```{r, results = 'asis', message = FALSE}
 # Create pdata for order of integration data:
@@ -935,7 +1076,7 @@ arrows. Majority of states fall short of the deemed adequate expenditure
 value. Mississippi boasts the greatest shortfall in spending while
 Wyoming boasts the greatest overshoot in spending. Figure 1 demonstrates
 the considerable within state variability in spending rates as well as
-between state variation in levels and student needs.
+between-state variation in levels and student needs.
 
 ```{r, echo = FALSE, fig.height = 7, fig.width = 8, fig.cap = "Per Pupil Education Expenditure"}
 
@@ -989,7 +1130,7 @@ cz_mean_test %>%
     x = "State (ordered by mean expenditure per pupil)",
     y = "Real Elementary Education Expenditure per Pupil",
     title = "Education expenditure per pupil by commuting zone",
-    subtitle = "Scattered points: Commuting zone-level expenditure per pupil\nBlack diamond: Population-weighted state mean expenditure per pupil\nTriangle: Estimated adequate K-12 expenditure per pupil\n(School Finance Indicators Database - University of Wisconsin).\nRed (green) indicates whether the state mean is below (above) adequate spending levels."
+    subtitle = "Scattered points: Commuting zone mean expenditure per pupil (2001-2021).\nBlack diamond: Population-weighted state mean expenditure per pupil (2001-2021). \nTriangle: Estimated adequate K-12 expenditure per pupil in 2017. Source: School Finance Indicators Database.\n       2017-value reported to match the deflator used to convert nominal $ values to real values in the dataset.\nRed (green) indicates whether the state mean is below (above) adequate spending levels."
   ) +
   #geom_hline(yintercept = 13.5) +
   theme_minimal(base_size = 12) +
@@ -1012,7 +1153,7 @@ Figure 2 demonstrates the trajectories of local wages from an initial
 level in 2001, demonstrating, the diverging wage growth trajectories of
 commuting zones in our sample. Blue commuting zones represents those
 exhibiting relatively high wage growth trajectories as deemed by the
-calculation in @sec-growthrates. The black dashed line represents the
+calculation outlined in @sec-growthrates. The black dashed line represents the
 annual national wage growth rate.
 
 ![Wages and Productivity](../output/wage_trends_plot.png){#fig-wages
@@ -1024,7 +1165,7 @@ fig-cap="Wages and Productivity over Time"}
 
 We are centrally interested in the effect of changes in local wages on
 public education expenditure where there is an evident endogeneity
-concern between public education expenditure and wage. First, there is a
+concern between public education expenditure and wages. First, there is a
 likely attracting factor of high levels of education expenditure for
 higher-income families. Second, absent migration, education systems
 provision local labor markets with individuals with diverse human
@@ -1066,7 +1207,7 @@ strategy for ‘de-endogenizing’ the treatment, as local exposure is
 predetermined with respect to contemporaneous shocks. Moreover, by
 construction, the approach enables the examination of how macro-level
 phenomena propagate to and affect local units, as it generates local
-shocks that are driven by national industry trends weighted but the
+shocks that are driven by national industry trends weighted by the
 community exposure to this industries.[^8]
 
 [^7]: Autor et al. use a shift-share instrument to assess the effect of
@@ -1135,7 +1276,7 @@ $$
 Z_{it} = \sum_{j=1}^{k} S_{0jt}G_{ojt}
 $$ {#eq-ref-bartik-2}
 
-Finally, the authors can make an additional design choice about whether
+Finally, authors can make an additional design choice about whether
 the effect of these instruments should be assumed common to an aggregate
 local-level wage growth indicator or allowed to vary by industry. In
 other words, whether to construct the first-stage relationship of the
@@ -1153,13 +1294,13 @@ $$
 
 We employ the formulation in @eq-ref-bartik, assuming that base-period
 local industry shares and time-varying national rates are exogenous to
-local outcomes and construct the former of the first-stage relationship
+local outcomes and construct the former of the first-stage relationships
 assuming a common $\beta$ to the sum of these shares.
 
 Using data from the Bureau of Economic Analysis, we construct a
 shift-share Bartik instrument at the commuting zone level using local
 employment shares by industry and national changes in industry-specific
-real value added represented in @eq-bartik. $G_{njt}$ represents
+real value added (VA) represented in @eq-bartik. $G_{njt}$ represents
 national-level changes in value added in industry $j$ in time $t$ and
 $\frac{N_{ij\tau}}{N_{i\tau}}$ represents the 'sensitivity' of a CZ to
 these national shocks proxied by an initial share of local employment in
@@ -1202,13 +1343,13 @@ the likely presence of time-dynamic effects, we include contemporaneous,
 $$
 \textbf{(First stage)}\qquad
 X_{it} \;=\; \rho\,X_{i,t-1} \;+\; \phi \,Y_{i,t-1} \;+\; \sum_{\ell=0}^{2}\pi_{\ell}\,\tilde Z_{i,t-\ell}
-\;+\; \boldsymbol{\theta}\mathbf{W}_{it}' \;+\; \alpha_i \;+\; \lambda_t \;+\; u_{it},
+\;+\; \boldsymbol{\theta}\mathbf{W}_{it}' \;+\; \alpha_i^{FS} \;+\; \lambda_t^{FS} \;+\; u_{it},
 $$ {#eq-first-stage}
 
 $$
 \textbf{(Second stage)}\qquad
 Y_{it} \;=\; \phi^\ast \,Y_{i,t-1} \;+\; \beta\,\widehat{X}_{it}
-\;+\; \boldsymbol{\delta}\mathbf{W}_{it}'\;+\;  \alpha_i \;+\; \lambda_t \;+\; \varepsilon_{it}
+\;+\; \boldsymbol{\delta}\mathbf{W}_{it}'\;+\;  \alpha_i^{SS} \;+\; \lambda_t^{SS} \;+\; \varepsilon_{it}
 $$ {#eq-second-stage}
 
 <!-- "Explanation for excluded growth rates: the AR1 beta is nowhere near 1 -->
@@ -1230,7 +1371,7 @@ education expenditure per pupil for CZ $i$ in year $t$. We focus on
 elementary education for two reasons. First, this restriction partly
 shields against a justifiable concern about the endogeneity between
 wages and quality of local public education. Whereas funding for high
-school could likely affect local wages given such students are of
+school could likely affect local wages given such students are of or near
 working age, funding for elementary education is unlikely to impact wage
 rates via a human capital or skills channel. Second, in terms of public
 impact, elementary education is of foundational importance in the lives
@@ -1585,7 +1726,7 @@ if(new_ss_calculation){
 
 ```
 
-```{r, echo = FALSE, cache = FALSE, results = 'asis', message = FALSE}
+```{r, echo = FALSE,  results = 'asis', message = FALSE}
 
 rel_inds <- c("Agriculture, Forestry, Fishing, and Hunting" = "11",
 "Mining" = "21",
@@ -1643,7 +1784,7 @@ geom_vline(data = percentile_df,
   labs(x = "% Coverage of CZ's Employed by NAICS sub-categorization",
        y = "No. CZs",
        title = str_wrap("Data Coverage of Industry-level Employment as Share of Total Reported Employed", width = 60),
-       subtitle = str_wrap("Data coverage is calculated as the fraction of total local employment accounted for in the industry-specific employment values. Percentage labels represent proportion of commuting zones (percentiles) falling below a coverage value.", width = 80),
+       subtitle = str_wrap("Data coverage is calculated as the fraction of total local employment accounted for in the industry-specific employment values. Percentage labels represent the proportion of commuting zones (percentiles) falling below a coverage value using the 2-digit NAICS sectoral classification of industries.", width = 80),
        fill = "NAICS Specificity") +
   common_theme +
   theme(legend.position = "bottom") +
@@ -1728,20 +1869,32 @@ ss_temp <- ss_temp_filled
 ```
 
 ```{r, echo = FALSE, results = 'asis'}
-
 iv_lev_form <- "log_real_Elem_Educ_Total_Exp_pp ~  l1_log_real_Elem_Educ_Total_Exp_pp + log_real_Total_IG_Revenue_pp + log_real_gdp_priv_ind_pc + log_Enrollment + pct_black + pct_hispanic | unit + year | "
 
 iv_lev_form_prop <- "log_hpi ~ l1_log_hpi + log_real_gdp_priv_ind_pc + pct_black + pct_hispanic | unit + year | "
 
 iv_gr_form <- "diff_log_real_Elem_Educ_Total_Exp_pp ~ diff_log_real_Total_IG_Revenue_pp + diff_log_real_gdp_priv_ind_pc + diff_log_Enrollment + fd_pct_black + fd_pct_hispanic | unit + year | "
+  
+if(yes_contemp_ss){
 
-ss_lev_gr_va <- "log_weighted_annual_avg_wkly_wage ~ l1_log_weighted_annual_avg_wkly_wage + gdp_ss_2d + l1_gdp_ss_2d + l2_gdp_ss_2d"
+  ss_lev_gr_va <- "log_weighted_annual_avg_wkly_wage ~ l1_log_weighted_annual_avg_wkly_wage + l1_gdp_ss_2d + l2_gdp_ss_2d"
+  
+  ss_gr_gr_va <- "gr_weighted_annual_avg_wkly_wage ~ l1_gdp_ss_2d + l2_gdp_ss_2d"
+  
+  ss_lev_lev_va <- "log_weighted_annual_avg_wkly_wage ~ l1_log_weighted_annual_avg_wkly_wage + l1_lev_gdp_ss_2d + l2_lev_gdp_ss_2d"
+  
+  ss_gr_lev_va <- "gr_weighted_annual_avg_wkly_wage ~ l1_lev_gdp_ss_2d + l2_lev_gdp_ss_2d"
+}else{
 
-ss_gr_gr_va <- "gr_weighted_annual_avg_wkly_wage ~ gdp_ss_2d + l1_gdp_ss_2d + l2_gdp_ss_2d"
+  ss_lev_gr_va <- "log_weighted_annual_avg_wkly_wage ~ l1_log_weighted_annual_avg_wkly_wage + l1_gdp_ss_2d + l2_gdp_ss_2d"
+  
+  ss_gr_gr_va <- "gr_weighted_annual_avg_wkly_wage ~ l1_gdp_ss_2d + l2_gdp_ss_2d"
+  
+  ss_lev_lev_va <- "log_weighted_annual_avg_wkly_wage ~ l1_log_weighted_annual_avg_wkly_wage + l1_lev_gdp_ss_2d + l2_lev_gdp_ss_2d"
+  
+  ss_gr_lev_va <- "gr_weighted_annual_avg_wkly_wage ~ l1_lev_gdp_ss_2d + l2_lev_gdp_ss_2d"
+}
 
-ss_lev_lev_va <- "log_weighted_annual_avg_wkly_wage ~ l1_log_weighted_annual_avg_wkly_wage + lev_gdp_ss_2d + l1_lev_gdp_ss_2d + l2_lev_gdp_ss_2d"
-
-ss_gr_lev_va <- "gr_weighted_annual_avg_wkly_wage ~ lev_gdp_ss_2d + l1_lev_gdp_ss_2d + l2_lev_gdp_ss_2d"
 # mines_cz <- mines_cz %>% 
 #   filter(state != 28)
 
@@ -1757,10 +1910,10 @@ df_ivs <- left_join(mines_cz, rename(ss_temp, unit = cz_id), by = c("year","unit
            l1_lev_gdp_ss_2d = lag(lev_gdp_ss_2d, 1),
            l2_lev_gdp_ss_2d = lag(lev_gdp_ss_2d, 2),
            fd_pct_black = pct_black - lag(pct_black),
-           fd_pct_hispanic = pct_hispanic - lag(pct_hispanic)) %>% 
+           fd_pct_hispanic = pct_hispanic - lag(pct_hispanic)) %>%
   ungroup
-
 ```
+
 
 ```{r wage_ss_res, include = FALSE, echo = FALSE, results = 'asis'}
 
@@ -1817,13 +1970,23 @@ regressions.")
 append_to_appendix("## Results Using the Wage-based Shift-Share Instrument",
                panel_lines)
 
-ss_wage_lev_gr <- "log_weighted_annual_avg_wkly_wage ~ l1_log_weighted_annual_avg_wkly_wage + ss_2d + l1_ss_2d + l2_ss_2d"
-
-ss_wage_gr_gr <- "gr_weighted_annual_avg_wkly_wage ~ ss_2d + l1_ss_2d + l2_ss_2d"
-
-ss_wage_lev_lev <- "log_weighted_annual_avg_wkly_wage ~ l1_log_weighted_annual_avg_wkly_wage + lev_ss_2d + l1_lev_ss_2d + l2_lev_ss_2d"
-
-ss_wage_gr_lev <- "gr_weighted_annual_avg_wkly_wage ~ lev_ss_2d + l1_lev_ss_2d + l2_lev_ss_2d"
+if(yes_contemp_ss){
+  ss_wage_lev_gr <- "log_weighted_annual_avg_wkly_wage ~ l1_log_weighted_annual_avg_wkly_wage + ss_2d + l1_ss_2d + l2_ss_2d"
+  
+  ss_wage_gr_gr <- "gr_weighted_annual_avg_wkly_wage ~ ss_2d + l1_ss_2d + l2_ss_2d"
+  
+  ss_wage_lev_lev <- "log_weighted_annual_avg_wkly_wage ~ l1_log_weighted_annual_avg_wkly_wage + lev_ss_2d + l1_lev_ss_2d + l2_lev_ss_2d"
+  
+  ss_wage_gr_lev <- "gr_weighted_annual_avg_wkly_wage ~ lev_ss_2d + l1_lev_ss_2d + l2_lev_ss_2d"
+}else{
+  ss_wage_lev_gr <- "log_weighted_annual_avg_wkly_wage ~ l1_log_weighted_annual_avg_wkly_wage + l1_ss_2d + l2_ss_2d"
+  
+  ss_wage_gr_gr <- "gr_weighted_annual_avg_wkly_wage ~ l1_ss_2d + l2_ss_2d"
+  
+  ss_wage_lev_lev <- "log_weighted_annual_avg_wkly_wage ~ l1_log_weighted_annual_avg_wkly_wage + l1_lev_ss_2d + l2_lev_ss_2d"
+  
+  ss_wage_gr_lev <- "gr_weighted_annual_avg_wkly_wage ~ l1_lev_ss_2d + l2_lev_ss_2d"
+}
 
 
 # #iv_model_2d_lev_gr <- feols(as.formula(paste0(iv_lev_form, ss_wage_gr_gr)), data = df_ivs, panel.id = c("unit", "year"), cluster = "unit")
@@ -1837,14 +2000,22 @@ iv_model_2d_gr_gr <- feols(as.formula(paste0(iv_gr_form, ss_wage_gr_gr)), data =
 # iv_model_2d_gr_lev <- feols(as.formula(paste0(iv_gr_form, ss_wage_gr_lev_va)), data = df_ivs, panel.id = c("unit", "year"), cluster = "unit")
 # 
 # iv_model_2d_gr_lev_lev_ed <- feols(as.formula(paste0(iv_lev_form, ss_wage_gr_lev_va)), data = df_ivs, panel.id = c("unit", "year"), cluster = "unit")
+if(yes_contemp_ss){
+  temp_test <- "log_real_Elem_Educ_Total_Exp_pp ~  log_real_Total_IG_Revenue_pp + log_real_gdp_priv_ind_pc + log_Enrollment + pct_black + pct_hispanic | unit + year | log_weighted_annual_avg_wkly_wage ~ lev_gdp_ss_2d + l1_lev_gdp_ss_2d + l2_lev_gdp_ss_2d"
+  temp_test4 <- "log_real_Elem_Educ_Total_Exp_pp ~ log_real_Total_IG_Revenue_pp + log_real_gdp_priv_ind_pc + log_Enrollment + pct_black + pct_hispanic | unit + year | log_weighted_annual_avg_wkly_wage ~ l1_log_weighted_annual_avg_wkly_wage + lev_ss_2d + l1_lev_ss_2d + l2_lev_ss_2d"}else{
+    temp_test4 <- "log_real_Elem_Educ_Total_Exp_pp ~ log_real_Total_IG_Revenue_pp + log_real_gdp_priv_ind_pc + log_Enrollment + pct_black + pct_hispanic | unit + year | log_weighted_annual_avg_wkly_wage ~ l1_log_weighted_annual_avg_wkly_wage + l1_lev_ss_2d + l2_lev_ss_2d"
+    temp_test <- "log_real_Elem_Educ_Total_Exp_pp ~  log_real_Total_IG_Revenue_pp + log_real_gdp_priv_ind_pc + log_Enrollment + pct_black + pct_hispanic | unit + year | log_weighted_annual_avg_wkly_wage ~ l1_lev_gdp_ss_2d + l2_lev_gdp_ss_2d"
+  }
+
 
 iv_model_2d_lev_lev <- feols(as.formula(paste0(iv_lev_form, ss_wage_lev_lev)), data = df_ivs, panel.id = c("unit", "year"), cluster = "unit")
 
 iv_model_2d_lev_lev_prop <- feols(as.formula(paste0(iv_lev_form_prop, ss_wage_lev_lev)), data = df_ivs, panel.id = c("unit", "year"), cluster = "unit")
 # No AR
-iv_model_2d_lev_lev_test <- feols(as.formula("log_real_Elem_Educ_Total_Exp_pp ~  log_real_Total_IG_Revenue_pp + log_real_gdp_priv_ind_pc + log_Enrollment + pct_black + pct_hispanic | unit + year | log_weighted_annual_avg_wkly_wage ~ lev_gdp_ss_2d + l1_lev_gdp_ss_2d + l2_lev_gdp_ss_2d"), data = df_ivs, panel.id = c("unit", "year"), cluster = "unit")
+iv_model_2d_lev_lev_test <- feols(as.formula(temp_test), data = df_ivs, panel.id = c("unit", "year"), cluster = "unit")
 # FS AR
-iv_model_2d_lev_lev_test4 <- feols(as.formula("log_real_Elem_Educ_Total_Exp_pp ~ log_real_Total_IG_Revenue_pp + log_real_gdp_priv_ind_pc + log_Enrollment + pct_black + pct_hispanic | unit + year | log_weighted_annual_avg_wkly_wage ~ l1_log_weighted_annual_avg_wkly_wage + lev_ss_2d + l1_lev_ss_2d + l2_lev_ss_2d"), data = df_ivs, panel.id = c("unit", "year"), cluster = "unit")
+
+iv_model_2d_lev_lev_test4 <- feols(as.formula(temp_test4), data = df_ivs, panel.id = c("unit", "year"), cluster = "unit")
 
 etable(iv_model_2d_lev_lev, iv_model_2d_lev_lev_test4, iv_model_2d_gr_gr, iv_model_2d_lev_lev_prop, adjustbox = TRUE, stage = 1:2,fitstat = iv_fitstats, tex = latex_tables, caption = "IV Estimation Using Wage-based Shift-share instrument (l0, l1, l2) in Levels varying state and CZ fixed effects and lags.")
 
@@ -1916,10 +2087,7 @@ increase in local wages leads to a 2.23% increase in per-pupil education
 expenditure in the short run. The first-stage F-statistic substantially
 exceeds conventional weak instrument thresholds. The Wu-Hausman test
 definitively rejects the exogeneity of wages, validating our
-instrumental variable approach. However, the Wald over-identification
-test suggests potential instrument invalidity, though this is likely an
-artifact of the inclusion of AR(1) terms in the first-stage and not an
-indictment of the exclusion restriction itself. The implied long-run
+instrumental variable approach. The implied long-run
 elasticity is near 0.46, indicating that the cumulative effect of a 10%
 wage increase is a 4.6% increase in education spending.
 
@@ -1973,13 +2141,24 @@ iv_model_2d_lev_lev <- feols(as.formula(paste0(iv_lev_form, ss_lev_lev_va)), dat
 
 iv_model_2d_lev_lev_prop <- feols(as.formula(paste0(iv_lev_form_prop, ss_lev_lev_va)), data = df_ivs, panel.id = c("unit", "year"), cluster = "unit")
 # No AR
-iv_model_2d_lev_lev_test <- feols(as.formula("log_real_Elem_Educ_Total_Exp_pp ~  log_real_Total_IG_Revenue_pp + log_real_gdp_priv_ind_pc + log_Enrollment + pct_black + pct_hispanic | unit + year | log_weighted_annual_avg_wkly_wage ~ lev_gdp_ss_2d + l1_lev_gdp_ss_2d + l2_lev_gdp_ss_2d"), data = df_ivs, panel.id = c("unit", "year"), cluster = "unit")
+f2d_lev_lev_test <- "log_real_Elem_Educ_Total_Exp_pp ~  log_real_Total_IG_Revenue_pp + log_real_gdp_priv_ind_pc + log_Enrollment + pct_black + pct_hispanic | unit + year | log_weighted_annual_avg_wkly_wage ~ lev_gdp_ss_2d + l1_lev_gdp_ss_2d + l2_lev_gdp_ss_2d"
+f2d_lev_lev_test2 <- "log_real_Elem_Educ_Total_Exp_pp ~ l1_log_real_Elem_Educ_Total_Exp_pp + log_real_Total_IG_Revenue_pp + log_real_gdp_priv_ind_pc + log_Enrollment + pct_black + pct_hispanic | unit + year | log_weighted_annual_avg_wkly_wage ~ lev_gdp_ss_2d + l1_lev_gdp_ss_2d + l2_lev_gdp_ss_2d"
+f2d_lev_lev_test3 <- "log_real_Elem_Educ_Total_Exp_pp ~ l1_log_real_Elem_Educ_Total_Exp_pp + log_real_Total_IG_Revenue_pp + log_real_gdp_priv_ind_pc + log_Enrollment + pct_black + pct_hispanic | unit + year | log_weighted_annual_avg_wkly_wage ~ l1_log_weighted_annual_avg_wkly_wage + lev_gdp_ss_2d + l1_lev_gdp_ss_2d + l2_lev_gdp_ss_2d"
+f2d_lev_lev_test4 <- "log_real_Elem_Educ_Total_Exp_pp ~ log_real_Total_IG_Revenue_pp + log_real_gdp_priv_ind_pc + log_Enrollment + pct_black + pct_hispanic | unit + year | log_weighted_annual_avg_wkly_wage ~ l1_log_weighted_annual_avg_wkly_wage + lev_gdp_ss_2d + l1_lev_gdp_ss_2d + l2_lev_gdp_ss_2d"
+if(!yes_contemp_ss){
+   f2d_lev_lev_test <- gsub(" lev_gdp_ss_2d + ", " ", f2d_lev_lev_test, fixed = TRUE)
+   f2d_lev_lev_test2 <- gsub(" lev_gdp_ss_2d + ", " ", f2d_lev_lev_test2, fixed = TRUE)
+   f2d_lev_lev_test3 <- gsub(" lev_gdp_ss_2d + ", " ", f2d_lev_lev_test3, fixed = TRUE)
+   f2d_lev_lev_test4 <- gsub(" lev_gdp_ss_2d + ", " ", f2d_lev_lev_test4, fixed = TRUE)
+}
+
+iv_model_2d_lev_lev_test <- feols(as.formula(f2d_lev_lev_test), data = df_ivs, panel.id = c("unit", "year"), cluster = "unit")
 # SS AR
-iv_model_2d_lev_lev_test2 <- feols(as.formula("log_real_Elem_Educ_Total_Exp_pp ~ l1_log_real_Elem_Educ_Total_Exp_pp + log_real_Total_IG_Revenue_pp + log_real_gdp_priv_ind_pc + log_Enrollment + pct_black + pct_hispanic | unit + year | log_weighted_annual_avg_wkly_wage ~ lev_gdp_ss_2d + l1_lev_gdp_ss_2d + l2_lev_gdp_ss_2d"), data = df_ivs, panel.id = c("unit", "year"), cluster = "unit")
+iv_model_2d_lev_lev_test2 <- feols(as.formula(f2d_lev_lev_test2), data = df_ivs, panel.id = c("unit", "year"), cluster = "unit")
 # Full AR
-iv_model_2d_lev_lev_test3 <- feols(as.formula("log_real_Elem_Educ_Total_Exp_pp ~ l1_log_real_Elem_Educ_Total_Exp_pp + log_real_Total_IG_Revenue_pp + log_real_gdp_priv_ind_pc + log_Enrollment + pct_black + pct_hispanic | unit + year | log_weighted_annual_avg_wkly_wage ~ l1_log_weighted_annual_avg_wkly_wage + lev_gdp_ss_2d + l1_lev_gdp_ss_2d + l2_lev_gdp_ss_2d"), data = df_ivs, panel.id = c("unit", "year"), cluster = "unit")
+iv_model_2d_lev_lev_test3 <- feols(as.formula(f2d_lev_lev_test3), data = df_ivs, panel.id = c("unit", "year"), cluster = "unit")
 # FS AR
-iv_model_2d_lev_lev_test4 <- feols(as.formula("log_real_Elem_Educ_Total_Exp_pp ~ log_real_Total_IG_Revenue_pp + log_real_gdp_priv_ind_pc + log_Enrollment + pct_black + pct_hispanic | unit + year | log_weighted_annual_avg_wkly_wage ~ l1_log_weighted_annual_avg_wkly_wage + lev_gdp_ss_2d + l1_lev_gdp_ss_2d + l2_lev_gdp_ss_2d"), data = df_ivs, panel.id = c("unit", "year"), cluster = "unit")
+iv_model_2d_lev_lev_test4 <- feols(as.formula(f2d_lev_lev_test4), data = df_ivs, panel.id = c("unit", "year"), cluster = "unit")
 
 etable(iv_model_2d_lev_lev, iv_model_2d_lev_lev_test4, iv_model_2d_lev_lev_prop, adjustbox = TRUE, stage = 1:2,fitstat = iv_fitstats, tex = latex_tables, caption = "IV Estimation Using VA-based Shift-share instrument (l0, l1, l2) in Levels with CZ and year fixed effects and lags.", label = "tbl_va_ss_baseline")
 # 
@@ -2095,17 +2274,16 @@ invisible(gc(verbose = FALSE))
 
 ## Accounting for Heterogeneity
 
-In order to make meaningful policy-related insights, we need to unmask
+In order to make meaningful policy-relevant insights, we need to unmask
 the substantial heterogeneity obscured by national-level average
 treatment effects. These national-level estimates are unlikely to apply
 uniformly across states and commuting zones, especially given
 heterogeneity in local tax regimes.
 
 Therefore, we (1) use data on local wages and GDP to create indicators
-for whether regions are exhibiting relative decline or growth compared
+for whether regions have exhibited relative decline or growth compared
 to other commuting zones to partition our sample in a data-driven
-manner, employ (2) industry-by-industry and (2) state-by-state
-estimations in our IV specifications using our VA-based shift-share
+manner, employ (2) state-by-state and (3) industry-by-industry estimations in our IV specifications using our VA-based shift-share
 instrument.
 
 For completeness, we provide results of average treatment effects for
@@ -2278,8 +2456,8 @@ outstanding positive outliers in the distribution whereas Kentucky,
 Louisiana, South Dakota have outstanding negative outliers. The grey
 lines represent the commuting zones value of $\alpha_w$, indicating that
 in a large share of cases, wage growth rates are defined by a different
-sign than the GDP growth rates, indicating even potential local
-divergence in growth rates. Though the calculations above could lead to
+sign than the GDP per capita growth rates, indicating local
+divergence between these rates. Though the calculations above could lead to
 insignificant such relationships because the growth rates are calculated
 in reference to different data (indeed the distributions represented in
 the top left panel of Figure 5 have different median values), the volume
@@ -2571,7 +2749,7 @@ scatter_betas / (hist_nat + hist_state)
 
 <!-- \textcolor{violet}{Georgia is an incredibly interesting case in which nearly all commuting zones have relatively declining GDPpc growth rates but relatively growing wage growth rates}. -->
 
-```{r wage-trends-lollipop, eval = TRUE, include = FALSE, echo = FALSE, fig.height = 10, fig.width = 10, warning = FALSE, cache = FALSE, fig.cap = c("Distribution of Wage Trend Coefficients", "Lollipop Plot of Wage Growth Rates"), fig.align = "center"}
+```{r wage-trends-lollipop, eval = TRUE, include = FALSE, echo = FALSE, fig.height = 10, fig.width = 10, warning = FALSE,  fig.cap = c("Distribution of Wage Trend Coefficients", "Lollipop Plot of Wage Growth Rates"), fig.align = "center"}
 # 0. Prepare CZ-level wage growth + national series (you already did this earlier)
 wage_growth_rates <- mines_cz_short %>%
   select(year, unit, state, gr_weighted_annual_avg_wkly_wage, natl_gr_annual_avg_wkly_wage, state_gr_annual_avg_wkly_wage) 
@@ -2811,7 +2989,7 @@ rm(cz_wage_trend)
 ggsave(here("output/cz_wage_trends_lollipop.jpg"), height = 10, width = 16)
 ```
 
-```{r corr-wage-gdp-reg, echo = FALSE, fig.height = 10, fig.width = 10, warning = FALSE, cache = FALSE, fig.cap = c("Correlation between Wage and GDPpc Trends"), fig.align = "center"}
+```{r corr-wage-gdp-reg, echo = FALSE, fig.height = 10, fig.width = 10, warning = FALSE,  fig.cap = c("Correlation between Wage and GDPpc Trends"), fig.align = "center"}
 pct_1 <- cz_trends %>% left_join(cz_wage_trends, by = "unit") %>% ggplot(., aes(x = trend_pc, y = wage_trend)) +
      geom_point(alpha = 0.2) +
      geom_smooth(method = "lm", se = TRUE, color = "maroon", fill = "maroon") +
@@ -2848,7 +3026,7 @@ pct_2 <- cz_trends %>%
   )
 ```
 
-```{r wage-trends-maps, echo = FALSE, include = FALSE, eval = TRUE, fig.height = 10, fig.width = 10, warning = FALSE, cache = FALSE, fig.cap = c("Map of Wage GR - Median", "Map of Wage Level - Median"), fig.align = "center"}
+```{r wage-trends-maps, echo = FALSE, include = FALSE, eval = TRUE, fig.height = 10, fig.width = 10, warning = FALSE,  fig.cap = c("Map of Wage GR - Median", "Map of Wage Level - Median"), fig.align = "center"}
 pct_1/pct_2
 
 map_data <- mines_cz_short %>%
@@ -2998,7 +3176,7 @@ scatter_betas / (hist_nat + hist_state)
 
 ```
 
-```{r wage_gdp_trend, echo = FALSE, fig.height = 10, fig.width = 10, warning = FALSE, cache = FALSE, fig.cap = c("GDPpc and Wage Growth Rates and Loadings", "Lollipop Plot of Wage and GDPpc Growth Rates"), fig.align = "center"}
+```{r wage_gdp_trend, echo = FALSE, fig.height = 10, fig.width = 10, warning = FALSE,  fig.cap = c("GDPpc and Wage Growth Rates and Loadings", "Lollipop Plot of Wage and GDPpc Growth Rates"), fig.align = "center"}
 
 cz_trends_comb_plot <- cz_trends_plot %>% 
   left_join(rename(cz_wage_trends_plot, beta_nat_wage = beta_nat, beta_state_wage = beta_state), by = c('unit', 'state', 'region'))
@@ -3362,14 +3540,12 @@ smaller role in regions exhibiting above-average wage growth.
 
 <!-- \textcolor{violet}{I am thinking of a few different interpretations here but not quite sure yet...}. -->
 
-In \autoref{tbl_gdp_ss_gdp_subsamples} partitions CZs by long-run GDP
+\autoref{tbl_gdp_ss_gdp_subsamples} partitions CZs by long-run GDP
 per capita trends. The statistical significance and magnitude variations
 in the wage response tell a less monotonic story here, likely mirroring
 the lack of systematic correlation between $\alpha_w$ and $\alpha_g$.
-When partitioning the sample by GDP growth rates, the interpretation is
-more straight-forward.
 
-Regardless, all models remain well-identified, with high first stage F
+Regardless, all models except Column 5 in \autoref{tbl_gdp_ss_wage_subsamples} remain well-identified, with high first stage F
 statistics, convincing performance on the Wu-Hausman endogeneity tests
 and Wald tests. Combined, these results indicate that partitioning by
 background wage growth rates provides greater insight into the sample's
@@ -3621,12 +3797,12 @@ Next, given the substantial heterogeneity in state-level economic makeup
 and public finance regimes, we investigate state-specific relationships
 between our variables of interest.
 
-First, states vary in the number of commuting zones they contain. Figure
+States vary in the number of commuting zones they contain. Figure
 12 demonstrates that states have anywhere between 2 (Delaware) and 58
 (Texas) commuting zones. This allows us to estimate panel-style
 regressions within each state to net out between-state variation that
 might be confounding our current treatment estimates. We exclude any
-states that contain less than 5 commuting zones due to sample size
+states that contain less than 5 commuting zones (Delaware, Maine, Nevada, New Hampshire, New Jersey) due to sample size
 concerns.
 
 ```{r, echo = FALSE, results = 'asis', fig.cap = "Histogram: Commuting Zones by State"}
@@ -3668,7 +3844,8 @@ ggplot(hist_states_cz, aes(x = n_czs)) +
 \FloatBarrier
 
 ```{r, echo = FALSE}
-extract_coef_info <- function(model, state_name, iv = FALSE) {
+
+extract_coef_info <- function(model, state_name, iv = FALSE, vars_of_interest_list) {
       # Get summary
       coef_summary <- summary(model)$coeftable
   if(iv){
@@ -3680,7 +3857,7 @@ extract_coef_info <- function(model, state_name, iv = FALSE) {
   # Filter for relevant variables
   coef_df <- as.data.frame(coef_summary) %>%
     rownames_to_column("variable") %>%
-    filter(variable %in% vars_of_interest) %>%
+    filter(variable %in% vars_of_interest_list | grepl(paste0(vars_of_interest_list, collapse = "|"), variable)) %>%
     mutate(
       state = state_name,
       # Calculate 95% confidence intervals
@@ -3706,6 +3883,7 @@ extract_coef_info <- function(model, state_name, iv = FALSE) {
     select(state, variable, estimate = Estimate, ci_lower, ci_upper, p_val, significance, r2_within) %>% return(.)
   }
 }
+
 ```
 
 ```{r state_by_state_descriptive_sm, include = FALSE, echo = FALSE, results = 'asis'}
@@ -3738,14 +3916,9 @@ for(k in reg_states){
   state_mods[[as.character(k)]] <- mod
 }
 
-# Define variable names of interest
-vars_of_interest <- c("log_weighted_annual_avg_wkly_wage",
-                      "l1_log_weighted_annual_avg_wkly_wage",
-                      "l2_log_weighted_annual_avg_wkly_wage")
-
 # Apply to list of models
 # Assuming: model_list is named by state names
-results_df <- imap_dfr(state_mods, extract_coef_info)
+results_df <- imap_dfr(state_mods, ~extract_coef_info(.x, .y, vars_of_interest_list = c("log_weighted_annual_avg_wkly_wage", "l1_log_weighted_annual_avg_wkly_wage", "l2_log_weighted_annual_avg_wkly_wage")))
 results_df$state_name <- sapply(results_df$state, get_state)
 
 results_df_cleaned <- results_df %>%
@@ -3820,18 +3993,17 @@ results_df_cleaned_desc <- results_df_cleaned
 
 Using our instrumental variable approach with a value-added based
 shift-share instrument, we corroborate the directionality and magnitude
-of the effect for 11 states: Colorado, Florida, South Dakota, Kentucky,
-Louisiana, Pennsylvania, North Dakota, Oregon, Oklahoma, Arizona, and
-Indiana. In estimating the state-by-state regressions, we exclude any
-states where our F-statistic is below conventional weak instrument
-thresholds (F statistics \<= 12 and p-value \< 0.05) and the p-value of
+of the effect for 10 states: Colorado, Florida, South Dakota, Kentucky, North Dakota,
+Louisiana, Pennsylvania, Oregon, Oklahoma, and
+Indiana. In estimating the state-by-state regressions, we only present the results for states that exceed conventional weak instrument
+thresholds (F statistic \>= 12 and p-value \< 0.05) and whose p-values for
 the second stage coefficient of interest is \< 0.1.
 
 Examining various characteristics of these states, we find that they
 vary widely in demographic composition, enrollment levels, and wage
 levels indicating that the detected effects are not attributable to any
-extremes in these values. Notably, they even vary in reliance on local
-sources educational expenditure.
+extremes in these values. Notably, these states even vary in reliance on local versus intergovernmental
+sources for public education expenditure.
 
 ```{r, echo = FALSE, fig.height = 10, fig.width = 10, fig.cap = "State-by-State Wage Effect Using SS GDP Shock"}
 
@@ -3847,12 +4019,10 @@ for(k in reg_states){
   invisible(gc(verbose = FALSE))
 }
 
-# Define variable names of interest
-vars_of_interest <- c("fit_log_weighted_annual_avg_wkly_wage", "fitted_endog")
 
 # Apply to list of models
 # Assuming: model_list is named by state names
-results_df <- imap_dfr(state_mods_ss, ~extract_coef_info(.x,.y, iv = TRUE))
+results_df <- imap_dfr(state_mods_ss, ~extract_coef_info(.x,.y, iv = TRUE, vars_of_interest_list = c("fit_log_weighted_annual_avg_wkly_wage", "fitted_endog")))
 results_df$state_name <- sapply(results_df$state, get_state)
 
 results_df_cleaned <- results_df %>%
@@ -3862,7 +4032,7 @@ results_df_cleaned <- results_df %>%
   )) %>%
   #filter(significance != "") %>%
   # Compute total estimate and max R²
-filter(r2_within > 0 & ftest >= f_stat_threshold & ftest_p < 0.05 & p_val <= 0.1) %>%
+filter(r2_within > 0 & ftest >= f_stat_threshold & ftest_p < 0.05 & p_val < 0.1) %>%
   # Order `state` by R²
   mutate(state_name = fct_reorder(state_name, estimate, .desc = TRUE)) %>%
   # Reorder state_label using combined (state, lag_order)
@@ -3892,7 +4062,7 @@ geom_point(aes(y = estimate, size = ftest, color = r2_within), stroke = 0.25, al
     title = "Effect of 1% Increase in Wage (using SS GDP Instrument) on Education Expenditure per Pupil",
     x = "States",
     y = "Coefficient Estimate",
-    caption = paste0("Effect of 1% increase in Wage using l1 of GDP SS Instrument on PP Education\n Expenditure controlling for enrollment, GDP, % black, % hispanic, and intergovernmental transfers.\n Within R^2 of state-level estimation reflected in color of point. \nDisplays only states whose second-stage coefficient is statistically significant at the 5% level and first-stage F statistic >= ", f_stat_threshold, " and p-value < 0.05"),
+    caption = paste0("Effect of 1% increase in Wage using l1 of GDP SS Instrument on PP Education\n Expenditure controlling for enrollment, GDP, % black, % hispanic, and intergovernmental transfers.\n Within R^2 of state-level estimation reflected in color of point. \nDisplays only states whose second-stage coefficient is statistically significant at the 10% level and first-stage F statistic >= ", f_stat_threshold, " and p-value < 0.05"),
    color = "Within R2 of State-level Estimation",
     size = "F-test statistic value",
     alpha = "Statistical Significance"
@@ -4095,12 +4265,9 @@ for(k in reg_states){
   state_mods_ss[[as.character(k)]] <- mod
 }
 
-# Define variable names of interest
-vars_of_interest <- c("fit_log_weighted_annual_avg_wkly_wage")
-
 # Apply to list of models
 # Assuming: model_list is named by state names
-results_df <- imap_dfr(state_mods_ss, ~extract_coef_info(.x,.y, iv = TRUE))
+results_df <- imap_dfr(state_mods_ss, ~extract_coef_info(.x,.y, iv = TRUE, vars_of_interest_list = c("fit_log_weighted_annual_avg_wkly_wage")))
 results_df$state_name <- sapply(results_df$state, get_state)
 
 results_df_cleaned <- results_df %>%
@@ -4110,7 +4277,7 @@ results_df_cleaned <- results_df %>%
   )) %>%
   #filter(significance != "") %>%
   # Compute total estimate and max R²
-filter(r2_within > 0 & ftest >= f_stat_threshold & ftest_p < 0.05 & p_val <= 0.1) %>%
+filter(r2_within > 0 & ftest >= f_stat_threshold & ftest_p < 0.05 & p_val < 0.1) %>%
 
   # Order `state` by R²
   mutate(state_name = fct_reorder(state_name, estimate, .desc = TRUE)) %>%
@@ -4233,10 +4400,10 @@ rm(wallethub_ranking)
 
 ```
 
-### Industry by Industry
+### Industry by Industry {#sec-indbyind}
 
 Finally, given our shift-share instruments are the composite effect of
-shifts in industry-level real value added (VA), we can decompose this
+shifts in industry-level real value added, we can decompose this
 instrument into industry-specific real value added shocks. This
 decomposition allows us to examine the effect of industry-specific
 changes across states in a more explicit manner. In other words, we
@@ -4249,7 +4416,7 @@ $$ {#eq-bartik-decomposed}
 ...rather than the sum of all industry-level shocks.
 
 We estimate separate panel regressions using the full commuting zone
-sample and then grouping commuting zones by state instrumenting local
+sample and then grouping commuting zones by state, instrumenting local
 level wages by these decomposed shift-share shocks by industry.
 
 Using our value added-based shift share instrument, Figure 10
@@ -4257,21 +4424,21 @@ demonstrates the overall treatment effect of local wage changes
 instrumented via an industry-specific GDP shock. We find that regardless
 of the instrument design, the coefficient estimate is consistent with
 the baseline results, where the estimated effect of a 10% change to
-local wages on public education expenditure is a 2.2% increase, with the
+local wages on public education expenditure is approximately a 2% increase, with the
 effect's magnitude varying meaningfully for several states. We plot the
 relevant state-level effects for those states whose estimations pass the
 same restriction criteria as above (F statistics \<= 12 and p-value \<
 0.05 and the p-value of the second stage coefficient of interest is \<
-0.1).
+0.05). This estimation provides a view on the strength of our chosen instrument. Regardless of instrument choice, the detected effect should be consistent. 
 
 ```{r indind, echo = FALSE, warning = FALSE, message = FALSE, fig.height = 8, fig.width = 8, fig.cap = "Wage Effect via Industry VA SS Shock"}
 
 # --- 0) Inputs / variable list ------------------------------------------------
 temp_vars <- ss_temp %>%
-  select(starts_with("lev_gdp_ss"), -contains("2d") , -contains("_61")) %>%  # <- fix select syntax
+  select(starts_with("lev_gdp_ss"), -contains("2d") , -contains("_61")) %>%
   names()
 
-vars_of_interest <- c("fit_log_weighted_annual_avg_wkly_wage", "fitted_endog")
+#vars_of_interest <- c("fit_log_weighted_annual_avg_wkly_wage", "fitted_endog")
 
 df_ivs_ind <- df_ivs %>% 
   select(unit, year, state, log_real_Elem_Educ_Total_Exp_pp, l1_log_real_Elem_Educ_Total_Exp_pp, log_real_Total_IG_Revenue_pp, log_real_gdp_priv_ind_pc, log_Enrollment, pct_black, pct_hispanic, log_weighted_annual_avg_wkly_wage, l1_log_weighted_annual_avg_wkly_wage, all_of(temp_vars)) %>% 
@@ -4280,144 +4447,152 @@ df_ivs_ind <- df_ivs %>%
     mutate(across(temp_vars, list(l1 = ~lag(., 1), 
                                      l2 = ~lag(., 2)), .names = "{.fn}_{.col}")) %>% 
   ungroup
+
+# Create a plotting wrapper function
+run_industry_analysis <- function(
+  vars_to_iterate,
+  vars_of_interest_list,
+  ss_formula_builder,
+  extract_func,
+  skip_industries = NULL,
+  fill_palette = "Greens",
+  color_palette = "ggthemes::Classic_20",
+  plot_title,
+  plot_caption,
+  df,
+  geom_point_filter_all = ~ dplyr::filter(.x, state == "All")
+) {
   
-
-# --- 1) Run models and collect estimates --------------------------------------
-ind_mods <- tibble()
-for (k in temp_vars) {
-  ss_form_temp <- paste0(" log_weighted_annual_avg_wkly_wage ~ ", k ," + l1_", k, " + l2_", k, " + l1_log_weighted_annual_avg_wkly_wage")
-
-  # "All" model IV
-  iv_model <- feols(as.formula(paste0(iv_lev_form, ss_form_temp)), 
-    data = df_ivs_ind, panel.id = c("unit", "year"), cluster = "unit") %>% extract_coef_info(state_name = "All", iv = TRUE)
-
-  # State-by-state models
-  state_mods_ind <- list()
-  for (s in reg_states) {
-    tmp <- df_ivs_ind %>% filter(state == s)
-
-    if (tmp %>%
-        select(state, unit, year, !!k) %>%
-        group_by(unit) %>%
-        filter(!all(is.na(get(k)))) %>% n_groups(.) == 1) {
-      # skip if no variation
-    } else {
-      mod <- tmp %>% feols(as.formula(paste0(iv_lev_form, ss_form_temp)),
-          data = ., panel.id = c("unit", "year"), cluster = "unit"
-        )
-      state_mods_ind[[s]] <- mod
+  ind_mods <- tibble()
+  
+  for (k in vars_to_iterate) {
+    # Skip certain industries if specified
+    if (!is.null(skip_industries)) {
+      ind_val <- gsub("annual_avg_wkly_wage_measure_", "", k)
+      if (ind_val %in% skip_industries) next
     }
+    
+    # Build formula using provided function
+    ss_form_temp <- ss_formula_builder(k)
+    
+    # "All" model IV
+    iv_model <- feols(as.formula(paste0(iv_lev_form, ss_form_temp)), 
+      data = df, panel.id = c("unit", "year"), cluster = "unit") %>% 
+      extract_func(state_name = "All", iv = TRUE, vars_of_interest_list = vars_of_interest_list)
+    
+    # State-by-state models
+    state_mods_ind <- list()
+    for (s in reg_states) {
+      tmp <- df %>% filter(state == s)
+      
+      if (tmp %>% select(state, unit, year, !!k) %>%
+          group_by(unit) %>% filter(!all(is.na(get(k)))) %>% 
+          n_groups(.) == 1) {
+        next
+      } else {
+        mod <- tmp %>% feols(as.formula(paste0(iv_lev_form, ss_form_temp)),
+            data = ., panel.id = c("unit", "year"), cluster = "unit")
+        state_mods_ind[[s]] <- mod
+      }
+    }
+    
+    ind_mods <- imap_dfr(state_mods_ind, ~extract_func(.x, .y, iv = TRUE, vars_of_interest_list = vars_of_interest_list)) %>%
+      rbind(iv_model) %>%
+      mutate(industry = gsub("lev_ss_|lev_gdp_ss_|annual_avg_wkly_wage_measure_", "", k)) %>%
+      rbind(., ind_mods)
+    
+    invisible(gc(verbose = FALSE))
   }
-
-  ind_mods <- imap_dfr(state_mods_ind, ~extract_coef_info(.x, .y, iv = TRUE)) %>%
-    rbind(iv_model) %>%
-    mutate(industry = gsub("lev_gdp_ss_", "", k)) %>%
-    rbind(., ind_mods)
   
-  invisible(gc(verbose = FALSE))
+  # Process results (same for all three)
+  results_df <- ind_mods %>%
+    mutate(industry_name = names(rel_inds)[match(industry, rel_inds)])
+  
+  base_df <- results_df %>%
+    mutate(label = dplyr::case_when(
+      variable == "fit_log_weighted_annual_avg_wkly_wage" ~ "Wage Effect",
+      variable == "fitted_endog" ~ "Wage Effect",
+      grepl("annual_avg_wkly_wage_measure_", variable) ~ "Wage Effect"
+    ))
+  
+  order_levels <- base_df %>%
+    filter(state == "All") %>%
+    arrange(desc(estimate)) %>%
+    pull(industry_name) %>%
+    unique()
+  
+  base_df$state_name <- sapply(base_df$state, get_state)
+  
+  results_df_cleaned <- base_df %>%
+    mutate(
+      state_name = as.character(state_name),
+      industry_label = factor(industry_name, levels = order_levels),
+      overall_estimate = dplyr::if_else(state == "All", estimate, NA_real_)
+    )
+  
+  # Create plot
+  plot <- results_df_cleaned %>%
+    ggplot(aes(x = industry_label)) +
+    geom_point(
+      data = geom_point_filter_all,
+      aes(y = estimate, fill = r2_within),
+      size = 3, shape = 21
+    ) +
+    geom_text(
+      data = ~ dplyr::filter(.x, state != "All" & grepl("*", significance, fixed = TRUE) & ftest >= 12),
+      aes(y = estimate, label = state_name, color = state_name),
+      size = 3, show.legend = FALSE
+    ) +
+    geom_hline(yintercept = 0, linetype = "dashed") +
+    common_theme +
+    theme(legend.position = "bottom", axis.text.x = element_text(angle = 90, hjust = 1)) +
+    labs(title = plot_title, x = "Industry", y = "Coefficient Estimate",
+         caption = plot_caption, fill = "Within R² (All model)", color = "State")
+  
+  # Add scales and styling
+  plot +
+    scale_x_discrete(limits = order_levels, labels = function(x) stringr::str_wrap(x, width = 14)) +
+    guides(x = guide_axis(n.dodge = 2)) +
+    scale_fill_distiller(direction = 1, palette = fill_palette) +
+    scale_color_paletteer_d(color_palette) +
+    guides(
+      fill = guide_colorbar(title = "Within R² (All model)", title.position = "top",
+        title.hjust = 0.5, barwidth = unit(6, "cm"), barheight = unit(0.5, "cm"),
+        label.position = "bottom"),
+      color = guide_legend(title = "State", title.position = "top", title.hjust = 0.5)
+    ) +
+    theme(
+      axis.text.x = element_text(size = 8, vjust = 1, hjust = 1, angle = 35),
+      plot.margin = margin(t = 10, r = 10, b = 70, l = 10),
+      legend.position = "bottom", legend.direction = "horizontal",
+      legend.key.width = unit(0.5, "cm"), legend.key.height = unit(2.5, "cm"),
+      legend.title = element_text(size = 10, face = "bold"),
+      legend.text = element_text(size = 9), legend.spacing.x = unit(0.2, "cm"),
+      legend.box.margin = margin(t = 0, r = 0, b = 0, l = 0),
+      legend.box.spacing = unit(3, "mm")
+    )
 }
 
-# --- 2) Map industry codes to names (using your rel_inds) ---------------------
-# assumes: rel_inds is a named vector where names(rel_inds) are industry names
-# and values (or names) match the 'industry' codes we created above
-results_df <- ind_mods %>%
-  mutate(industry_name = names(rel_inds)[match(industry, rel_inds)])
+# Now call it three times with different parameters:
+run_industry_analysis(
+  vars_to_iterate = temp_vars,
+  df = df_ivs_ind,
+  vars_of_interest_list = c("fit_log_weighted_annual_avg_wkly_wage", "fitted_endog"),
+  ss_formula_builder = function(k) {
+    if(yes_contemp_ss) {
+      paste0(" log_weighted_annual_avg_wkly_wage ~ ", k ," + l1_", k, " + l2_", k, " + l1_log_weighted_annual_avg_wkly_wage")
+    } else {
+      paste0(" log_weighted_annual_avg_wkly_wage ~ l1_", k, " + l2_", k, " + l1_log_weighted_annual_avg_wkly_wage")
+    }
+  },
+  extract_func = extract_coef_info,
+  fill_palette = "Greens",
+  color_palette = "Polychrome::palette36",
+  plot_title = "Effect of 1% Increase in Wage on Education Expenditure per Pupil\nUsing Industry-Specific GDP SS Shock",
+  plot_caption = "Effect of 1% increase in Wage Using Industry-Specific GDP (shift-share) Shocks. Controls: enrollment, GDP, intergov transfers, year & CZ FE.\nWithin R² of 'All' estimation in point color.\n Each state abbreviation reflects statistically significant state-specific treatment effects with CZ FE.",
+  geom_point_filter_all = ~ dplyr::filter(.x, state == "All")
+)
 
-# --- 3) Clean labels (no ordering yet) ----------------------------------------
-base_df <- results_df %>%
-  mutate(
-    label = dplyr::case_when(variable == "fit_log_weighted_annual_avg_wkly_wage" ~ "Wage Effect",
-                             variable == "fitted_endog" ~ "Wage Effect")
-  )
-
-# --- 4) Derive the x-axis order ONLY from the All-model estimates -------------
-order_levels <- base_df %>%
-  filter(state == "All") %>%
-  arrange(desc(estimate)) %>%
-  pull(industry_name) %>%
-  unique()
-
-base_df$state_name <- sapply(base_df$state, get_state)
-
-# --- 5) Apply order and final cleaning ----------------------------------------
-results_df_cleaned <- base_df %>%
-  mutate(
-    state_name = as.character(state_name),
-    industry_label   = factor(industry_name, levels = order_levels),
-    overall_estimate = dplyr::if_else(state == "All", estimate, NA_real_)
-  ) #%>%
-  #filter(r2_within > 0)
-
-
-# First, create the base plot and store it
-plot <- results_df_cleaned %>%
-  ggplot(aes(x = industry_label)) +
-  geom_point(
-    data = ~ dplyr::filter(.x, state == "All"),
-    aes(y = estimate, fill = r2_within),
-    size = 3, shape = 21
-  ) +
-  geom_text(
-    data = ~ dplyr::filter(.x, state != "All" & significance != "" & ftest >= 12),
-    aes(y = estimate, label = state_name, color = state_name),
-    size = 3,
-    show.legend = FALSE
-  ) +
-  geom_hline(yintercept = 0, linetype = "dashed") +
-  common_theme +
-  theme(
-    legend.position = "bottom",
-    axis.text.x = element_text(angle = 90, hjust = 1)
-  ) +
-  labs(
-    title = "Effect of 1% Increase in Wage on Education Expenditure per Pupil\nUsing Industry-Specific GDP SS Shock",
-    x = "Industry",
-    y = "Coefficient Estimate",
-    caption = "Effect of 1% increase in Wage Using Industry-Specific GDP (shift-share) Shocks. Controls: enrollment, GDP, intergov transfers, year & CZ FE.\nWithin R² of 'All' estimation in point color.\n X reflects statistically significant state-specific treatment effects with CZ FE.",
-    fill = "Within R² (All model)",
-    color = "State"  # Add this for state colors
-  )
-library(grDevices)
-library(paletteer)
-# Now add the rest
-plot +
-  scale_x_discrete(
-    limits = order_levels,
-    labels = function(x) stringr::str_wrap(x, width = 14)
-  ) +
-  guides(x = guide_axis(n.dodge = 2)) +
-  #coord_cartesian(ylim = c(-1, 1), clip = "off") +  # Combined coord calls
-  scale_fill_distiller(direction = 1, palette = "Greens") +
-  scale_color_paletteer_d("ggthemes::Classic_20") +
-  #scale_color_brewer(palette = "Spectral") +  # Use brewer for discrete colors
-  guides(
-    fill = guide_colorbar(
-      title = "Within R² (All model)",
-      title.position = "top",
-      title.hjust = 0.5,
-      barwidth = unit(6, "cm"),
-      barheight = unit(0.5, "cm"),
-      label.position = "bottom"
-    ),
-    color = guide_legend(  # Add guide for state colors
-      title = "State",
-      title.position = "top",
-      title.hjust = 0.5
-    )
-  ) +
-  theme(
-    axis.text.x = element_text(size = 8, vjust = 1, hjust = 1, angle = 35),
-    plot.margin = margin(t = 10, r = 10, b = 70, l = 10),
-    legend.position = "bottom",
-    legend.direction = "horizontal",
-    legend.key.width = unit(0.5, "cm"),
-    legend.key.height = unit(2.5, "cm"),
-    legend.title = element_text(size = 10, face = "bold"),
-    legend.text = element_text(size = 9),
-    legend.spacing.x = unit(0.2, "cm"),
-    legend.box.margin = margin(t = 0, r = 0, b = 0, l = 0),
-    legend.box.spacing = unit(3, "mm")
-  )
 
 ```
 
@@ -4436,161 +4611,120 @@ overall treatment effect of local wage changes instrumented via our
 wage-based shift-share shock.")
 
 # --- 0) Inputs / variable list ------------------------------------------------
-temp_vars <- ss_temp %>%
+temp_vars_wage <- ss_temp %>%
   select(starts_with("lev_ss"), -contains("2d") , -contains("_61")) %>%  # <- fix select syntax
   names()
 
-vars_of_interest <- c("fit_log_weighted_annual_avg_wkly_wage", "fitted_endog")
+#vars_of_interest <- c("fit_log_weighted_annual_avg_wkly_wage", "fitted_endog")
+
+df_ivs_ind_wage <- df_ivs %>% 
+  select(unit, year, state, log_real_Elem_Educ_Total_Exp_pp, l1_log_real_Elem_Educ_Total_Exp_pp, log_real_Total_IG_Revenue_pp, log_real_gdp_priv_ind_pc, log_Enrollment, pct_black, pct_hispanic, log_weighted_annual_avg_wkly_wage, l1_log_weighted_annual_avg_wkly_wage, all_of(temp_vars_wage)) %>% 
+  group_by(unit) %>% 
+    arrange(year) %>% 
+    mutate(across(temp_vars_wage, list(l1 = ~lag(., 1), 
+                                     l2 = ~lag(., 2)), .names = "{.fn}_{.col}")) %>% 
+  ungroup
+  
+run_industry_analysis(
+  vars_to_iterate = temp_vars_wage,
+  df = df_ivs_ind_wage,
+  vars_of_interest_list = c("fit_log_weighted_annual_avg_wkly_wage", "fitted_endog"),
+  ss_formula_builder = function(k) {
+    if(yes_contemp_ss){
+      ss_form_temp <- paste0(" log_weighted_annual_avg_wkly_wage ~ ", k ," + l1_", k, " + l2_", k, " + l1_log_weighted_annual_avg_wkly_wage")
+    }else{
+      ss_form_temp <- paste0(" log_weighted_annual_avg_wkly_wage ~ l1_", k, " + l2_", k, " + l1_log_weighted_annual_avg_wkly_wage")
+    }
+  },
+  extract_func = extract_coef_info,
+  fill_palette = "Oranges",
+  color_palette = "Polychrome::palette36",
+  plot_title = str_wrap("Effect of 1% Increase in Wage on Ed. Exp. per Pupil Using Industry-Specific Wage SS Shock", width = 70),
+  plot_caption = str_wrap("Effect of 1% increase in Wage Using Industry-Specific Wage (shift-share) Shocks. Controls: enrollment, GDP, intergovernmental transfers, year & CZ FE. Within R² of 'All' estimation in point color. X reflects statistically significant state-specific treatment effects with CZ FE.", width = 120),
+  geom_point_filter_all = ~ dplyr::filter(.x, state == "All") #& grepl("*", significance, fixed = TRUE) & ftest >= 12)
+)
+
+```
+
+
+\FloatBarrier
+
+The previous estimation only provides additional confidence in our instrument choice, indicating that our effect is consistent across various instruments. However, we are interested in industry-specific wage elasticities. Therefore, we attempt an alternative estimation in which we instrument local *industry-specific* wages using our general shift-share instrument. More precisely, we instrument industry-specific local wages using our original shift-share instrument as designed in @eq-bartik. Figure 11 demonstrates the results of a full-sample estimation (dots) and state sub-samples (text labels of state names). We only display coefficient estimates whose p-value < 0.05 and first-stage F-statistic >= 12. This specification demonstrates that industry-level wages have different effects on education expenditure per pupil. Though the estimated effect remains positive for all full-sample estimations, states demonstrate diverse relationships that vary in both magnitude and sign. 
+
+```{r indind_new, echo = FALSE, warning = FALSE, message = FALSE, fig.height = 8, fig.width = 8, fig.cap = "Industry-Specific Wage Effect via General VA SS Shock"}
+
+invisible(gc(verbose = FALSE))
+
+wage_cz <- readRDS(here("data/raw/QCEW/cz_wage_stats_ts_wtd_mean.RDS"))
+# --- 0) Inputs / variable list ------------------------------------------------
+temp_vars <- ss_temp %>%
+  select(starts_with("lev_gdp_ss"), -contains("2d") , -contains("_61")) %>%
+  names()
+
+cz_temp_vars <- wage_cz %>% select(contains("annual_avg_wkly_wage_measure")) %>% names
 
 df_ivs_ind <- df_ivs %>% 
-  select(unit, year, state, log_real_Elem_Educ_Total_Exp_pp, l1_log_real_Elem_Educ_Total_Exp_pp, log_real_Total_IG_Revenue_pp, log_real_gdp_priv_ind_pc, log_Enrollment, pct_black, pct_hispanic, log_weighted_annual_avg_wkly_wage, l1_log_weighted_annual_avg_wkly_wage, all_of(temp_vars)) %>% 
+  select(unit, year, state, log_real_Elem_Educ_Total_Exp_pp, l1_log_real_Elem_Educ_Total_Exp_pp, log_real_Total_IG_Revenue_pp, log_real_gdp_priv_ind_pc, log_Enrollment, pct_black, pct_hispanic, log_weighted_annual_avg_wkly_wage, l1_log_weighted_annual_avg_wkly_wage, lev_gdp_ss_2d, l1_lev_gdp_ss_2d, l2_lev_gdp_ss_2d, all_of(temp_vars)) %>% 
   group_by(unit) %>% 
     arrange(year) %>% 
     mutate(across(temp_vars, list(l1 = ~lag(., 1), 
                                      l2 = ~lag(., 2)), .names = "{.fn}_{.col}")) %>% 
-  ungroup
+  ungroup %>% 
+  left_join(wage_cz, by = c('unit', 'year'))
   
-
-# --- 1) Run models and collect estimates --------------------------------------
-ind_mods <- tibble()
-for (k in temp_vars) {
-  ss_form_temp <- paste0(" log_weighted_annual_avg_wkly_wage ~ ", k ," + l1_", k, " + l2_", k, " + l1_log_weighted_annual_avg_wkly_wage")
-
-  # "All" model IV
-  iv_model <- feols(as.formula(paste0(iv_lev_form, ss_form_temp)), 
-    data = df_ivs_ind, panel.id = c("unit", "year"), cluster = "unit") %>% extract_coef_info(state_name = "All", iv = TRUE)
-
-  # State-by-state models
-  state_mods_ind <- list()
-  for (s in reg_states) {
-    tmp <- df_ivs_ind %>% filter(state == s)
-
-    if (tmp %>%
-        select(state, unit, year, !!k) %>%
-        group_by(unit) %>%
-        filter(!all(is.na(get(k)))) %>% n_groups(.) == 1) {
-      # skip if no variation
+run_industry_analysis(
+  df = df_ivs_ind,
+  vars_to_iterate = cz_temp_vars,
+  vars_of_interest_list = c("annual_avg_wkly_wage_measure"),
+  ss_formula_builder = function(k) {
+    if(yes_contemp_ss) {
+      paste0(" log(",k, ") ~ lev_gdp_ss_2d + l1_lev_gdp_ss_2d + l2_lev_gdp_ss_2d + l(log(",k,"), 1)")
     } else {
-      mod <- tmp %>% feols(as.formula(paste0(iv_lev_form, ss_form_temp)),
-          data = ., panel.id = c("unit", "year"), cluster = "unit"
-        )
-      state_mods_ind[[s]] <- mod
+      paste0(" log(",k, ") ~ l1_lev_gdp_ss_2d + l2_lev_gdp_ss_2d + l(log(",k,"), 1)")
     }
-  }
-
-  ind_mods <- imap_dfr(state_mods_ind, ~extract_coef_info(.x, .y, iv = TRUE)) %>%
-    rbind(iv_model) %>%
-    mutate(industry = gsub("lev_ss_", "", k)) %>%
-    rbind(., ind_mods)
-  
-  invisible(gc(verbose = FALSE))
-}
-
-# --- 2) Map industry codes to names (using your rel_inds) ---------------------
-# assumes: rel_inds is a named vector where names(rel_inds) are industry names
-# and values (or names) match the 'industry' codes we created above
-results_df <- ind_mods %>%
-  mutate(industry_name = names(rel_inds)[match(industry, rel_inds)])
-
-# --- 3) Clean labels (no ordering yet) ----------------------------------------
-base_df <- results_df %>%
-  mutate(
-    label = dplyr::case_when(variable == "fit_log_weighted_annual_avg_wkly_wage" ~ "Wage Effect",
-                             variable == "fitted_endog" ~ "Wage Effect")
-  )
-
-# --- 4) Derive the x-axis order ONLY from the All-model estimates -------------
-order_levels <- base_df %>%
-  filter(state == "All") %>%
-  arrange(desc(estimate)) %>%
-  pull(industry_name) %>%
-  unique()
-
-base_df$state_name <- sapply(base_df$state, get_state)
-
-# --- 5) Apply order and final cleaning ----------------------------------------
-results_df_cleaned <- base_df %>%
-  mutate(
-    state_name = as.character(state_name),
-    industry_label   = factor(industry_name, levels = order_levels),
-    overall_estimate = dplyr::if_else(state == "All", estimate, NA_real_)
-  ) #%>%
-  #filter(r2_within > 0)
-
-
-# First, create the base plot and store it
-plot <- results_df_cleaned %>%
-  ggplot(aes(x = industry_label)) +
-  geom_point(
-    data = ~ dplyr::filter(.x, state == "All"),
-    aes(y = estimate, fill = r2_within),
-    size = 3, shape = 21
-  ) +
-  geom_text(
-    data = ~ dplyr::filter(.x, state != "All" & significance != "" & ftest >= 12),
-    aes(y = estimate, label = state_name, color = state_name),
-    size = 3,
-    show.legend = FALSE
-  ) +
-  geom_hline(yintercept = 0, linetype = "dashed") +
-  common_theme +
-  theme(
-    legend.position = "bottom",
-    axis.text.x = element_text(angle = 90, hjust = 1)
-  ) +
-  labs(
-    title = "Effect of 1% Increase in Wage on Ed. Exp. per Pupil Using Industry-Specific Wage SS Shock",
-    x = "Industry",
-    y = "Coefficient Estimate",
-    caption = "Effect of 1% increase in Wage Using Industry-Specific Wage (shift-share) Shocks. Controls: enrollment, GDP, intergovernmental transfers, year & CZ FE.\nWithin R² of 'All' estimation in point color.\n X reflects statistically significant state-specific treatment effects with CZ FE.",
-    fill = "Within R² (All model)",
-    color = "State"  # Add this for state colors
-  )
-library(grDevices)
-library(paletteer)
-# Now add the rest
-plot +
-  scale_x_discrete(
-    limits = order_levels,
-    labels = function(x) stringr::str_wrap(x, width = 14)
-  ) +
-  guides(x = guide_axis(n.dodge = 2)) +
-  #coord_cartesian(ylim = c(-1, 1), clip = "off") +  # Combined coord calls
-  scale_fill_distiller(direction = 1, palette = "Greens") +
-  scale_color_paletteer_d("ggthemes::Classic_20") +
-  #scale_color_brewer(palette = "Spectral") +  # Use brewer for discrete colors
-  guides(
-    fill = guide_colorbar(
-      title = "Within R² (All model)",
-      title.position = "top",
-      title.hjust = 0.5,
-      barwidth = unit(6, "cm"),
-      barheight = unit(0.5, "cm"),
-      label.position = "bottom"
-    ),
-    color = guide_legend(  # Add guide for state colors
-      title = "State",
-      title.position = "top",
-      title.hjust = 0.5
-    )
-  ) +
-  theme(
-    axis.text.x = element_text(size = 8, vjust = 1, hjust = 1, angle = 35),
-    plot.margin = margin(t = 10, r = 10, b = 70, l = 10),
-    legend.position = "bottom",
-    legend.direction = "horizontal",
-    legend.key.width = unit(0.5, "cm"),
-    legend.key.height = unit(2.5, "cm"),
-    legend.title = element_text(size = 10, face = "bold"),
-    legend.text = element_text(size = 9),
-    legend.spacing.x = unit(0.2, "cm"),
-    legend.box.margin = margin(t = 0, r = 0, b = 0, l = 0),
-    legend.box.spacing = unit(3, "mm")
-  )
+  },
+  extract_func = extract_coef_info,
+  fill_palette = "Purples",
+  color_palette = "Polychrome::palette36",
+  plot_title = str_wrap("Effect of 1% Increase in Industry-Specific Wages on Education Expenditure per Pupil\nUsing GDP SS Shock", width = 70),
+  plot_caption = str_wrap("Controls: enrollment, GDP, intergovernmental transfers, year & CZ FE. Within R² of full-sample estimation in point color. Each state abbreviation reflects statistically significant state-specific treatment effects with year and CZ FE. All points and state names displayed demonstrate treatment effects whose p-values < 0.05 and first-stage F-statistic >= 12.", width = 120),
+  geom_point_filter_all = ~ dplyr::filter(.x, state == "All" & grepl("*", significance, fixed = TRUE) & ftest >= 12)
+)
 
 ```
 
-\FloatBarrier
+
+```{r indind_new_2, include = FALSE, echo = FALSE, results = 'asis', warning = FALSE, message = FALSE,fig.height = 8, fig.width = 8, fig.cap = "Industry-Specific Wage Effect via Industry-Specific VA SS Shock"}
+
+append_to_appendix("## Industry-by-Industry Estimation Using Industry-Specific GDP SS", 
+                   "In the following section, we provide an additional alternative estimation to that described in @sec-indbyind of the main text. In this case, we instrument local industry-specific wages using our decomposed industry-specific estimation as designed in @eq-bartik-decomposed.")
+ 
+invisible(gc(verbose = FALSE))
+
+run_industry_analysis(
+  vars_to_iterate = cz_temp_vars,
+  vars_of_interest_list = c("annual_avg_wkly_wage_measure"),
+  df = df_ivs_ind,
+  ss_formula_builder = function(k) {
+    ind_val <- gsub("annual_avg_wkly_wage_measure_", "", k)
+    if(yes_contemp_ss) {
+      paste0(" log(annual_avg_wkly_wage_measure_", ind_val, ") ~ lev_gdp_ss_", ind_val, " + l1_lev_gdp_ss_", ind_val, " + l2_lev_gdp_ss_", ind_val, " + l(log(",k,"), 1)")
+    } else {
+      paste0(" log(",k, ") ~ l1_lev_gdp_ss_", ind_val, " + l2_lev_gdp_ss_", ind_val, " + l(log(",k,"), 1)")
+    }
+  },
+  extract_func = extract_coef_info,
+  skip_industries = c("31_33", "48_49", "44_45", "92", "61"),
+  fill_palette = "Blues",
+  color_palette = "Polychrome::palette36",
+  plot_title = str_wrap("Effect of 1% Increase in Industry-Specific Wages on Education Expenditure per Pupil Using Industry-Specific GDP SS", width = 70),
+  plot_caption = str_wrap("Controls: enrollment, GDP, intergov transfers, year & CZ FE. Within R² of full-sample estimation in point color. Each state abbreviation reflects statistically significant state-specific treatment effects with CZ FE. All points and state names displayed demonstrate treatment effects whose p-values < 0.05 and first-stage F-statistic >= 12.", width = 120),
+  geom_point_filter_all = ~ dplyr::filter(.x, state == "All" & grepl("*", significance, fixed = TRUE) & ftest >= 12)
+)
+
+```
+
+
 
 ```{r, echo = FALSE, include = FALSE, eval = FALSE, results = 'asis'}
 
@@ -4601,47 +4735,6 @@ if(new_ss_calculation){
 }else{
   ss_temp_old <- readRDS(here("code/ss_cache_manual/ss_temp_old.RDS"))
 }
-
-
-# ind_codes %>% filter(nchar(industry_code) == 2 & industry_code != 99)  %>% select(-keep, -industry_code) %>% xtable() %>% print(include.rownames = FALSE)
-
-ind_mods <- list()
-inds <- ind_codes %>% filter(nchar(industry_code) == 2 & !(industry_code %in% c(10, 99))) %>% pull(industry_code) %>% unique
-i <- 0
-for(k in inds){
-    print(k)
-    ss_inst <- ss_temp_old %>%
-      plot_ss_old(., k, "gr_natl_annual_avg_wkly_wage_", "cz_id", ind_codes)
-    name <- ind_codes %>% filter(industry_code == k) %>% pull(industry_title)
-
-    mods <- list()
-    for(df in names(dfs)){
-      print(df)
-      # IV regression using shift-share instrument
-      temp_dat <- left_join(dfs[[df]], rename(ss_inst, unit = cz_id), by = c("year", "unit"))
-      stopifnot(temp_dat %>% group_by(cz_id, year) %>% n_groups == nrow(temp_dat))
-      iv_model <- feols(
-        as.formula(paste0("log_real_Elem_Educ_Total_Exp_pp ~ log_real_Total_IG_Revenue_pp + log_real_gdp_priv_ind_pc + log_Enrollment + l1_log_real_Elem_Educ_Total_Exp_pp  + pct_black + pct_hispanic | unit + year | log_weighted_annual_avg_wkly_wage ~ l(ss_", k, ",1)")),
-        data = temp_dat, panel.id = c("unit", "year"), cluster = "unit"
-      )
-      mods[[df]] <- iv_model
-    }
-    ind_mods[[as.character(k)]] <- mods
-}
-
-for(k in names(ind_mods)){
-  etable(ind_mods[[k]], title = k, tex = latex_tables, headers = names(ind_mods[[k]]),  adjustbox = TRUE) %>% print()
-}
-
-# Filter the list of models for significant log_real_gdp_priv_ind_pc coefficients
-significant_mods <- mods[sapply(mods, function(m) {
-  coefs <- summary(m)$coeftable
-  if ("fit_log_weighted_annual_avg_wkly_wage" %in% rownames(coefs)) {
-    return(coefs["fit_log_weighted_annual_avg_wkly_wage", "Pr(>|t|)"] < 0.05)}
-  } else {
-    return(FALSE)
-  }
-})]
 
 ```
 
@@ -5157,7 +5250,7 @@ experience the opposite effect.
 Importantly, the positive elasticity we document is not uniform across
 the country. It is concentrated in less than a third of the states in
 the sample (Colorado, Florida, South Dakota, Kentucky, Louisiana,
-Pennsylvania, North Dakota, Oregon, Oklahoma, Arizona, and Indiana).
+Pennsylvania, North Dakota, Oregon, Oklahoma, and Indiana).
 Many other states exhibit minimal or insignificant responsiveness,
 suggesting that these risks are not uniformly distributed. These
 findings underscore that equalization programmes need to consider
@@ -5183,7 +5276,7 @@ potential downward pressures on public education expenditure.
 The determinants of inequality in public education delivery in the US
 are multiple and complex. Significant evidence exists of the role of
 historically discriminatory policies related to congressional
-districting, under-investment in low-income areas of color
+districting in driving under-investment in low-income areas of color
 [@trounstine2016; @trounstine2021; @sosina2019]. Though this work does
 not directly inform this debate, further work could explore the extent
 to which wage growth interacts with such structural policies.
@@ -5199,7 +5292,7 @@ heterogeneously.
 
 -   Though we have attempted to bypass deep endogeneity issues in the
     relationship between wages and public education expenditure, our
-    excludability assumptions about local industry composition are
+    excludability assumptions about local industrial composition are
     strong.
 
 -   Data limits true consideration of non-stationarity issues.
@@ -5219,13 +5312,11 @@ Below, we outline the remaining work planned prior to pursuing journal
 submission. In addition to cosmetic improvements to the manuscript, we
 intend to:
 
--   Revise the industry-by-industry estimation. The industry-by-industry
-    estimation in the main text could benefit from revision. Rather than
-    instrumenting local wage levels, we intend to instrument
-    *industry-specific* wages using the described industry-specific
-    shocks. We believe this could link well to the intro in which only
+-   Finalize the industry-by-industry estimation. The main industry-by-industry estimation presented in Figure 10, by design, demonstrates the reliability of our headline coefficient estimate. In other words, our coefficient estimate is consistent for a wide variety of instruments. However, we are more interested in determining industry-specific wage elasticities. Therefore,  we provide two alternative estimations, the first of which is presented in the current draft (Figure 12) and the second in the Appendix. Rather than
+    instrumenting overall local wage levels, we instrument
+    *industry-specific* wages using either the general shift-share instrument designed in @eq-bartik or the industry-specific shift-share instruments as designed in @eq-bartik-decomposed. We believe that this revision could link well to the introduction in which only
     those regressions in which there is a strong first stage (i.e., GDP
-    changes predict local wages well) would qualify for analysis.
+    changes predict local wages well) would qualify for analysis. Though we have estimated both alternatives, the estimation in which we use the industry-specific shift-share instrument needs further data work to ensure accuracy. We therefore present the preliminary results from this estimation in the Appendix only. 
 -   Explore the states in which we detect a statistically significant
     effect in greater detail. We plan to evaluate their industrial
     composition, economic history, and public goods and taxation regimes
@@ -5234,13 +5325,13 @@ intend to:
     greater detail in the resulting policy recommendations of the work.
 -   Provide an improved calculation about the economic meaning of the
     results. Though we provide a preliminary back-of-the-envelope
-    calcuation about the impact of a 2% change in expenditure per pupil
+    calculation about the impact of a 2% change in expenditure per pupil
     in terms of staff costs, this calculation is likely simplified. We
     plan to make a comparison of the scale of potential changes to
     public education budgets in terms of staff, food, or other resource
     costs using data from the SLGF. Additionally, we might be able to
     speak to the potential for such a change in expenditure per pupil to
-    reduce class sizes or fund salary increase for teachers, for
+    reduce class sizes or fund salary increases for teachers, for
     example.
 -   Report the marginal F-statistic of the instrumental variable
     specifications to demonstrate the relative value of the instruments
@@ -5253,6 +5344,10 @@ intend to:
     instrumenting local property prices rather than local wage levels.
 -   Incorporate data on private school enrollment to test whether these
     rates respond to changes in local wages.
+-   Consider additional outcome variables that reflect within commuting zone dynamics (i.e., inequality in expenditure). Possible outcome variables to consider:
+    -   Within-commuting zone maximum, minimum, or variance in expenditure levels.
+    -   Using the School Funding Adequacy Data presented in Figure 1, construct indicators of the within-commuting zone proportion of under-, over-, or adequately-funded school districts.
+    -   Private school enrollment to measure potential crowding in and out of public education.
 -   Provide a robustness check using a cross-sectional empirical
     strategy to determine the relative importance of cross-sectional
     versus time variation in the sample.
@@ -5261,14 +5356,18 @@ intend to:
 
 Code and data to reproduce the analysis will be made available on
 Zenodo. A working version of the database and code is currently public
-on \[Github\](https://github.com/ebbam/pub_fin_schools).
+on [Github](https://github.com/ebbam/pub_fin_schools).
+
+# Acknowledgements
+
+I would primarily like to thank Jennifer Castle for valuable supervision and comments throughout the course of this project. Thanks additionally to Jonas Kurle and Kasper Pedersen of the Calleva Research Centre and Stefania Innocenti for comments. 
 
 # Use of AI
 
-Below, we provide a summary of the tasks where AI has been used. We
+Below, we provide a summary of the tasks where AI was used. We
 limited its use to debugging and efficiency improvements during data
 cleaning and analysis, formatting of tables and figures, and helping
-with compatiblity between various typesetting tools:
+with compatibility between various typesetting tools. We did *not* use AI to generate any text for this manuscript.
 
 -   Used ChatGPT or Claude to help improve readability of plots
     (formatting, margins, labeling, font size, distinguishing between
