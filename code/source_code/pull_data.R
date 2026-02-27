@@ -64,7 +64,23 @@ if(unit_id == "cz_id"){
   
   mines_cz <- mines_cz_state_wages
   
+  priv_school_data <- readRDS(here("data/raw/priv_school_enrolment/complete_priv_school_enrolment_cz.RDS")) %>% 
+    select(cz_id, year, pct_private_school_primary_acs5, pct_private_school_primary_acs1)
+  
+  mines_cz_priv_school <- mines_cz %>% 
+    left_join(., priv_school_data, by = c("cz_id", "year"))
+  
+  stopifnot(mines_cz %>% filter(!(cz_id %in% priv_school_data$cz_id)) %>% nrow(.) == 0)
+  
+  stopifnot(mines_cz_priv_school %>% 
+              select(-c('pct_private_school_primary_acs5', 'pct_private_school_primary_acs1')) %>% 
+              identical(mines_cz))
+  
+  mines_cz <- mines_cz_priv_school
+  
+  
 }else if(unit_id == "fips"){
+  
   print(paste0("Running analysis on counties (", unit_id, ")."))
   mines_cz <- readRDS(here("data/out/regression_data_complete_fips.RDS")) %>% 
     mutate(unit = get(unit_id)) %>% 
@@ -83,6 +99,7 @@ if(unit_id == "cz_id"){
     fill(state_postal, state_fips, race_pop_total, pop_hispanic, pct_hispanic, pct_white, pct_black, pct_ai_an, pct_asian_pac, pop_race_white, pop_race_black, pop_race_ai_an, pop_race_asian_pac, .direction = "downup") %>% 
     ungroup 
   
+
   # race_data %>% saveRDS(here("data/raw/race_controls/data_race_seer_selected_fips.RDS"))
   
   stopifnot(mines_cz %>% filter(!(fips %in% race_data$fips)) %>% nrow(.) == 0)
@@ -95,6 +112,20 @@ if(unit_id == "cz_id"){
               identical(mines_cz))
   
   mines_cz <- mines_cz_race
+  
+  priv_school_data <- readRDS(here("data/raw/priv_school_enrolment/complete_priv_school_enrolment_fips.RDS")) %>% 
+    select(fips, year, pct_private_school_primary_acs5, pct_private_school_primary_acs1)
+  
+  mines_cz_priv_school <- mines_cz %>% 
+    left_join(., priv_school_data, by = c("fips", "year"))
+  
+  stopifnot(mines_cz %>% filter(!(fips %in% priv_school_data$fips)) %>% nrow(.) == 0)
+  
+  stopifnot(mines_cz_priv_school %>% 
+              select(-c('pct_private_school_primary_acs5', 'pct_private_school_primary_acs1')) %>% 
+              identical(mines_cz))
+  
+  mines_cz <- mines_cz_priv_school
   
   # ss <- readRDS(here("data/temp/shift_shares_base_01_05_11.RDS")) %>% 
   #   mutate(unit = get(unit_id)) 
