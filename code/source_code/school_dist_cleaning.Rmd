@@ -145,6 +145,18 @@ nrow(temp_voc_adult) + nrow(temp_df) == nrow(temp_short)
 
 ```
 
+# Create within-fips and within CZ information
+```{r}
+
+within_vars <- temp_df %>% 
+  filter(SchLevCode != 7) %>% 
+  group_by(fips, year) %>% 
+  select(-c(FIPSid, Name, SchLevCode)) %>% 
+  group_by(fips, year) %>% 
+  summarise(across(where(is.numeric), ~sum(., na.rm = TRUE))) %>% 
+  ungroup
+
+```
 
 # County-level dataframe(s)
 ## Main dataframe
@@ -170,6 +182,80 @@ n_districts_fips <- temp_df %>%
   group_by(fips, year) %>% 
   summarise(n_school_districts = n()) %>% 
   ungroup
+
+```
+
+### Get within-county variables for fips
+```{r}
+
+# Using temp_df from above
+within_fips_filled <- temp_df %>% 
+  filter(!(fips %in% c("50050", "31129"))) %>%
+  mutate(fips = ifelse(fips == "46113", "46102", fips)) %>% 
+  filter(SchLevCode != 7) %>% 
+  group_by(FIPSid, fips) %>% 
+  complete(year = full_seq(year, 1)) %>% 
+  arrange(year, .by_group = TRUE) %>% 
+  select(fips, FIPSid, year, Enrollment, Elem_Educ_Total_Exp, Total_Revenue,
+      Total_Rev_Own_Sources, Total_IG_Revenue) %>% 
+  mutate(across(
+    c(Enrollment, Elem_Educ_Total_Exp, Total_Revenue,
+      Total_Rev_Own_Sources, Total_IG_Revenue),
+    as.numeric
+  )) %>% 
+  mutate(across(c(Enrollment, Elem_Educ_Total_Exp, Total_Revenue,
+      Total_Rev_Own_Sources, Total_IG_Revenue), ~ if (all(is.na(.x))) .x else zoo::na.approx(.x, maxgap = 2, rule = 2, na.rm = FALSE))) %>% 
+  ungroup %>% 
+  # Calculating per pupil values
+  mutate(across(contains("Total"), ~./Enrollment, .names = "{.col}_pp")) 
+  #select(-c(FIPSid))  
+
+# To check included fips codes
+temp_check <- readRDS(here('data/temp/mines_restr_corrected.RDS'))
+
+stopifnot(setdiff(unique(temp_check$fips), unique(within_fips_filled$fips)) %>% length(.) == 0)
+
+# within_fips_filled %>%  
+#   filter(fips %in% temp_check$fips) %>% 
+#   saveRDS(here("data/out/within_vars_fips_builder.RDS"))
+  
+within_fips <- readRDS(here("data/out/within_vars_fips_builder.RDS")) %>% 
+  select(-c(FIPSid)) %>% 
+  group_by(fips, year) %>% 
+  summarise(n_school_districts = n(),
+            across(contains("_pp"),
+                   .fns = list("var" = ~var(., na.rm = TRUE), 
+                            "min" = ~min(., na.rm = TRUE), 
+                            "max" = ~max(., na.rm = TRUE), 
+                            "diff_min_max" =  ~max(., na.rm = TRUE) - min(., na.rm = TRUE)), 
+                   .names = "{.fn}_{.col}")) %>%
+  ungroup %>% 
+  mutate(across(where(is.numeric), ~ifelse(is.infinite(.), NA, .)))
+
+# within_fips %>% saveRDS(here("data/out/within_vars_fips.RDS"))
+
+within_cz <- readRDS(here("data/out/within_vars_fips_builder.RDS")) %>% 
+ left_join(., czs, by = "fips") %>% 
+  mutate(cz_id = as.character(cz_id),
+         cz_id_1990 = as.character(cz_id_1990)) %>% 
+  group_by(cz_id, year) %>% 
+  summarise(n_school_districts = n(),
+            across(contains("_pp"),
+                   .fns = list("var" = ~var(., na.rm = TRUE), 
+                            "min" = ~min(., na.rm = TRUE), 
+                            "max" = ~max(., na.rm = TRUE), 
+                            "diff_min_max" =  ~max(., na.rm = TRUE) - min(., na.rm = TRUE)), 
+                   .names = "{.fn}_{.col}")) %>%
+  ungroup %>% 
+  mutate(across(where(is.numeric), ~ifelse(is.infinite(.), NA, .)))
+
+# within_cz %>% 
+#   saveRDS(here("data/out/within_vars_cz.RDS"))
+
+# This is cached final dataframe created in pull_data.R and cached in regressions.qmd
+test_cz <- readRDS(here("output/cache/pull_data_cache.RDS"))
+# Check that all CZ ids used in main analysis are present
+stopifnot(setdiff(unique(test_cz$cz_id), unique(within_cz$cz_id)) %>% length(.) == 0)
 
 ```
 
@@ -255,7 +341,7 @@ esa_county <- temp_df %>%
   rename(esa_rev = 3, esa_tot_exp = 4) %>% 
   mutate(esa = TRUE)
 
-#esa_county %>% saveRDS(here("data/temp/esa_data_county_97_21.RDS"))
+# esa_county %>% saveRDS(here("data/temp/esa_data_county_97_21.RDS"))
 
 ```
 
@@ -707,7 +793,7 @@ mines_cz <- mines_df %>%
   group_by(cz_id, year) %>%
   summarise(across(vars_grab, ~sum(., na.rm = TRUE)),
             n_fips = n_distinct(fips),
-            # Grabs the states of each commuting zone, in cases in which the commiuting zone overlaps multiple states the most common one is retained
+            # Grabs the states of each commuting zone, in cases in which the commuting zone overlaps multiple states the most common one is retained
             main_state = names(sort(table(state), decreasing = TRUE))[1], # Most common value
             # Also retains a list of all states encompassed by the CZ
             all_states = paste(unique(state), collapse = ":")) %>% 
