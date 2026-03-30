@@ -1,0 +1,1534 @@
+---
+title: "State Analysis"
+format: html
+date: "2026-03-24"
+bibliography: references.bib
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, fig.height = 16, fig.width = 14, cache = FALSE, message = FALSE, warning = FALSE, results = 'asis')
+
+```
+
+## R Markdown
+
+```{r cars, cache = FALSE}
+library(here)
+library(tidyverse)
+library(readxl)
+library(usmap)
+library(fixest)
+library(kableExtra)
+library(purrr)
+library(ggrepel)
+library(readxl)
+source(here('code/source_code/useful_functions.R'))
+source(here('code/source_code/dicts.R'))
+results_df_cleaned_iv <- readRDS(here("data/temp/results_df_cleaned_iv.RDS"))
+sig_states <- unique(results_df_cleaned_iv$state)
+# Saving a backup just in case
+sig_states_temp <- sig_states
+results_df <- readRDS(here("data/temp/results_df.RDS"))
+reg_states <- readRDS(here("data/temp/reg_states.RDS"))
+reg_states_temp <- setdiff(reg_states, sig_states_temp)
+df_ivs <- readRDS(here("data/temp/df_ivs.RDS"))
+
+cz_names <- readRDS(here("data/out/cz_w_county_names.RDS"))
+school_dist_info <- readRDS(here("data/raw/state_school_district_info/raw_state_school_dist_info.RDS"))
+```
+
+```{r, results = 'asis', cache = FALSE}
+
+source(here("code/heterogeneity_analysis.R"))
+
+```
+
+```{r, results = 'asis', cache = FALSE}
+
+source(here("code/heterogeneity_mechanism_test.R"))
+
+```
+
+```{r, results = 'asis', cache = FALSE}
+
+source(here('code/leverage_analysis_cz.R'))
+
+```
+
+## Mechanism Figures
+
+```{r fig_mechanism_map, echo=FALSE, warning=FALSE, message=FALSE, fig.width=12, fig.height=14, cache = FALSE}
+# ============================================================
+# FIGURE 1: US CHOROPLETH MAP OF MECHANISM TYPES
+# ============================================================
+library(maps)
+
+mech_colors <- c(
+  "Amplification" = "#d7191c",
+  "Insulation"    = "#fdae61",
+  "Equalization"  = "#2c7bb6"
+)
+
+mech_df <- read_csv(here("output/mechanism_typology.csv"), show_col_types = FALSE) %>%
+  rename(abbr = state_name)
+
+state_lookup <- tibble(
+  abbr      = state.abb,
+  full_name = tolower(state.name)
+)
+
+mech_df <- mech_df %>%
+  left_join(state_lookup, by = "abbr")
+
+us_poly <- map_data("state") %>%
+  left_join(mech_df, by = c("region" = "full_name"))
+
+state_centroids <- us_poly %>%
+  filter(!is.na(abbr)) %>%
+  group_by(abbr, mechanism, sig_state) %>%
+  summarize(
+    long = (min(long) + max(long)) / 2,
+    lat  = (min(lat)  + max(lat))  / 2,
+    .groups = "drop"
+  )
+
+fig_map <- ggplot() +
+  geom_polygon(
+    data = us_poly %>% filter(!is.na(mechanism)),
+    aes(x = long, y = lat, group = group, fill = mechanism),
+    color = "white", linewidth = 0.35
+  ) +
+  geom_polygon(
+    data = us_poly %>% filter(is.na(mechanism)),
+    aes(x = long, y = lat, group = group),
+    fill = "grey88", color = "white", linewidth = 0.35
+  ) +
+  geom_polygon(
+    data = us_poly %>% filter(sig_state == TRUE),
+    aes(x = long, y = lat, group = group),
+    fill = NA, color = "black", linewidth = 1.0
+  ) +
+  geom_text(
+    data = state_centroids,
+    aes(x = long, y = lat, label = abbr,
+        fontface = if_else(sig_state, "bold", "plain")),
+    size = 2.4, color = "white"
+  ) +
+  scale_fill_manual(
+    values   = mech_colors,
+    name     = "Funding Mechanism",
+    na.value = "grey88"
+  ) +
+  coord_fixed(1.3) +
+  labs(
+    title    = "Fiscal Transmission Mechanisms for K-6 Education Spending",
+    subtitle = "States classified by conditional correlation between CZ wage growth and residual spending growth. Bold borders: significant IV elasticity. Grey: excluded states.",
+    caption  = "Amplification: rho >= 0.20 (n=9); Insulation: |rho| < 0.20 (n=15); Equalization: rho <= -0.20 (n=11). Data 2001-2021."
+  ) +
+  theme_void(base_size = 11) +
+  theme(
+    plot.title       = element_text(face = "bold", size = 13, hjust = 0.5,
+                                    margin = margin(b = 4)),
+    plot.subtitle    = element_text(size = 9, hjust = 0.5, color = "grey30",
+                                    margin = margin(b = 6)),
+    plot.caption     = element_text(size = 7.5, hjust = 0.5, color = "grey45",
+                                    margin = margin(t = 8)),
+    legend.position  = "bottom",
+    legend.title     = element_text(face = "bold", size = 10),
+    legend.text      = element_text(size = 9),
+    legend.key.width = unit(1.2, "cm"),
+    plot.margin      = margin(10, 10, 10, 10)
+  )
+
+print(fig_map)
+ggsave(here("output/fig_mechanism_map.png"), fig_map, width = 12, height = 7, dpi = 300)
+```
+
+```{r fig_mechanism_fingerprint, echo=FALSE, warning=FALSE, message=FALSE, fig.width=13, fig.height=14, cache = FALSE}
+# ============================================================
+# FIGURE 2: MECHANISM FINGERPRINT PANEL
+# Requires: revenue_summary, transfer_results, cyclical_summary
+# (created by heterogeneity_mechanism_test.R, sourced above)
+# ============================================================
+library(patchwork)
+
+mech_colors <- c(
+  "Amplification" = "#d7191c",
+  "Insulation"    = "#fdae61",
+  "Equalization"  = "#2c7bb6"
+)
+mech_levels <- c("Amplification", "Insulation", "Equalization")
+
+# Panel A: Local revenue share
+p_a <- revenue_summary %>%
+  mutate(
+    mechanism = factor(mechanism, levels = mech_levels),
+    pct_label = paste0(round(mean_local_share * 100, 1), "%")
+  ) %>%
+  ggplot(aes(x = mechanism, y = mean_local_share * 100, fill = mechanism)) +
+  geom_col(width = 0.55, alpha = 0.9) +
+  geom_text(aes(label = pct_label), vjust = -0.45, size = 3.6, fontface = "bold") +
+  scale_fill_manual(values = mech_colors) +
+  scale_y_continuous(
+    limits = c(0, 55),
+    labels = function(x) paste0(x, "%"),
+    expand = expansion(mult = c(0, 0.08))
+  ) +
+  labs(
+    title = "A. Local Revenue Reliance",
+    x     = NULL,
+    y     = "Local revenue as % of total spending"
+  ) +
+  theme_minimal(base_size = 11) +
+  theme(
+    legend.position    = "none",
+    plot.title         = element_text(face = "bold", size = 11),
+    axis.text.x        = element_text(face = "bold", size = 10),
+    panel.grid.major.x = element_blank()
+  )
+
+# Panel B: Transfer elasticity with 95% CIs
+p_b <- transfer_results %>%
+  mutate(mechanism = factor(mechanism, levels = mech_levels)) %>%
+  ggplot(aes(x = mechanism, y = elasticity, color = mechanism)) +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "grey55", linewidth = 0.6) +
+  geom_errorbar(aes(ymin = ci_lower, ymax = ci_upper), width = 0.18, linewidth = 1.1) +
+  geom_point(size = 4.5) +
+  geom_text(aes(label = paste0(sprintf("%+.3f", elasticity), sig)),
+            vjust = -1.0, size = 3.4, fontface = "bold") +
+  scale_color_manual(values = mech_colors) +
+  labs(
+    title = "B. Transfer Elasticity to Wage Growth",
+    x     = NULL,
+    y     = "beta (IG revenue growth | wage growth)"
+  ) +
+  theme_minimal(base_size = 11) +
+  theme(
+    legend.position    = "none",
+    plot.title         = element_text(face = "bold", size = 11),
+    axis.text.x        = element_text(face = "bold", size = 10),
+    panel.grid.major.x = element_blank()
+  )
+
+# Panel C: Levels-based IG redistribution test
+# Correlates mean log wages vs. mean log IG per pupil across CZs within each mechanism group.
+# Unlike growth-rate tests, this captures the structural redistribution that equalizing
+# formulas create: low-wage CZs persistently receive more IG (negative correlation).
+ig_levels_by_mech <- df_ivs %>%
+  group_by(unit, state) %>%
+  summarize(
+    mean_log_wage = mean(log_weighted_annual_avg_wkly_wage, na.rm = TRUE),
+    mean_log_ig   = mean(log_real_Total_IG_Revenue_pp,      na.rm = TRUE),
+    .groups = "drop"
+  ) %>%
+  left_join(
+    read_csv(here("output/mechanism_typology.csv"), show_col_types = FALSE) %>%
+      select(state = state_name, mechanism),
+    by = "state"
+  ) %>%
+  filter(!is.na(mechanism), is.finite(mean_log_wage), is.finite(mean_log_ig)) %>%
+  group_by(mechanism) %>%
+  filter(n() >= 3) %>%
+  summarize(
+    cor_ig_wage = cor(mean_log_wage, mean_log_ig),
+    .groups = "drop"
+  ) %>%
+  mutate(
+    mechanism = factor(mechanism, levels = mech_levels),
+    bar_vjust = if_else(cor_ig_wage >= 0, -0.45, 1.4),
+    cor_label = sprintf("%+.2f", cor_ig_wage)
+  )
+
+p_c <- ggplot(ig_levels_by_mech, aes(x = mechanism, y = cor_ig_wage, fill = mechanism)) +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "grey55", linewidth = 0.6) +
+  geom_col(width = 0.55, alpha = 0.9) +
+  geom_text(aes(label = cor_label, vjust = bar_vjust), size = 3.6, fontface = "bold") +
+  scale_fill_manual(values = mech_colors) +
+  scale_y_continuous(expand = expansion(mult = c(0.2, 0.2))) +
+  labs(
+    title = "C. IG Levels vs. Wage Levels (Structural)",
+    x     = NULL,
+    y     = "Cross-CZ correlation: mean wages vs. mean IG per pupil"
+  ) +
+  theme_minimal(base_size = 11) +
+  theme(
+    legend.position    = "none",
+    plot.title         = element_text(face = "bold", size = 11),
+    axis.text.x        = element_text(face = "bold", size = 10),
+    panel.grid.major.x = element_blank()
+  )
+
+fig_fingerprint <- (p_a | p_b | p_c) +
+  plot_annotation(
+    title    = "Structural Differences Across Fiscal Transmission Mechanisms",
+    subtitle = "Amplification (red): local-revenue-heavy, transfers unresponsive to wages. Insulation (orange): moderate local reliance, stable transfers. Equalization (blue): transfers actively offset local wage gains.",
+    caption  = "Panel A: mean local revenue as share of total spending, by mechanism group. Panel B: FE regression of IG transfer growth on wage growth, year FE, SE clustered by CZ; error bars = 95% CI. Panel C: cross-CZ correlation between total wage growth and IG revenue growth within each mechanism group; negative values indicate lower-wage CZs receive more IG funding.",
+    theme = theme(
+      plot.title    = element_text(face = "bold", size = 13, hjust = 0),
+      plot.subtitle = element_text(size = 9, color = "grey30", hjust = 0,
+                                   margin = margin(t = 2, b = 8)),
+      plot.caption  = element_text(size = 7.5, color = "grey45", hjust = 0,
+                                   margin = margin(t = 10))
+    )
+  )
+
+print(fig_fingerprint)
+ggsave(here("output/fig_mechanism_fingerprint.png"), fig_fingerprint,
+       width = 13, height = 5.5, dpi = 300)
+```
+
+```{r, cache = FALSE}
+# Safety check: heterogeneity_analysis.R adds mechanism to mechanism_typology
+# but NOT back to state_correlations. If the join in leverage_analysis_cz.R
+# therefore failed to attach mechanism to cz_conditional_all, do it here.
+# if (!"mechanism" %in% names(cz_conditional_all)) {
+#   mech_lookup <- read_csv(here("output/mechanism_typology.csv"), show_col_types = FALSE) %>%
+#     rename(state = state_name) %>%
+#     select(state, mechanism) %>%
+#     mutate(mechanism = factor(mechanism, levels = c("Amplification", "Insulation", "Equalization")))
+#   cz_conditional_all <- cz_conditional_all %>%
+#     left_join(mech_lookup, by = "state")
+# }
+
+print_lev_sum <- function(state){
+    show_state_drivers(state, n = 60) -> state_driver_temp
+    #print(state_driver_temp)
+    temp_res <- state_driver_temp$cz_id %>%
+    compare_czs(., state_name = get_state(state))
+    
+    map_wage_bust_episodes(wage_pctile = 0.25, spend_pctile = 0.25, include_states = state, 
+                           sig_states = ifelse(state %in% sig_states, state, NULL), include_cities = TRUE, city_pop = 100000)
+}
+
+# Allows to iterate over a list across separate chunks - pops a list element before the next one. 
+pop_state <- function(state_list, temp_state_code){
+  if(length(state_list) > 1){
+      remaining_state_list <- setdiff(state_list, temp_state_code)
+  }else{
+    return(NULL)
+  }
+  
+  return(remaining_state_list)
+}
+
+```
+
+```{r, fig.height=14, fig.width = 10}
+
+source(here("code/heterogeneity_industrial_share_analysis.R"))
+
+```
+
+## Mapping All States' Booms & Busts
+
+```{r}
+
+map_wage_bust_episodes(wage_pctile = 0.5, spend_pctile = 0.5, include_states = reg_states, 
+                       sig_states = sig_states, include_cities = TRUE, city_pop = 100000)
+
+```
+
+
+Note that any district and school information is sourced from the National Center for Education Statistics' "Search for Public School Districts" database: https://nces.ed.gov/ccd/districtsearch/.
+
+## Significant States
+
+<!-- ::: {.panel-tabset} -->
+
+### Colorado
+
+Colorado is a remarkable state precisely because education spending almost perfectly traces wages.
+
+Colorado is one of ten states identified has having a positive causal wage-education spending relationship. Examining its commuting zones in detail confirms this pattern, wherein commuting zones whose wages follow a stable pattern exhibit stable spending, whereas those whose wages fluctuate considerably from a smooth trend show more volatile spending patterns. Though there is evidence that the spending relationship is asymmetric. In other words, local sources increase education spending in "good" times but are partially offset by intergovernmental spending in "bad" times. However, this is far from a consistently responsive mechanism, as can be seen in commuting zone 663 where IG expenditure increases despite significant local booms to spending. Altogether, Colorado's pattern is consistent with an amplification mechanism, wherein local wage booms and busts contribute to spending increases and cuts, though the cuts are offset in certain commuting zones by intergovernmental expenditure responses. The concern remains that this intergovernmental response seems to be inconsistent across commuting zones. For example, in CZ 663 (Jackson County, CO (1 school - 1 district) & Carbon County, WY (11 schools - 2 districts)), IG expenditure increases despite significant local booms to spending, whereas in CZ 633 (Gunnison (1 district - 7 schools) and Hinsdale (1 school - 1 district) Counties), IG expenditure steps in to correct for local resource losses post-2012; and CZ 693 (Baca County - 11 schools across 5 public school districts) sees both IG spending move in tandem with local resource changes, meaning that the intergovernmental response is not reliable during local fiscal downturns.  
+
+```{r, cache = FALSE}
+
+curr_state <- sig_states_temp[1]
+
+if(!is.null(sig_states_temp)){
+  sig_states_temp <- pop_state(sig_states_temp, curr_state)
+  print(paste0("Remaining list: ", paste(sig_states_temp, collapse = ",")))
+}
+
+```
+
+```{r, cache = FALSE}
+
+print_lev_sum(curr_state)
+
+temp_trash <- show_state_drivers("08", n = 60) %>% .$cz_id %>% 
+compare_czs(., state_name = get_state("08"), highlight = c(663, 5, 633, 691, 693, 697))
+
+show_fiscal_decomposition(c(663, 5, 693, 633, 691),"08", decomp_bars = TRUE, add_wages = TRUE, wage_lag = 1)  
+
+```
+
+### Florida
+
+The spending jump Franklin County, Florida, likely comes from a significant capital expenditure allocated in the 2007-2008 budget: https://www.leg.state.fl.us/data/committees/Senate/EA/EdFundingsummary_2007.pdf.
+
+Florida represents a state in which spending co-moves with local economic conditions (GDP and wages). Essentially, spending increases prior to 2008, decreased after, and has slowly been recovering since. However, certain commuting zones still spend more per student than others, largely as a factor of uneven local revenues feeding into school systems in boom periods without equalizing intergovernmental revenues. Notably, intergovernmental revenue has become more correcting post-2008. Debate within Florida has been waged regarding the burden of public education funding (taxation at the local or state level), with state legislators preferring to push the burden to local communities, aligning with the data visualized in the below figure, where spending growth lags due to slowly recovering local economic conditions post-2008 and intergovernmental revenue decreasing across nearly all commuting zones. Essentially, in Florida (mainly post-2008), intergovernmental revenues have not served an equalizing purpose, but has rather dwindled in favor of a reliance on local funding mechanisms, leaving budgets susceptible to fluctuations in local conditions and the economic geography within the state.
+
+```{r}
+
+curr_state <- sig_states_temp[1]
+
+if(!is.null(sig_states_temp)){
+  sig_states_temp <- pop_state(sig_states_temp, curr_state)
+  print(paste0("Remaining list: ", paste(sig_states_temp, collapse = ",")))
+}
+
+
+```
+
+```{r, fig.width = 16, fig.height=14}
+
+print_lev_sum("12")
+
+florida_czs <-  c(62, 670, 410, 307, 306, 522, 334, 325, 374)
+
+temp_trash <- show_state_drivers("12", n = 60) %>% .$cz_id %>% 
+compare_czs(., state_name = get_state("12"), highlight = florida_czs)
+
+all_florida_czs <- temp_trash %>% pull(cz_id)
+
+show_fiscal_decomposition(all_florida_czs, "12", decomp_bars = TRUE, add_wages = TRUE, wage_lag = 1)  
+show_cz_industry_profile(florida_czs, state_code = "12")
+
+```
+
+### South Dakota
+
+Dips in total commuting-zone level wages in South Dakota are linked to wage losses in the construction industry (CZ 556 and 680); whereas other regions seeing similar construction-wage based dips are outweighed by the stability of wages in other sectors. Interesting cases are Pierre, SD (CZ6); Watertown, SD, whose spending increases significantly post-2008 (CZ301); Aberdeen, SD (324); Brookings, SD (467); CZ646 Boom in 2016/17; CZ 260 - major local resource losses offset by intergovernmental revenues. 
+
+There are four commuting zones that receive above-mean levels of intergovernmental transfers (260 (Dewey and Ziebach Counties), 556 (Bennett and Shannon Counties), 459 (Mellette & Todd Counties), 474 (Sioux, Cambell, Corson, Walworth Counties)). These are school districts that lie within Indian/Native American Reservations within the rural corridor of the state.
+
+The figure demonstrating the fiscal decomposition of spending changes displays commuting zones, ordered from highest to lowest spending per pupil where the black outline demonstrates the zones in the top 25th percentile of wage growth variance. Of the top five commuting zones in terms of wage variance, three include those counties within Reservations. The remaining two rely largely on wages from Construction and Agricultural industries. 
+
+```{r}
+
+curr_state <- sig_states_temp[1]
+
+if(!is.null(sig_states_temp)){
+  sig_states_temp <- pop_state(sig_states_temp, curr_state)
+  print(paste0("Remaining list: ", paste(sig_states_temp, collapse = ",")))
+}
+
+
+```
+
+```{r}
+
+print_lev_sum(curr_state)
+
+if(!exists("south_dakota_czs")){south_dakota_czs <- NULL}
+
+temp_trash <- show_state_drivers("46", n = 60) %>% .$cz_id %>% 
+compare_czs(., state_name = get_state("46"), highlight = south_dakota_czs)
+
+south_dakota_czs <- temp_trash %>% arrange(desc(sd_gr_wage)) %>% slice(1:round(0.25*nrow(temp_trash))) %>% pull(cz_id)
+all_sd_czs <- temp_trash %>% pull(cz_id)
+
+show_fiscal_decomposition(all_sd_czs, "46", decomp_bars = TRUE, add_wages = TRUE, wage_lag = 2, highlight_czs = south_dakota_czs)  
+show_cz_industry_profile(south_dakota_czs, state_code = "46")
+map_state(state_name = "46", include_cities = TRUE, highlight_czs = south_dakota_czs)
+
+```
+
+### Kentucky
+
+Additionally, 72 (Frankfort, KY, Lexington-Lafayetta) has extremely low IG spending but high wages. As is common across the United States, healthcare services dominate the commuting zones in the 25th percentile of wage growth variance. However, in these commuting zones, either natural resources (including mining) and hospitality immediately follow making up nearly 50% of employment per commuting zone. These commuting zones exhibit clear wage stagnation following the 2008 financial crisis and post-2010 decline in coal production, likely explaining these wage patterns. As can be seen in the map the commuting zones with greatest wage growth variation are clustered in the eastern coal-producing region of Kentucky, northern urban areas near Louisville, Kentucky and Cincinnati, Ohio; and on the border with Union City and Dyersburg, Tennessee, where hospitality and public administration industries are major employers.
+
+```{r}
+curr_state <- sig_states_temp[1]
+
+if(!is.null(sig_states_temp)){
+  sig_states_temp <- pop_state(sig_states_temp, curr_state)
+  print(paste0("Remaining list: ", paste(sig_states_temp, collapse = ",")))
+}
+
+```
+
+```{r}
+
+print_lev_sum(curr_state)
+
+if(!exists("kentucky_czs")){kentucky_czs <- NULL}
+
+temp_trash <- show_state_drivers("21", n = 60) %>% .$cz_id %>% 
+compare_czs(., state_name = get_state("21"), highlight = kentucky_czs)
+
+
+kentucky_czs <- temp_trash %>% arrange(desc(sd_gr_wage)) %>% slice(1:round(0.25*nrow(temp_trash))) %>% pull(cz_id)
+all_ky_czs <- temp_trash %>% pull(cz_id)
+
+# c(117, 319, 463, 450, 302))
+show_fiscal_decomposition(all_ky_czs, "21", decomp_bars = TRUE, add_wages = TRUE, wage_lag = 2, highlight_czs = kentucky_czs)  
+show_cz_industry_profile(kentucky_czs, state_code = "21")
+map_state(state_name = "21", include_cities = TRUE, highlight_czs = 89)
+
+```
+
+### North Dakota
+
+North Dakota demonstrates the relevance of stable wage growth. The commuting zones with greatest wage growth variation see a significant boost in local wages around 2010. However, wages in these areas stagnate within 2-3 years, achieving a near-zero rate of growth, whereas the remaining commuting zones largely have lower wage levels, but stable growth. The map indicates that the commuting zones seeing wage boosts with subsequent stagnation are concentrated in the western half of the state near the border with Montana. Examining the industrial composition of these two types of North Dakotan commuting zones, the western zones' top industries are healthcare, wholesale trade, and public administration; whereas in the eastern zones, the top industries behind healthcare are public administration followed by wholesale trade. Essentially, wholesale trade is a strong employer in the west due to the presence of a large agricultural sector. The shape of wages in the western commuting zones aligns with that of real value added from the agriculture, forestry, fishing, and hunting as a percentage of GDP. 
+
+The fiscal decomposition of education spending per pupil across North Dakotan commuting zones indicates a pattern in which the zones experiencing wage booms and subsequent stagnation, have seen spending booms with non-enduring effects. On the other hand, other zones have seen achieved a stable higher level of expenditure per pupil.
+
+```{r}
+curr_state <- sig_states_temp[1]
+
+if(!is.null(sig_states_temp)){
+  sig_states_temp <- pop_state(sig_states_temp, curr_state)
+  print(paste0("Remaining list: ", paste(sig_states_temp, collapse = ",")))
+}
+
+```
+
+```{r}
+
+print_lev_sum(curr_state)
+
+if(!exists("nd_czs")){nd_czs <- NULL}
+
+temp_trash <- show_state_drivers("38", n = 60) %>% .$cz_id %>% 
+compare_czs(., state_name = get_state("38"), highlight = nd_czs)
+
+nd_czs <- temp_trash %>% arrange(desc(sd_gr_wage)) %>% slice(1:(round(0.25*nrow(temp_trash)) + 1)) %>% pull(cz_id) 
+all_nd_czs <- temp_trash %>% pull(cz_id)
+
+show_fiscal_decomposition(all_nd_czs, "38", decomp_bars = TRUE, add_wages = TRUE, wage_lag = 2, highlight_czs = nd_czs)  
+show_cz_industry_profile(nd_czs, state_code = "38")
+show_cz_industry_profile(setdiff(all_nd_czs, nd_czs), state_code = "38")
+map_state(state_name = "38", include_cities = TRUE, highlight_czs = nd_czs)
+
+```
+
+### Louisiana
+
+All commuting zones with greatest wage growth variance have a high proportion of employment in the mining sector, aligning with the presence, whereas this is only a small proportion of employment in other commuting zones. The map demonstrates the location of commuting zones with considerable wage variance along the "Industrial Corridor" of Louisiana which follows the south end of the Mississippi River approaching the Gulf Coast. This corridor houses several petrochemical refineries which serve as a source of local employment while also transmitting variability in natural resource wages to commuting zones in this region. 
+
+```{r}
+curr_state <- sig_states_temp[1]
+
+if(!is.null(sig_states_temp)){
+  sig_states_temp <- pop_state(sig_states_temp, curr_state)
+  print(paste0("Remaining list: ", paste(sig_states_temp, collapse = ",")))
+}
+
+```
+
+```{r}
+
+print_lev_sum(curr_state)
+
+if(!exists("la_czs")){la_czs <- NULL}
+
+temp_trash <- show_state_drivers("22", n = 60) %>% .$cz_id %>% 
+compare_czs(., state_name = get_state("22"), highlight = la_czs)
+
+la_czs <- temp_trash %>% arrange(desc(sd_gr_wage)) %>% slice(1:(round(0.25*nrow(temp_trash)) + 1)) %>% pull(cz_id) 
+all_la_czs <- temp_trash %>% pull(cz_id)
+
+show_fiscal_decomposition(all_la_czs, "22", decomp_bars = TRUE, add_wages = TRUE, wage_lag = 2, highlight_czs = la_czs)  
+show_cz_industry_profile(la_czs, state_code = "22")
+show_cz_industry_profile(setdiff(all_la_czs, la_czs), state_code = "22")
+map_state(state_name = "22", include_cities = TRUE, highlight_czs = la_czs)
+
+
+```
+
+### Pennsylvania
+
+Pennsylvania's statistically significant relationship stems largely from a discernible connection between spending and state-level economic conditions, rather than clear delineations between diverging wage trajectories. As evidenced in the fiscal decomposition figure below, educational spending growth is largely consistent across commuting zones in the state, however the relative share of intergovernmental versus local revenue shares varies remarkably. In CZ 215 (Chautauqua County, Clarion County, Crawford County, Erie County, Forest County, Venango County, Warren County), CZ 358 (Bradford County, Clinton County, Lycoming County, Sullivan County), CZ 524 (Cameron County, Elk County, Mc Kean County, Potter County), spending growth has kept up with state-wide rates due largely to intergovernmental transfers. 
+
+```{r}
+curr_state <- sig_states_temp[1]
+
+if(!is.null(sig_states_temp)){
+  sig_states_temp <- pop_state(sig_states_temp, curr_state)
+  print(paste0("Remaining list: ", paste(sig_states_temp, collapse = ",")))
+}
+
+```
+
+```{r}
+
+print_lev_sum(curr_state)
+
+if(!exists("pa_czs")){pa_czs <- NULL}
+temp_trash <- show_state_drivers("42", n = 60) %>% .$cz_id %>% 
+compare_czs(., state_name = get_state("42"), highlight = pa_czs)
+
+pa_czs <- temp_trash %>% arrange(desc(sd_gr_wage)) %>% slice(1:(round(0.25*nrow(temp_trash)) + 1)) %>% pull(cz_id) 
+all_pa_czs <- temp_trash %>% pull(cz_id)
+
+show_fiscal_decomposition(all_pa_czs, "42", decomp_bars = TRUE, add_wages = TRUE, wage_lag = 2, highlight_czs = pa_czs)  
+show_cz_industry_profile(pa_czs, state_code = "42")
+show_cz_industry_profile(setdiff(all_pa_czs, pa_czs), state_code = "42")
+map_state(state_name = "42", include_cities = TRUE, highlight_czs = pa_czs)
+
+
+```
+
+### Oregon
+
+The commuting zones exhibiting greatest wage growth variation in Oregon are those whose employment relies heavily on the Agriculture, Forestry, Fishing, and Hunting industry, as compared to the remaining commuting zones. Notably, education spending in these commuting zones correlate strongly with wage growth rates as indicated by the red and green shading in the fiscal decomposition plots. Furthermore, examining CZ 662 (Lincoln and Tillamook Counties) with a notably strong co-movement between wage growth and education spending, these areas rely greatly on income from Accommodation and Food Services given their proximity to tourist destinations along the Pacific Coast including state forests. 
+
+```{r}
+curr_state <- sig_states_temp[1]
+
+if(!is.null(sig_states_temp)){
+  sig_states_temp <- pop_state(sig_states_temp, curr_state)
+  print(paste0("Remaining list: ", paste(sig_states_temp, collapse = ",")))
+}
+
+```
+
+```{r}
+
+print_lev_sum(curr_state)
+
+if(!exists("or_czs")){or_czs <- NULL}
+temp_trash <- show_state_drivers("41", n = 60) %>% .$cz_id %>% 
+compare_czs(., state_name = get_state("41"), highlight = or_czs)
+
+or_czs <- temp_trash %>% arrange(desc(sd_gr_wage)) %>% slice(1:(round(0.25*nrow(temp_trash)) + 1)) %>% pull(cz_id) 
+all_or_czs <- temp_trash %>% pull(cz_id)
+
+show_fiscal_decomposition(all_or_czs, "41", decomp_bars = TRUE, add_wages = TRUE, wage_lag = 2, highlight_czs = or_czs)  
+show_cz_industry_profile(or_czs, state_code = "41")
+show_cz_industry_profile(c(174, 662), state_code = "41")
+map_state(state_name = "41", include_cities = TRUE, highlight_czs = or_czs)
+
+```
+
+### Oklahoma
+
+The commuting zones exhibiting greatest wage growth variation overlap with Native American reservations and have an above-state-average share of employment in mining and public administration.  
+
+Other notable commuting zones: CZ 370 (Blaine, Dewey, Ellis, Harper, Woodward Counties) lies mainly within the Cheyenne-Arapaho Tribal Jurisdiction of Oklahoma. This commuting zone has received a decreasing amount of intergovernmental revenue since 2008 though overall spending has increased as a result of rising wages in the area. 
+
+```{r}
+curr_state <- sig_states_temp[1]
+
+if(!is.null(sig_states_temp)){
+  sig_states_temp <- pop_state(sig_states_temp, curr_state)
+  print(paste0("Remaining list: ", paste(sig_states_temp, collapse = ",")))
+}
+
+```
+
+```{r}
+
+print_lev_sum(curr_state)
+
+if(!exists("ok_czs")){ok_czs <- NULL}
+temp_trash <- show_state_drivers("40", n = 60) %>% .$cz_id %>% 
+compare_czs(., state_name = get_state("40"), highlight = ok_czs)
+
+ok_czs <- temp_trash %>% arrange(desc(sd_gr_wage)) %>% slice(1:(round(0.25*nrow(temp_trash)) + 1)) %>% pull(cz_id) 
+all_ok_czs <- temp_trash %>% pull(cz_id)
+
+show_fiscal_decomposition(all_ok_czs, "40", decomp_bars = TRUE, add_wages = TRUE, wage_lag = 2, highlight_czs = ok_czs)  
+show_cz_industry_profile(ok_czs, state_code = "40")
+show_cz_industry_profile(setdiff(all_ok_czs, ok_czs), state_code = "40")
+map_state(state_name = "40", include_cities = TRUE, highlight_czs = ok_czs)
+
+```
+
+### Indiana
+
+Indiana's public education system underwent two major shifts to its funding landscape during the time period analyzed in this study. First, the Indiana General Assembly passed Public Law 148 n 2008 which eliminated property taxes as a revenue source for the state General Fund, the main vehicle funding school operating expenses. This legal change is demonstrated clearly in the figures below, wherein the intergovernmental transfers across all commuting zones exhibits a distinct mean shift [Michael 2009; Egalite & Catt 2025]. . Second, Indiana has championed "school choice" reform programs wherein the state has, among other reforms, subsidized access to private education through publicly funded voucher programs and established several charter schools which aim to provide independently operated public schools. Critics of "school choice" reform programs cite the potential for charter schools or voucher programs to crowd out traditional public school funding (Wang et al; Shaffer; Bifulco), while proponents cite the ability to adapt to heterogeneous student needs, the benefit of a more direct student funding channel (families and students themselves decide where to spend their allotted funding dollars); and scant empirical evidence of harms to students remaining in traditional public schools (Bitler; Egalite; Wang; Egalite & Catt).
+
+However, evident in the below figures, public school funding has decreased significantly across nearly all commuting zones within Indiana following 2008. Though intergovernmental revenues have largely balanced the losses in local funding sources, public education expenditure remains at a lower level in both real and nominal terms toward the end of the time series analyzed in this study. 
+
+```{r}
+
+curr_state <- sig_states_temp[1]
+
+if(!is.null(sig_states_temp)){
+  sig_states_temp <- pop_state(sig_states_temp, curr_state)
+  print(paste0("Remaining list: ", paste(sig_states_temp, collapse = ",")))
+}
+
+```
+
+```{r}
+
+print_lev_sum(curr_state)
+
+if(!exists("temp_czs")){temp_czs <- NULL}
+temp_trash <- show_state_drivers(curr_state, n = 60) %>% .$cz_id %>% 
+compare_czs(., state_name = get_state(curr_state), highlight = temp_czs)
+
+temp_czs <- temp_trash %>% arrange(desc(sd_gr_wage)) %>% slice(1:(round(0.25*nrow(temp_trash)) + 1)) %>% pull(cz_id) 
+all_temp_czs <- temp_trash %>% pull(cz_id)
+
+show_fiscal_decomposition(all_temp_czs, curr_state, decomp_bars = TRUE, add_wages = TRUE, wage_lag = 2, highlight_czs = temp_czs)  
+show_cz_industry_profile(temp_czs, state_code = curr_state)
+show_cz_industry_profile(setdiff(all_temp_czs, temp_czs), state_code = curr_state)
+map_state(state_name = curr_state, include_cities = TRUE, highlight_czs = temp_czs)
+
+
+```
+
+<!-- ::: -->
+
+## All Other States
+
+For the states where no statistically significant causal effect is detected, we proceed with an analysis of the potential source of the negligible effect. This diagnosis is important for two reasons. First, a near-zero elasticity can indicate the presence of strong intergovernmental equalization tools to alleviate the spill-over consequences of uneven wage distributions within a state. Second, a near-zero elasticity can indicate a fundamental decoupling between commuting-zone level economic conditions. Both of these sources of a negligible elasticity would provide potential support for the wider implementation of the relevant state or local public education funding mechanisms as they effectively insulate commuting zones from a wage-based channel for public education inequity. However, a near-zero elasticity could additionally indicate either a poorly estimated functional form unfit for the research question or insufficient within-state variation to detect meaningful differences between higher- versus lower-wage commuting zones. In either of these latter cases, it will be important to highlight any statistical-, data-, or estimation-related obstacles to identification to ensure that undue conclusions about the quality of local public education funding systems are not drawn from this effect. In other words, distinguishing between states in which a non-zero elasticity has meaningful policy relevance or is simply an artifact of a poor econometric specification or insufficient data is imperative to ensure the integrity of conclusions drawn. 
+
+<!-- ::: {.panel-tabset} -->
+
+### Alabama
+
+Panel C demonstrates that the relationship between wage growth and spending growth is near flat while Panel A indicates that there is little variation in wage growth across Alabama commuting zones. Panel B demonstrates that the intergovernmental expenditure shows little evidence of responding to wage growth in an insulating or equalizing way. Combined, this indicates that the inability to detect an effect likely stems from an identification challenge rather than evidence of an effective equalization system. 
+
+```{r}
+
+rm(temp_czs)
+curr_state <- reg_states_temp[1]
+
+if(!is.null(reg_states_temp)){
+  reg_states_temp <- pop_state(reg_states_temp, curr_state)
+  # print(paste0("Remaining list: ", paste(reg_states_temp, collapse = ",")))
+}
+
+```
+
+```{r}
+
+#print_lev_sum(curr_state)
+
+if(!exists("temp_czs")){temp_czs <- NULL}
+temp_trash <- show_state_drivers(curr_state, n = 60) %>% .$cz_id %>% 
+compare_czs(., state_name = get_state(curr_state), highlight = temp_czs)
+
+temp_czs <- temp_trash %>% arrange(desc(sd_gr_wage)) %>% slice(1:(round(0.25*nrow(temp_trash)) + 1)) %>% pull(cz_id) 
+all_temp_czs <- temp_trash %>% pull(cz_id)
+
+show_fiscal_decomposition(all_temp_czs, curr_state, decomp_bars = TRUE, add_wages = TRUE, wage_lag = 2, highlight_czs = temp_czs)  
+show_cz_industry_profile(temp_czs, state_code = curr_state)
+show_cz_industry_profile(setdiff(all_temp_czs, temp_czs), state_code = curr_state)
+map_state(state_name = curr_state, include_cities = TRUE, highlight_czs = temp_czs)
+
+
+diagnose_no_effect(curr_state)
+
+
+```
+
+### Arizona
+
+Arizona has considerable variation in commuting zone level wages, aligned with the distribution of the country as a whole. However, wage growth appears to have a negligible relationship with both intergovernmental funding and spending growth indicating that commuting zones are largely decoupled from commuting-zone specific wage dynamics. Nonetheless, all six commuting zones remain strongly linked to higher-level economic indicators that appear to affect local and intergovernmental funding evenly. 
+
+The commuting zone containing Graham and Greenlee counties exhibits a wage growth rate ~50% higher than the rest of the commuting zones in the state, which can likely be attributed to the reliance of Greenlee county on employment by the Morenci Mine, the largest copper mining operation in North America. In 2024, 90% of the county's GDP and 70% of the county's total jobs relied on mining, according to a report produced by Better City and sponsored by the holding company of the Morenci Mine (Freeport-McMoran)  [source](https://www.freeportinmycommunity.com/uploads/2024.05_Greenlee_RAP_Full.pdf). We therefore exclude this commuting zone when evaluating the relationships below. 
+
+```{r}
+curr_state <- reg_states_temp[1]
+
+if(!is.null(reg_states_temp)){
+  reg_states_temp <- pop_state(reg_states_temp, curr_state)
+  # print(paste0("Remaining list: ", paste(reg_states_temp, collapse = ",")))
+}
+
+```
+
+```{r}
+
+print_lev_sum(curr_state)
+
+if(!exists("temp_czs")){temp_czs <- NULL}
+temp_trash <- show_state_drivers(curr_state, n = 60) %>% .$cz_id %>% 
+compare_czs(., state_name = get_state(curr_state), highlight = temp_czs)
+
+temp_czs <- temp_trash %>% arrange(desc(sd_gr_wage)) %>% slice(1:(round(0.25*nrow(temp_trash)) + 1)) %>% pull(cz_id) 
+all_temp_czs <- temp_trash %>% pull(cz_id)
+
+show_fiscal_decomposition(all_temp_czs, curr_state, decomp_bars = TRUE, add_wages = TRUE, wage_lag = 2, highlight_czs = temp_czs)  
+show_cz_industry_profile(temp_czs, state_code = curr_state)
+show_cz_industry_profile(setdiff(all_temp_czs, temp_czs), state_code = curr_state)
+map_state(state_name = curr_state, include_cities = TRUE, highlight_czs = temp_czs)
+
+diagnose_no_effect(curr_state, exclude = 207)
+
+
+```
+
+### Arkansas
+
+Arkansas exhibits wage variation similar to that of the full-country sample; wage growth and spending are largely decoupled; and intergovernmental revenue neither equalizes nor amplifies any wage-spending link. 
+
+```{r}
+curr_state <- reg_states_temp[1]
+
+if(!is.null(reg_states_temp)){
+  reg_states_temp <- pop_state(reg_states_temp, curr_state)
+  # print(paste0("Remaining list: ", paste(reg_states_temp, collapse = ",")))
+}
+
+```
+
+```{r}
+
+print_lev_sum(curr_state)
+
+if(!exists("temp_czs")){temp_czs <- NULL}
+temp_trash <- show_state_drivers(curr_state, n = 60) %>% .$cz_id %>% 
+compare_czs(., state_name = get_state(curr_state), highlight = temp_czs)
+
+temp_czs <- temp_trash %>% arrange(desc(sd_gr_wage)) %>% slice(1:(round(0.25*nrow(temp_trash)) + 1)) %>% pull(cz_id) 
+all_temp_czs <- temp_trash %>% pull(cz_id)
+
+show_fiscal_decomposition(all_temp_czs, curr_state, decomp_bars = TRUE, add_wages = TRUE, wage_lag = 2, highlight_czs = temp_czs)  
+show_cz_industry_profile(temp_czs, state_code = curr_state)
+show_cz_industry_profile(setdiff(all_temp_czs, temp_czs), state_code = curr_state)
+map_state(state_name = curr_state, include_cities = TRUE, highlight_czs = temp_czs)
+
+diagnose_no_effect(curr_state)
+
+```
+
+### California
+
+California exhibits slightly low wage variation, especially when excluding the two outlier commuting zones surrounding San Francisco (including some of the highest-income counties in the United States like Napa, Marin, and Monterey Counties). However, excluding these outliers, there is considerable evidence of a strong equalizing mechanism in the state whereby wage growth and spending growth exhibit a positive relationship, counter-balanced by a negative relationships between wage growth and intergovernmental expenditure. 
+
+```{r}
+curr_state <- reg_states_temp[1]
+
+if(!is.null(reg_states_temp)){
+  reg_states_temp <- pop_state(reg_states_temp, curr_state)
+  # print(paste0("Remaining list: ", paste(reg_states_temp, collapse = ",")))
+}
+
+```
+
+```{r}
+
+print_lev_sum(curr_state)
+
+if(!exists("temp_czs")){temp_czs <- NULL}
+temp_trash <- show_state_drivers(curr_state, n = 60) %>% .$cz_id %>% 
+compare_czs(., state_name = get_state(curr_state), highlight = temp_czs)
+
+temp_czs <- temp_trash %>% arrange(desc(sd_gr_wage)) %>% slice(1:(round(0.25*nrow(temp_trash)) + 1)) %>% pull(cz_id) 
+all_temp_czs <- temp_trash %>% pull(cz_id)
+
+show_fiscal_decomposition(all_temp_czs, curr_state, decomp_bars = TRUE, add_wages = TRUE, wage_lag = 2, highlight_czs = temp_czs)  
+show_cz_industry_profile(temp_czs, state_code = curr_state)
+show_cz_industry_profile(setdiff(all_temp_czs, temp_czs), state_code = curr_state)
+map_state(state_name = curr_state, include_cities = TRUE, highlight_czs = temp_czs)
+
+diagnose_no_effect(curr_state, exclude = c(218, 294))
+
+```
+
+### Georgia
+
+PN: Discard; though look at the orange and mud-yellow (likely Atlanta).
+
+```{r}
+curr_state <- reg_states_temp[1]
+
+if(!is.null(reg_states_temp)){
+  reg_states_temp <- pop_state(reg_states_temp, curr_state)
+  # print(paste0("Remaining list: ", paste(reg_states_temp, collapse = ",")))
+}
+
+```
+
+```{r}
+
+print_lev_sum(curr_state)
+
+if(!exists("temp_czs")){temp_czs <- NULL}
+temp_trash <- show_state_drivers(curr_state, n = 60) %>% .$cz_id %>% 
+compare_czs(., state_name = get_state(curr_state), highlight = temp_czs)
+
+temp_czs <- temp_trash %>% arrange(desc(sd_gr_wage)) %>% slice(1:(round(0.25*nrow(temp_trash)) + 1)) %>% pull(cz_id) 
+all_temp_czs <- temp_trash %>% pull(cz_id)
+
+show_fiscal_decomposition(all_temp_czs, curr_state, decomp_bars = TRUE, add_wages = TRUE, wage_lag = 2, highlight_czs = temp_czs)  
+show_cz_industry_profile(temp_czs, state_code = curr_state)
+show_cz_industry_profile(setdiff(all_temp_czs, temp_czs), state_code = curr_state)
+map_state(state_name = curr_state, include_cities = TRUE, highlight_czs = temp_czs)
+
+diagnose_no_effect(curr_state)
+
+```
+
+### Idaho
+
+PN: Discard; potentially look at the teal case
+
+```{r}
+curr_state <- reg_states_temp[1]
+
+if(!is.null(reg_states_temp)){
+  reg_states_temp <- pop_state(reg_states_temp, curr_state)
+  # print(paste0("Remaining list: ", paste(reg_states_temp, collapse = ",")))
+}
+
+```
+
+```{r}
+
+print_lev_sum(curr_state)
+
+if(!exists("temp_czs")){temp_czs <- NULL}
+temp_trash <- show_state_drivers(curr_state, n = 60) %>% .$cz_id %>% 
+compare_czs(., state_name = get_state(curr_state), highlight = temp_czs)
+
+temp_czs <- temp_trash %>% arrange(desc(sd_gr_wage)) %>% slice(1:(round(0.25*nrow(temp_trash)) + 1)) %>% pull(cz_id) 
+all_temp_czs <- temp_trash %>% pull(cz_id)
+
+show_fiscal_decomposition(all_temp_czs, curr_state, decomp_bars = TRUE, add_wages = TRUE, wage_lag = 2, highlight_czs = temp_czs)  
+show_cz_industry_profile(temp_czs, state_code = curr_state)
+show_cz_industry_profile(setdiff(all_temp_czs, temp_czs), state_code = curr_state)
+map_state(state_name = curr_state, include_cities = TRUE, highlight_czs = temp_czs)
+
+diagnose_no_effect(curr_state)
+
+```
+
+### Illinois
+
+Wages have a near-zero direct relationship with spending, but a slight positive relationship with intergovernmental revenue, indicating the presence of a channel between wages and intergovernmental funding growth which potentially amplifies within-state education funding inequality. The variation in spending per pupil in Illinois is not explained by wage differences in general and warrant the further investigation of other possible channels. 
+
+```{r}
+curr_state <- reg_states_temp[1]
+
+if(!is.null(reg_states_temp)){
+  reg_states_temp <- pop_state(reg_states_temp, curr_state)
+  # print(paste0("Remaining list: ", paste(reg_states_temp, collapse = ",")))
+}
+
+```
+
+```{r}
+
+print_lev_sum(curr_state)
+
+if(!exists("temp_czs")){temp_czs <- NULL}
+temp_trash <- show_state_drivers(curr_state, n = 60) %>% .$cz_id %>% 
+compare_czs(., state_name = get_state(curr_state), highlight = temp_czs)
+
+temp_czs <- temp_trash %>% arrange(desc(sd_gr_wage)) %>% slice(1:(round(0.25*nrow(temp_trash)) + 1)) %>% pull(cz_id) 
+all_temp_czs <- temp_trash %>% pull(cz_id)
+
+show_fiscal_decomposition(all_temp_czs, curr_state, decomp_bars = TRUE, add_wages = TRUE, wage_lag = 2, highlight_czs = temp_czs)  
+show_cz_industry_profile(temp_czs, state_code = curr_state)
+show_cz_industry_profile(setdiff(all_temp_czs, temp_czs), state_code = curr_state)
+map_state(state_name = curr_state, include_cities = TRUE, highlight_czs = temp_czs)
+
+diagnose_no_effect(curr_state)
+
+```
+
+### Iowa
+
+PN: Discard
+
+```{r}
+curr_state <- reg_states_temp[1]
+
+if(!is.null(reg_states_temp)){
+  reg_states_temp <- pop_state(reg_states_temp, curr_state)
+  # print(paste0("Remaining list: ", paste(reg_states_temp, collapse = ",")))
+}
+
+```
+
+```{r}
+
+print_lev_sum(curr_state)
+
+if(!exists("temp_czs")){temp_czs <- NULL}
+temp_trash <- show_state_drivers(curr_state, n = 60) %>% .$cz_id %>% 
+compare_czs(., state_name = get_state(curr_state), highlight = temp_czs)
+
+temp_czs <- temp_trash %>% arrange(desc(sd_gr_wage)) %>% slice(1:(round(0.25*nrow(temp_trash)) + 1)) %>% pull(cz_id) 
+all_temp_czs <- temp_trash %>% pull(cz_id)
+
+show_fiscal_decomposition(all_temp_czs, curr_state, decomp_bars = TRUE, add_wages = TRUE, wage_lag = 2, highlight_czs = temp_czs)  
+show_cz_industry_profile(temp_czs, state_code = curr_state)
+show_cz_industry_profile(setdiff(all_temp_czs, temp_czs), state_code = curr_state)
+map_state(state_name = curr_state, include_cities = TRUE, highlight_czs = temp_czs)
+
+diagnose_no_effect(curr_state)
+
+```
+
+### Kansas
+
+PN: Exclude
+
+```{r}
+curr_state <- reg_states_temp[1]
+
+if(!is.null(reg_states_temp)){
+  reg_states_temp <- pop_state(reg_states_temp, curr_state)
+  # print(paste0("Remaining list: ", paste(reg_states_temp, collapse = ",")))
+}
+
+```
+
+```{r}
+
+print_lev_sum(curr_state)
+
+if(!exists("temp_czs")){temp_czs <- NULL}
+temp_trash <- show_state_drivers(curr_state, n = 60) %>% .$cz_id %>% 
+compare_czs(., state_name = get_state(curr_state), highlight = temp_czs)
+
+temp_czs <- temp_trash %>% arrange(desc(sd_gr_wage)) %>% slice(1:(round(0.25*nrow(temp_trash)) + 1)) %>% pull(cz_id) 
+all_temp_czs <- temp_trash %>% pull(cz_id)
+
+show_fiscal_decomposition(all_temp_czs, curr_state, decomp_bars = TRUE, add_wages = TRUE, wage_lag = 2, highlight_czs = temp_czs)  
+show_cz_industry_profile(temp_czs, state_code = curr_state)
+show_cz_industry_profile(setdiff(all_temp_czs, temp_czs), state_code = curr_state)
+map_state(state_name = curr_state, include_cities = TRUE, highlight_czs = temp_czs)
+
+diagnose_no_effect(curr_state)
+
+```
+
+### Michigan
+
+PN: Discard; though lowest IG spending seems to be in areas with the lowest GDP and wages...
+
+```{r}
+curr_state <- reg_states_temp[1]
+
+if(!is.null(reg_states_temp)){
+  reg_states_temp <- pop_state(reg_states_temp, curr_state)
+  # print(paste0("Remaining list: ", paste(reg_states_temp, collapse = ",")))
+}
+
+```
+
+```{r}
+
+print_lev_sum(curr_state)
+
+if(!exists("temp_czs")){temp_czs <- NULL}
+temp_trash <- show_state_drivers(curr_state, n = 60) %>% .$cz_id %>% 
+compare_czs(., state_name = get_state(curr_state), highlight = temp_czs)
+
+temp_czs <- temp_trash %>% arrange(desc(sd_gr_wage)) %>% slice(1:(round(0.25*nrow(temp_trash)) + 1)) %>% pull(cz_id) 
+all_temp_czs <- temp_trash %>% pull(cz_id)
+
+show_fiscal_decomposition(all_temp_czs, curr_state, decomp_bars = TRUE, add_wages = TRUE, wage_lag = 2, highlight_czs = temp_czs)  
+show_cz_industry_profile(temp_czs, state_code = curr_state)
+show_cz_industry_profile(setdiff(all_temp_czs, temp_czs), state_code = curr_state)
+map_state(state_name = curr_state, include_cities = TRUE, highlight_czs = temp_czs)
+
+diagnose_no_effect(curr_state)
+
+```
+
+### Minnesota
+
+```{r}
+curr_state <- reg_states_temp[1]
+
+if(!is.null(reg_states_temp)){
+  reg_states_temp <- pop_state(reg_states_temp, curr_state)
+  # print(paste0("Remaining list: ", paste(reg_states_temp, collapse = ",")))
+}
+
+```
+
+```{r}
+
+print_lev_sum(curr_state)
+
+if(!exists("temp_czs")){temp_czs <- NULL}
+temp_trash <- show_state_drivers(curr_state, n = 60) %>% .$cz_id %>% 
+compare_czs(., state_name = get_state(curr_state), highlight = temp_czs)
+
+temp_czs <- temp_trash %>% arrange(desc(sd_gr_wage)) %>% slice(1:(round(0.25*nrow(temp_trash)) + 1)) %>% pull(cz_id) 
+all_temp_czs <- temp_trash %>% pull(cz_id)
+
+show_fiscal_decomposition(all_temp_czs, curr_state, decomp_bars = TRUE, add_wages = TRUE, wage_lag = 2, highlight_czs = temp_czs)  
+show_cz_industry_profile(temp_czs, state_code = curr_state)
+show_cz_industry_profile(setdiff(all_temp_czs, temp_czs), state_code = curr_state)
+map_state(state_name = curr_state, include_cities = TRUE, highlight_czs = temp_czs)
+
+diagnose_no_effect(curr_state)
+
+```
+
+### Mississippi
+
+```{r}
+curr_state <- reg_states_temp[1]
+
+if(!is.null(reg_states_temp)){
+  reg_states_temp <- pop_state(reg_states_temp, curr_state)
+  # print(paste0("Remaining list: ", paste(reg_states_temp, collapse = ",")))
+}
+
+```
+
+```{r}
+
+print_lev_sum(curr_state)
+
+if(!exists("temp_czs")){temp_czs <- NULL}
+temp_trash <- show_state_drivers(curr_state, n = 60) %>% .$cz_id %>% 
+compare_czs(., state_name = get_state(curr_state), highlight = temp_czs)
+
+temp_czs <- temp_trash %>% arrange(desc(sd_gr_wage)) %>% slice(1:(round(0.25*nrow(temp_trash)) + 1)) %>% pull(cz_id) 
+all_temp_czs <- temp_trash %>% pull(cz_id)
+
+show_fiscal_decomposition(all_temp_czs, curr_state, decomp_bars = TRUE, add_wages = TRUE, wage_lag = 2, highlight_czs = temp_czs)  
+show_cz_industry_profile(temp_czs, state_code = curr_state)
+show_cz_industry_profile(setdiff(all_temp_czs, temp_czs), state_code = curr_state)
+map_state(state_name = curr_state, include_cities = TRUE, highlight_czs = temp_czs)
+
+diagnose_no_effect(curr_state)
+
+```
+
+### Missouri
+
+Missouri exhibits a positive relationship between wages and spending growth. However, intergovernmental revenues do
+
+```{r}
+curr_state <- reg_states_temp[1]
+
+if(!is.null(reg_states_temp)){
+  reg_states_temp <- pop_state(reg_states_temp, curr_state)
+  # print(paste0("Remaining list: ", paste(reg_states_temp, collapse = ",")))
+}
+
+```
+
+```{r}
+
+print_lev_sum(curr_state)
+
+if(!exists("temp_czs")){temp_czs <- NULL}
+temp_trash <- show_state_drivers(curr_state, n = 60) %>% .$cz_id %>% 
+compare_czs(., state_name = get_state(curr_state), highlight = temp_czs)
+
+temp_czs <- temp_trash %>% arrange(desc(sd_gr_wage)) %>% slice(1:(round(0.25*nrow(temp_trash)) + 1)) %>% pull(cz_id) 
+all_temp_czs <- temp_trash %>% pull(cz_id)
+
+show_fiscal_decomposition(all_temp_czs, curr_state, decomp_bars = TRUE, add_wages = TRUE, wage_lag = 2, highlight_czs = temp_czs)  
+show_cz_industry_profile(temp_czs, state_code = curr_state)
+show_cz_industry_profile(setdiff(all_temp_czs, temp_czs), state_code = curr_state)
+map_state(state_name = curr_state, include_cities = TRUE, highlight_czs = temp_czs)
+
+diagnose_no_effect(curr_state)
+
+```
+
+### Montana
+
+PN: Discard
+
+```{r}
+curr_state <- reg_states_temp[1]
+
+if(!is.null(reg_states_temp)){
+  reg_states_temp <- pop_state(reg_states_temp, curr_state)
+  # print(paste0("Remaining list: ", paste(reg_states_temp, collapse = ",")))
+}
+
+```
+
+```{r}
+
+print_lev_sum(curr_state)
+
+if(!exists("temp_czs")){temp_czs <- NULL}
+temp_trash <- show_state_drivers(curr_state, n = 60) %>% .$cz_id %>% 
+compare_czs(., state_name = get_state(curr_state), highlight = temp_czs)
+
+temp_czs <- temp_trash %>% arrange(desc(sd_gr_wage)) %>% slice(1:(round(0.25*nrow(temp_trash)) + 1)) %>% pull(cz_id) 
+all_temp_czs <- temp_trash %>% pull(cz_id)
+
+show_fiscal_decomposition(all_temp_czs, curr_state, decomp_bars = TRUE, add_wages = TRUE, wage_lag = 2, highlight_czs = temp_czs)  
+show_cz_industry_profile(temp_czs, state_code = curr_state)
+show_cz_industry_profile(setdiff(all_temp_czs, temp_czs), state_code = curr_state)
+map_state(state_name = curr_state, include_cities = TRUE, highlight_czs = temp_czs)
+
+diagnose_no_effect(curr_state)
+
+```
+
+### Nebraska
+
+PN: Discard; potentially look at CZ with above-average IG spending and increasing IG spending (two pink lines)
+
+```{r}
+curr_state <- reg_states_temp[1]
+
+if(!is.null(reg_states_temp)){
+  reg_states_temp <- pop_state(reg_states_temp, curr_state)
+  # print(paste0("Remaining list: ", paste(reg_states_temp, collapse = ",")))
+}
+
+```
+
+```{r}
+
+print_lev_sum(curr_state)
+
+if(!exists("temp_czs")){temp_czs <- NULL}
+temp_trash <- show_state_drivers(curr_state, n = 60) %>% .$cz_id %>% 
+compare_czs(., state_name = get_state(curr_state), highlight = temp_czs)
+
+temp_czs <- temp_trash %>% arrange(desc(sd_gr_wage)) %>% slice(1:(round(0.25*nrow(temp_trash)) + 1)) %>% pull(cz_id) 
+all_temp_czs <- temp_trash %>% pull(cz_id)
+
+show_fiscal_decomposition(all_temp_czs, curr_state, decomp_bars = TRUE, add_wages = TRUE, wage_lag = 2, highlight_czs = temp_czs)  
+show_cz_industry_profile(temp_czs, state_code = curr_state)
+show_cz_industry_profile(setdiff(all_temp_czs, temp_czs), state_code = curr_state)
+map_state(state_name = curr_state, include_cities = TRUE, highlight_czs = temp_czs)
+
+diagnose_no_effect(curr_state)
+
+```
+
+### New Mexico
+
+Prelim notes: pink commuting zones - low wage, high spend
+
+```{r}
+curr_state <- reg_states_temp[1]
+
+if(!is.null(reg_states_temp)){
+  reg_states_temp <- pop_state(reg_states_temp, curr_state)
+  # print(paste0("Remaining list: ", paste(reg_states_temp, collapse = ",")))
+}
+
+```
+
+```{r}
+
+print_lev_sum(curr_state)
+
+if(!exists("temp_czs")){temp_czs <- NULL}
+temp_trash <- show_state_drivers(curr_state, n = 60) %>% .$cz_id %>% 
+compare_czs(., state_name = get_state(curr_state), highlight = temp_czs)
+
+temp_czs <- temp_trash %>% arrange(desc(sd_gr_wage)) %>% slice(1:(round(0.25*nrow(temp_trash)) + 1)) %>% pull(cz_id) 
+all_temp_czs <- temp_trash %>% pull(cz_id)
+
+show_fiscal_decomposition(all_temp_czs, curr_state, decomp_bars = TRUE, add_wages = TRUE, wage_lag = 2, highlight_czs = temp_czs)  
+show_cz_industry_profile(temp_czs, state_code = curr_state)
+show_cz_industry_profile(setdiff(all_temp_czs, temp_czs), state_code = curr_state)
+map_state(state_name = curr_state, include_cities = TRUE, highlight_czs = temp_czs)
+
+diagnose_no_effect(curr_state)
+
+```
+
+### New York
+
+PN: Orange and gold CZ with high wages, high spending per pupil, and low IG - PERFECT EXAMPLE OF EQUALIZATION!
+
+```{r}
+curr_state <- reg_states_temp[1]
+
+if(!is.null(reg_states_temp)){
+  reg_states_temp <- pop_state(reg_states_temp, curr_state)
+  # print(paste0("Remaining list: ", paste(reg_states_temp, collapse = ",")))
+}
+
+```
+
+```{r}
+
+print_lev_sum(curr_state)
+
+if(!exists("temp_czs")){temp_czs <- NULL}
+temp_trash <- show_state_drivers(curr_state, n = 60) %>% .$cz_id %>% 
+compare_czs(., state_name = get_state(curr_state), highlight = temp_czs)
+
+temp_czs <- temp_trash %>% arrange(desc(sd_gr_wage)) %>% slice(1:(round(0.25*nrow(temp_trash)) + 1)) %>% pull(cz_id) 
+all_temp_czs <- temp_trash %>% pull(cz_id)
+
+show_fiscal_decomposition(all_temp_czs, curr_state, decomp_bars = TRUE, add_wages = TRUE, wage_lag = 2, highlight_czs = temp_czs)  
+show_cz_industry_profile(temp_czs, state_code = curr_state)
+show_cz_industry_profile(setdiff(all_temp_czs, temp_czs), state_code = curr_state)
+map_state(state_name = curr_state, include_cities = TRUE, highlight_czs = temp_czs)
+
+diagnose_no_effect(curr_state)
+
+```
+
+### Ohio
+
+Prelim Notes: Variability in IG Spending; Orange CZ with higher spending; blue and green with collapsing spending.
+
+```{r}
+curr_state <- reg_states_temp[1]
+
+if(!is.null(reg_states_temp)){
+  reg_states_temp <- pop_state(reg_states_temp, curr_state)
+  # print(paste0("Remaining list: ", paste(reg_states_temp, collapse = ",")))
+}
+
+```
+
+```{r}
+
+print_lev_sum(curr_state)
+
+if(!exists("temp_czs")){temp_czs <- NULL}
+temp_trash <- show_state_drivers(curr_state, n = 60) %>% .$cz_id %>% 
+compare_czs(., state_name = get_state(curr_state), highlight = temp_czs)
+
+temp_czs <- temp_trash %>% arrange(desc(sd_gr_wage)) %>% slice(1:(round(0.25*nrow(temp_trash)) + 1)) %>% pull(cz_id) 
+all_temp_czs <- temp_trash %>% pull(cz_id)
+
+show_fiscal_decomposition(all_temp_czs, curr_state, decomp_bars = TRUE, add_wages = TRUE, wage_lag = 2, highlight_czs = temp_czs)  
+show_cz_industry_profile(temp_czs, state_code = curr_state)
+show_cz_industry_profile(setdiff(all_temp_czs, temp_czs), state_code = curr_state)
+map_state(state_name = curr_state, include_cities = TRUE, highlight_czs = temp_czs)
+
+diagnose_no_effect(curr_state)
+
+```
+
+### South Carolina
+
+PN: Deemed potential outlier...although I now see that the CZ with lowest GDP per capita gets the most IG revenue.
+
+```{r}
+curr_state <- reg_states_temp[1]
+
+if(!is.null(reg_states_temp)){
+  reg_states_temp <- pop_state(reg_states_temp, curr_state)
+  # print(paste0("Remaining list: ", paste(reg_states_temp, collapse = ",")))
+}
+
+```
+
+```{r}
+
+print_lev_sum(curr_state)
+
+if(!exists("temp_czs")){temp_czs <- NULL}
+temp_trash <- show_state_drivers(curr_state, n = 60) %>% .$cz_id %>% 
+compare_czs(., state_name = get_state(curr_state), highlight = temp_czs)
+
+temp_czs <- temp_trash %>% arrange(desc(sd_gr_wage)) %>% slice(1:(round(0.25*nrow(temp_trash)) + 1)) %>% pull(cz_id) 
+all_temp_czs <- temp_trash %>% pull(cz_id)
+
+show_fiscal_decomposition(all_temp_czs, curr_state, decomp_bars = TRUE, add_wages = TRUE, wage_lag = 2, highlight_czs = temp_czs)  
+show_cz_industry_profile(temp_czs, state_code = curr_state)
+show_cz_industry_profile(setdiff(all_temp_czs, temp_czs), state_code = curr_state)
+map_state(state_name = curr_state, include_cities = TRUE, highlight_czs = temp_czs)
+
+diagnose_no_effect(curr_state)
+
+```
+
+### Texas
+
+PN: none...
+
+```{r}
+curr_state <- reg_states_temp[1]
+
+if(!is.null(reg_states_temp)){
+  reg_states_temp <- pop_state(reg_states_temp, curr_state)
+  # print(paste0("Remaining list: ", paste(reg_states_temp, collapse = ",")))
+}
+
+```
+
+```{r}
+
+print_lev_sum(curr_state)
+
+if(!exists("temp_czs")){temp_czs <- NULL}
+temp_trash <- show_state_drivers(curr_state, n = 60) %>% .$cz_id %>% 
+compare_czs(., state_name = get_state(curr_state), highlight = temp_czs)
+
+temp_czs <- temp_trash %>% arrange(desc(sd_gr_wage)) %>% slice(1:(round(0.25*nrow(temp_trash)) + 1)) %>% pull(cz_id) 
+all_temp_czs <- temp_trash %>% pull(cz_id)
+
+show_fiscal_decomposition(all_temp_czs, curr_state, decomp_bars = TRUE, add_wages = TRUE, wage_lag = 2, highlight_czs = temp_czs)  
+show_cz_industry_profile(temp_czs, state_code = curr_state)
+show_cz_industry_profile(setdiff(all_temp_czs, temp_czs), state_code = curr_state)
+map_state(state_name = curr_state, include_cities = TRUE, highlight_czs = temp_czs)
+
+diagnose_no_effect(curr_state)
+
+```
+
+### Utah
+
+PN: teal commuting zone has high spending and increasing IG at the same time as GDP per capita nd wages are stagnating/decreasing! Interesting case as well
+
+```{r}
+curr_state <- reg_states_temp[1]
+
+if(!is.null(reg_states_temp)){
+  reg_states_temp <- pop_state(reg_states_temp, curr_state)
+  # print(paste0("Remaining list: ", paste(reg_states_temp, collapse = ",")))
+}
+
+```
+
+```{r}
+
+print_lev_sum(curr_state)
+
+if(!exists("temp_czs")){temp_czs <- NULL}
+temp_trash <- show_state_drivers(curr_state, n = 60) %>% .$cz_id %>% 
+compare_czs(., state_name = get_state(curr_state), highlight = temp_czs)
+
+temp_czs <- temp_trash %>% arrange(desc(sd_gr_wage)) %>% slice(1:(round(0.25*nrow(temp_trash)) + 1)) %>% pull(cz_id) 
+all_temp_czs <- temp_trash %>% pull(cz_id)
+
+show_fiscal_decomposition(all_temp_czs, curr_state, decomp_bars = TRUE, add_wages = TRUE, wage_lag = 2, highlight_czs = temp_czs)  
+show_cz_industry_profile(temp_czs, state_code = curr_state)
+show_cz_industry_profile(setdiff(all_temp_czs, temp_czs), state_code = curr_state)
+map_state(state_name = curr_state, include_cities = TRUE, highlight_czs = temp_czs)
+
+diagnose_no_effect(curr_state)
+
+```
+
+### Washington
+
+PN: Red CZ has highest GDP, enrollment, and wages, but lowest IG - also potentially a good example of equalization at play.
+
+```{r}
+curr_state <- reg_states_temp[1]
+
+if(!is.null(reg_states_temp)){
+  reg_states_temp <- pop_state(reg_states_temp, curr_state)
+  # print(paste0("Remaining list: ", paste(reg_states_temp, collapse = ",")))
+}
+
+```
+
+```{r}
+
+print_lev_sum(curr_state)
+
+if(!exists("temp_czs")){temp_czs <- NULL}
+temp_trash <- show_state_drivers(curr_state, n = 60) %>% .$cz_id %>% 
+compare_czs(., state_name = get_state(curr_state), highlight = temp_czs)
+
+temp_czs <- temp_trash %>% arrange(desc(sd_gr_wage)) %>% slice(1:(round(0.25*nrow(temp_trash)) + 1)) %>% pull(cz_id) 
+all_temp_czs <- temp_trash %>% pull(cz_id)
+
+show_fiscal_decomposition(all_temp_czs, curr_state, decomp_bars = TRUE, add_wages = TRUE, wage_lag = 2, highlight_czs = temp_czs)  
+show_cz_industry_profile(temp_czs, state_code = curr_state)
+show_cz_industry_profile(setdiff(all_temp_czs, temp_czs), state_code = curr_state)
+map_state(state_name = curr_state, include_cities = TRUE, highlight_czs = temp_czs)
+
+diagnose_no_effect(curr_state)
+
+```
+
+### West Virginia
+
+PN: Purple line is potential outlier
+
+```{r}
+curr_state <- reg_states_temp[1]
+
+if(!is.null(reg_states_temp)){
+  reg_states_temp <- pop_state(reg_states_temp, curr_state)
+  # print(paste0("Remaining list: ", paste(reg_states_temp, collapse = ",")))
+}
+
+```
+
+```{r}
+
+print_lev_sum(curr_state)
+
+if(!exists("temp_czs")){temp_czs <- NULL}
+temp_trash <- show_state_drivers(curr_state, n = 60) %>% .$cz_id %>% 
+compare_czs(., state_name = get_state(curr_state), highlight = temp_czs)
+
+temp_czs <- temp_trash %>% arrange(desc(sd_gr_wage)) %>% slice(1:(round(0.25*nrow(temp_trash)) + 1)) %>% pull(cz_id) 
+all_temp_czs <- temp_trash %>% pull(cz_id)
+
+show_fiscal_decomposition(all_temp_czs, curr_state, decomp_bars = TRUE, add_wages = TRUE, wage_lag = 2, highlight_czs = temp_czs)  
+show_cz_industry_profile(temp_czs, state_code = curr_state)
+show_cz_industry_profile(setdiff(all_temp_czs, temp_czs), state_code = curr_state)
+map_state(state_name = curr_state, include_cities = TRUE, highlight_czs = temp_czs)
+
+diagnose_no_effect(curr_state)
+
+```
+
+### Wisconsin
+
+PN: Discard
+
+```{r}
+curr_state <- reg_states_temp[1]
+
+if(!is.null(reg_states_temp)){
+  reg_states_temp <- pop_state(reg_states_temp, curr_state)
+  # print(paste0("Remaining list: ", paste(reg_states_temp, collapse = ",")))
+}
+
+```
+
+```{r}
+
+print_lev_sum(curr_state)
+
+if(!exists("temp_czs")){temp_czs <- NULL}
+temp_trash <- show_state_drivers(curr_state, n = 60) %>% .$cz_id %>% 
+compare_czs(., state_name = get_state(curr_state), highlight = temp_czs)
+
+temp_czs <- temp_trash %>% arrange(desc(sd_gr_wage)) %>% slice(1:(round(0.25*nrow(temp_trash)) + 1)) %>% pull(cz_id) 
+all_temp_czs <- temp_trash %>% pull(cz_id)
+
+show_fiscal_decomposition(all_temp_czs, curr_state, decomp_bars = TRUE, add_wages = TRUE, wage_lag = 2, highlight_czs = temp_czs)  
+show_cz_industry_profile(temp_czs, state_code = curr_state)
+show_cz_industry_profile(setdiff(all_temp_czs, temp_czs), state_code = curr_state)
+map_state(state_name = curr_state, include_cities = TRUE, highlight_czs = temp_czs)
+
+diagnose_no_effect(curr_state)
+
+```
+
+### Wyoming
+
+```{r}
+curr_state <- reg_states_temp[1]
+
+if(!is.null(reg_states_temp)){
+  reg_states_temp <- pop_state(reg_states_temp, curr_state)
+  # print(paste0("Remaining list: ", paste(reg_states_temp, collapse = ",")))
+}
+
+```
+
+```{r}
+
+print_lev_sum(curr_state)
+
+if(!exists("temp_czs")){temp_czs <- NULL}
+temp_trash <- show_state_drivers(curr_state, n = 60) %>% .$cz_id %>% 
+compare_czs(., state_name = get_state(curr_state), highlight = temp_czs)
+
+temp_czs <- temp_trash %>% arrange(desc(sd_gr_wage)) %>% slice(1:(round(0.25*nrow(temp_trash)) + 1)) %>% pull(cz_id) 
+all_temp_czs <- temp_trash %>% pull(cz_id)
+
+show_fiscal_decomposition(all_temp_czs, curr_state, decomp_bars = TRUE, add_wages = TRUE, wage_lag = 2, highlight_czs = temp_czs)  
+show_cz_industry_profile(temp_czs, state_code = curr_state)
+show_cz_industry_profile(setdiff(all_temp_czs, temp_czs), state_code = curr_state)
+map_state(state_name = curr_state, include_cities = TRUE, highlight_czs = temp_czs)
+
+diagnose_no_effect(curr_state)
+
+```
+<!-- ::: -->

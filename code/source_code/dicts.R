@@ -248,9 +248,10 @@ common_theme <- theme(
   axis.title.y = element_text(size = 12),
   axis.text.x = element_text(size = 10),
   axis.text.y = element_text(size = 10),
-  panel.background = element_rect(fill = NA),
   panel.grid.major = element_line(color = "grey90", linewidth = 0.5),
-  panel.grid.minor = element_line(color = "grey90", linewidth = 0.25)
+  panel.grid.minor = element_line(color = "grey90", linewidth = 0.25),
+  panel.background = element_rect(fill = NA, color = NA),  # added color = NA
+  plot.background = element_rect(fill = NA, color = NA),   # added this line
 
 )
 
