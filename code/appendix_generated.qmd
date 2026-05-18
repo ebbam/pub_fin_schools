@@ -285,6 +285,22 @@ regressions.
 \FloatBarrier
 ```
 
+## Correlation Between GDP Growth Rates and Wage Growth Rates by State
+
+Below, we calculate a standard Pearson correlation
+coefficient between the commuting zone time series of GDP per capita and
+wages, indicating that several states house commuting zones whose wages
+do not track GDP growth. Many states see nearly exclusively positive
+correlation coefficients, whereas others see a mix of commuting zones
+where the relationship is positive or negative.
+
+```{r, ref.label='unnamed-chunk-22', echo = FALSE, eval=TRUE, results = 'asis'}
+```
+
+```{=latex}
+\FloatBarrier
+```
+
 # Growth Rate Sample Partitioning
 
 In the following section, we provide supplementary information and econometric estimation details and results not included in the main text pertaining to the sample partitioning exercise by commuting zone level growth rates.
@@ -298,7 +314,7 @@ In the following section, we provide supplementary information and econometric e
 
 ## Baseline Models for Growth Rate Sample Partitioning
 
-
+...
 
 ```{r, ref.label='baseline_growth_rate_partitioning', echo = FALSE, eval=TRUE, results = 'asis'}
 ```
@@ -349,6 +365,14 @@ negative elasticities.
 \FloatBarrier
 ```
 
+```{=latex}
+\input{/Users/ebbamark/Documents/Documents - Nuff-Malham/GitHub/pub_fin_schools/data/raw/funding_distribution/data_desc_funding_dist.tex}
+```
+
+```{=latex}
+\FloatBarrier
+```
+
 ## Instrumental Variable versus Descriptive Relationship
 
 The below plots displays the descriptive regression estimate compared to the IV fitted regression coefficient, describing the effect of a 1% increase in local wages on education expenditure per pupil. Majority of states find at least a coefficient of equal sign. Interestingly though, the valid and statistically significant instrumental variable coefficients only ever identify positive elasticities.
@@ -371,11 +395,53 @@ In the following section, we provide additional detail about the estimated indus
 \FloatBarrier
 ```
 
+### Industry-level Shift-share Decomposition
+
+Finally, given our shift-share instruments are the composite effect of
+shifts in industry-level real value added, we can decompose this
+instrument into industry-specific real value added shocks to test the robustness of our instrument choice. This
+decomposition allows us to examine the effect of industry-specific
+changes across states in a more explicit manner. In other words, we
+re-design our instrument as...
+
+
+$$
+\tilde{Z}_{ijt} = G_{njt} *  \frac{N_{ij\tau}}{N_{i\tau}}
+$$ {#eq-bartik-decomposed}
+
+
+...rather than the sum of all industry-level shocks.
+
+
+We estimate separate panel regressions using the full commuting zone
+sample and then grouping commuting zones by state, instrumenting local
+level wages by these decomposed shift-share shocks by industry.
+
+
+Using our value added-based shift share instrument, the figure below
+demonstrates the overall treatment effect of local wage changes
+instrumented via an industry-specific GDP shock. We find that regardless
+of the instrument design, the coefficient estimate is consistent with
+the baseline results, where the estimated effect of a 10% change to
+local wages on public education expenditure is approximately a 2%
+increase, with the effect's magnitude varying meaningfully for several
+states. We plot the relevant state-level effects for those states whose
+estimations pass the same restriction criteria as above (F statistics
+\<= 12 and p-value \< 0.05 and the p-value of the second stage
+coefficient of interest is \< 0.05). This estimation provides a view on
+the strength of our chosen instrument. Regardless of instrument choice,
+the detected effect should be consistent.
+
+```{r, ref.label='indind_SM', echo = FALSE, eval=TRUE, results = 'asis'}
+```
+
+```{=latex}
+\FloatBarrier
+```
+
 ## Wage-based SS in Industry-by-Industry Estimation
 
-Using our wage-based shift share instrument, the below demonstrates the
-overall treatment effect of local wage changes instrumented via our
-wage-based shift-share shock.
+Using our wage-based shift share instrument, the below demonstrates the overall treatment effect of local wage changes instrumented via our wage-based shift-share shock.
 
 ```{r, ref.label='wage_ss_ind_by_ind', echo = FALSE, eval=TRUE, results = 'asis'}
 ```
@@ -436,71 +502,12 @@ larger point estimates, though with wider standard errors, while the
 VA-based instrument produces effects in line with earlier results.
 Overall, this robustness exercise confirms that the causal relationship
 between housing wealth and education spending is not confined to
-affluent areas but reflects a broader, generalizable pattern. These
+affluent areas but reflects a broader, generalizable pattern. s
 findings confirm that the main result is not driven solely by affluent
 jurisdictions, but reflects a more general relationship between local
 housing wealth and education spending.
 
 ```{r, ref.label='high_income_outliers', echo = FALSE, eval=TRUE, results = 'asis'}
-```
-
-```{=latex}
-\FloatBarrier
-```
-
-## Panel VAR Specification
-
-$$
-Y_{it} = \alpha_i +  \sum_{k = 1}^{4} \gamma_{k}A_{i,t-k} + \beta X_{it} + \varepsilon_{it}
-$$
-
-Where we approach a level and per capita value expression of the
-relationship between total education expenditure, intergovernmental
-revenue, house prices conditioned on GDP and wage levels.
-
-$$
-Y_{it} =
-\begin{bmatrix}
-\log(\text{real Total Educ. Exp.})_{it} \\
-\log(\text{real Total IG Revenue})_{it} \\
-\log(\text{HPI})_{it}
-\end{bmatrix},
-\quad
-X_{it} =
-\begin{bmatrix}
-\log(\text{real GDP})_{it} \\
-\log(\text{wage})_{it}
-\end{bmatrix}
-$$
-
-- $A_1, A_2, A_3, A_4$ are $3 \times 3$ coefficient matrices
-- $\beta$ is a $3 \times 2$ matrix of coefficients on the exogenous variables
-- $\alpha_i$ is a vector of unit fixed effects
-- $\varepsilon_{it}$ is the error term
-
-Where
-
-$$
-Y_{it} =
-\begin{bmatrix}
-\log(\text{real Own Source Rev. per person})_{it} \\
-\log(\text{real IG Revenue per person})_{it} \\
-\log(\text{wage})_{it} \\
-\log(\text{HPI})_{it}
-\end{bmatrix},
-\quad
-X_{it} =
-\begin{bmatrix}
-\log(\text{real GDP per capita})_{it}
-\end{bmatrix}
-$$
-
-- $A_1, A_2, A_3, A_4$ are $4 \times 4$ coefficient matrices
-- $B$ is a $4 \times 1$ coefficient matrix
-- $\alpha_i$ unit fixed effects
-- $\varepsilon_{it}$ error term
-
-```{r, ref.label='appendix_pvar', echo = FALSE, eval=TRUE, results = 'asis'}
 ```
 
 ```{=latex}

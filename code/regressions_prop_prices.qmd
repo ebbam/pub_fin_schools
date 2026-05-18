@@ -90,7 +90,7 @@ fitstat_register(
   alias = "Adj. R2 (1st stage)"
 )
 
-iv_fitstats = ~ n + r2_firststage + ar2_firststage + ivfall + ivfall.p + wh + wh.p + ivwaldall + ivwaldall.p
+iv_fitstats = ~ n + ivfall + ivfall.p + wh + wh.p + ivwaldall + ivwaldall.p
 
 default_iv_note = c("", "Note that the R2 and Adjusted R2 values for second-stage regressions are irrelevant information here. I have not yet figured out how to suppress them from the regression tables but will do so for the final version.")
 
@@ -454,7 +454,7 @@ However, examining the structure of the growth rate shock, the instability of th
 
 ```{r, echo = FALSE, results = 'asis', cache = TRUE}
 
-iv_lev_form <- iv_lev_form <- "log_real_Elem_Educ_Total_Exp_pp ~  l1_log_real_Elem_Educ_Total_Exp_pp + log_real_Total_IG_Revenue_pp + log_real_gdp_priv_ind_pc + log_Enrollment + pct_black + pct_hispanic"
+iv_lev_form <- "log_real_Elem_Educ_Total_Exp_pp ~  l1_log_real_Elem_Educ_Total_Exp_pp + log_real_Total_IG_Revenue_pp + log_real_gdp_priv_ind_pc + log_Enrollment + pct_black + pct_hispanic"
 
 df_ivs <- left_join(mines_cz, rename(ss_temp, unit = cz_id), by = c("year","unit")) %>% 
     group_by(unit) %>% 
@@ -566,8 +566,14 @@ iv_model_2d_lev_gr <- feols(as.formula(paste0(iv_lev_form, " | unit + year | log
     data = left_join(mines_cz, rename(ss_temp, unit = cz_id), by = c("year","unit")), panel.id = c("unit", "year"), cluster = "unit")
 
 iv_model_2d_lev_lev <- feols(
-    as.formula(paste0(iv_lev_form, " | unit + year | log_hpi ~ lev_gdp_ss_2d")),
-    data = left_join(mines_cz, rename(ss_temp, unit = cz_id), by = c("year","unit")), panel.id = c("unit", "year"), cluster = "unit")
+    as.formula(paste0(iv_lev_form, " | unit + year | log_hpi ~ l1_log_hpi + lev_gdp_ss_2d + l1_lev_gdp_ss_2d + l2_lev_gdp_ss_2d")),
+    data = df_ivs, panel.id = c("unit", "year"), cluster = "unit")
+
+iv_model_2d_lev_lev_no_ar <- feols(
+    as.formula(paste0(iv_lev_form, " | unit + year | log_hpi ~ lev_gdp_ss_2d + l1_lev_gdp_ss_2d + l2_lev_gdp_ss_2d")),
+    data = df_ivs, panel.id = c("unit", "year"), cluster = "unit")
+
+etable(iv_model_2d_lev_lev, iv_model_2d_lev_lev_no_ar, adjustbox = TRUE, stage = 1:2, fitstat = iv_fitstats, tex = latex_tables, title ="GDP-based Shift-share instrument (Level-Level, varying state and CZ fixed effects and lags.")
 
 iv_model_2d_lev_gr_l1 <- feols(as.formula(paste0(iv_lev_form, " | unit + year | log_hpi ~ l(gdp_ss_2d,1)")),
     data = left_join(mines_cz, rename(ss_temp, unit = cz_id), by = c("year","unit")), panel.id = c("unit", "year"), cluster = "unit")

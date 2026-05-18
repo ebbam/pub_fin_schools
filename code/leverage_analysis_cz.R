@@ -121,8 +121,8 @@ if (exists("cz_names") && exists("cz_conditional_all")) {
     ) %>%
     # Create display label: "descriptor (unit)"
     mutate(
-      cz_label = ifelse(!is.na(descriptor) & descriptor != "", 
-                        descriptor,
+      cz_label = ifelse(!is.na(descriptor) & descriptor != "",
+                        paste0(descriptor, " (CZ", cz_id, ")"),
                         paste0("No Met Area; CZ: ", as.character(unit), "; FIPS: ", county_name))
     )
 }
@@ -799,11 +799,20 @@ show_cz_industry_profile <- function(cz_ids, state_code, top_n = 7) {
 map_wage_bust_episodes <- function(window       = 3,
                                    wage_pctile  = 0.25,
                                    spend_pctile = 0.25,
-                                   exclude_states = NULL, 
+                                   exclude_states = NULL,
                                    include_states = NULL,
                                    sig_states = NULL,
                                    include_cities = FALSE,
-                                   city_pop = 50000) {
+                                   city_pop = 50000,
+                                   wage_method = "raw",
+                                   show_fiscal_insets = FALSE,
+                                   inset_scale = 0.15) {
+  # wage_method: one of
+  #   "raw"       — actual log wages (original behaviour)
+  #   "iv_pooled" — pooled first-stage instrument-only component (β·Z, all states)
+  #   "iv_state"  — per-state first stages; each CZ gets its own state's β·Z
+
+  stopifnot(wage_method %in% c("raw", "iv_pooled", "iv_state"))
 
   lag_n <- window - 1   # e.g. window=3 → lead 2 years forward
 
@@ -817,26 +826,103 @@ map_wage_bust_episodes <- function(window       = 3,
     ) %>%
     arrange(unit, year)
 
+  # ── 1b. Wage variable for episode detection ────────────────────────────────
+  if (wage_method == "raw") {
+
+    panel <- panel %>% mutate(wage_episode = log_wage)
+    cat("wage_method = 'raw': using actual log wages.\n")
+
+  } else if (wage_method == "iv_pooled") {
+
+    # Pooled first stage (unit + year FEs). Extract only the instrument-driven
+    # component β1·l1_lev_gdp_ss_2d + β2·l2_lev_gdp_ss_2d, stripped of FEs
+    # and AR(1) persistence, so episodes reflect exogenous industry-mix shocks.
+    fs <- feols(
+      log_weighted_annual_avg_wkly_wage ~
+        l1_log_weighted_annual_avg_wkly_wage +
+        l1_lev_gdp_ss_2d + l2_lev_gdp_ss_2d | unit + year,
+      data = panel, panel.id = c("unit", "year"), cluster = "unit"
+    )
+    b1 <- coef(fs)["l1_lev_gdp_ss_2d"]
+    b2 <- coef(fs)["l2_lev_gdp_ss_2d"]
+    cat(sprintf(
+      "wage_method = 'iv_pooled': l1_lev_gdp_ss_2d = %.4f  l2_lev_gdp_ss_2d = %.4f\n",
+      b1, b2
+    ))
+    panel <- panel %>%
+      mutate(wage_episode = b1 * l1_lev_gdp_ss_2d + b2 * l2_lev_gdp_ss_2d)
+
+  } else if (wage_method == "iv_state") {
+
+    # Per-state first stages. Each state gets its own β·Z so the instrument
+    # scaling reflects within-state variation — consistent with the state-by-
+    # state causal estimation.
+    state_betas <- panel %>%
+      group_by(state) %>%
+      group_map(function(state_data, state_key) {
+        fs <- tryCatch(
+          feols(
+            log_weighted_annual_avg_wkly_wage ~
+              l1_log_weighted_annual_avg_wkly_wage +
+              l1_lev_gdp_ss_2d + l2_lev_gdp_ss_2d | unit + year,
+            data = state_data, cluster = "unit"
+          ),
+          error = function(e) {
+            message("  Could not fit first stage for state ", state_key$state,
+                    ": ", conditionMessage(e))
+            NULL
+          }
+        )
+        if (is.null(fs)) return(NULL)
+        tibble(
+          state = state_key$state,
+          b1    = coef(fs)["l1_lev_gdp_ss_2d"],
+          b2    = coef(fs)["l2_lev_gdp_ss_2d"]
+        )
+      }, .keep = TRUE) %>%
+      bind_rows()
+
+    cat("wage_method = 'iv_state': per-state first-stage coefficients:\n")
+    print(state_betas, n = Inf)
+
+    panel <- panel %>%
+      left_join(state_betas, by = "state") %>%
+      mutate(wage_episode = b1 * l1_lev_gdp_ss_2d + b2 * l2_lev_gdp_ss_2d) %>%
+      select(-b1, -b2)
+
+  }
+
   # ── 2. Rolling window: delta from year t to t + lag_n ──────────────────────
   panel_rolled <- panel %>%
     group_by(unit) %>%
     mutate(
-      delta_wage     = lead(log_wage,    lag_n) - log_wage,
-      delta_spending = lead(spending_pp, lag_n) - spending_pp,
-      delta_ig       = lead(ig_pp,       lag_n) - ig_pp,
-      delta_local    = lead(local_pp,    lag_n) - local_pp
+      delta_wage     = lead(wage_episode, lag_n) - wage_episode,
+      delta_spending = lead(spending_pp,  lag_n) - spending_pp,
+      delta_ig       = lead(ig_pp,        lag_n) - ig_pp,
+      delta_local    = lead(local_pp,     lag_n) - local_pp
     ) %>%
     filter(!is.na(delta_wage)) %>%
     ungroup()
 
+  # For iv_state, per-state betas can differ substantially in magnitude, so
+  # national thresholds become meaningless when focusing on a subset of states.
+  # Restrict the ranking pool to include_states so thresholds are relative to
+  # the states being analysed. raw and iv_pooled use a common scale across all
+  # CZs, so they always rank against the full national pool.
+  panel_for_episodes <- if (wage_method == "iv_state" && !is.null(include_states)) {
+    panel_rolled %>% filter(state %in% include_states)
+  } else {
+    panel_rolled
+  }
+
   # ── 3a. Worst bust episode per CZ ──────────────────────────────────────────
-  worst <- panel_rolled %>%
+  worst <- panel_for_episodes %>%
     group_by(unit, state) %>%
     slice_min(delta_wage, n = 1, with_ties = FALSE) %>%
     ungroup()
 
   # ── 3b. Best boom episode per CZ ───────────────────────────────────────────
-  best <- panel_rolled %>%
+  best <- panel_for_episodes %>%
     group_by(unit, state) %>%
     slice_max(delta_wage, n = 1, with_ties = FALSE) %>%
     ungroup()
@@ -903,6 +989,14 @@ map_wage_bust_episodes <- function(window       = 3,
         boom_class == "Amplified boom" ~ "Amplified boom",
         TRUE                           ~ "Other"
       )
+    ) %>%
+    left_join(worst %>% select(unit, bust_year  = year), by = "unit") %>%
+    left_join(best  %>% select(unit, boom_year  = year), by = "unit") %>%
+    mutate(
+      episode_year = case_when(
+        episode_class == "Amplified boom" ~ boom_year,
+        TRUE                              ~ bust_year
+      )
     )
 
   cat(sprintf("Amplified bust CZs: %d\n", sum(classified$episode_class == "Amplified bust")))
@@ -915,6 +1009,37 @@ map_wage_bust_episodes <- function(window       = 3,
     separate_rows(fips, sep = ";\\s*") %>%
     filter(nchar(trimws(fips)) == 5) %>%
     mutate(fips = trimws(fips))
+
+  # ── 6b. CZ centroids for episode labels (non-Other CZs only) ──────────────
+  label_czs <- cz_names %>%
+    mutate(cz_id_chr = as.character(cz_id)) %>%
+    left_join(
+      classified %>%
+        filter(episode_class != "Other") %>%
+        mutate(cz_id_chr = as.character(unit)) %>%
+        select(cz_id_chr, episode_class, episode_year),
+      by = "cz_id_chr"
+    ) %>%
+    filter(!is.na(episode_class)) %>%
+    mutate(
+      cz_label = paste0(
+        ifelse(!is.na(descriptor) & descriptor != "",
+               paste0(descriptor, " (CZ", cz_id, ")"),
+               paste0("CZ ", cz_id)),
+        "\n", episode_year, "\u2013", episode_year + lag_n
+      )
+    ) %>%
+    select(cz_id, cz_label, fips) %>%
+    separate_rows(fips, sep = ";\\s*") %>%
+    filter(nchar(trimws(fips)) == 5) %>%
+    mutate(fips = trimws(fips))
+
+  cz_centroids <- usmapdata::us_map(regions = "counties", include = include_states) %>%
+    left_join(label_czs %>% select(fips, cz_id, cz_label), by = "fips") %>%
+    filter(!is.na(cz_id)) %>%
+    group_by(cz_id, cz_label) %>%
+    summarise(.groups = "drop") %>%
+    sf::st_point_on_surface()
 
   county_data <- cz_fips %>%
     left_join(
@@ -948,6 +1073,11 @@ map_wage_bust_episodes <- function(window       = 3,
     labs(
       title    = "Wage Episodes Transmitted to K\u20136 Education Spending",
       subtitle = paste0(
+        "Method: ", switch(wage_method,
+          raw       = "raw log wages",
+          iv_pooled = "IV predicted wages (pooled first stage)",
+          iv_state  = "IV predicted wages (state-by-state first stage)"
+        ), "  |  ",
         "Red: worst ", window, "-yr wage loss drove spending down via local revenue.  ",
         "Green: best ", window, "-yr wage gain drove spending up via local revenue.  ",
         "Blue: wage loss absorbed by IG transfers."
@@ -969,12 +1099,110 @@ map_wage_bust_episodes <- function(window       = 3,
       legend.position = "bottom",
       legend.text     = element_text(size = 10)
     ) + 
-    geom_sf(data = usmapdata::us_map(regions = "states", include = include_states), 
-                 fill = NA, linewidth = 0.25, color = "black") +
-    geom_sf(data = usmapdata::us_map(regions = "states", include = sig_states), 
-            fill = NA, linewidth = 0.5, color = "red") +
+    geom_sf(data = usmapdata::us_map(regions = "states", include = include_states),
+            fill = NA, linewidth = 0.25, color = "black") +
+    { if (!is.null(sig_states))
+        geom_sf(data = usmapdata::us_map(regions = "states", include = sig_states),
+                fill = NA, linewidth = 0.5, color = "red")
+    } +
     geom_sf(data = cities_transformed, fill = "yellow", color = 'orange', aes(size = pop), shape = 23) + 
-    scale_fill_manual(values = ep_cols, name = NULL, na.value = "grey88")
+    scale_fill_manual(values = ep_cols, name = NULL, na.value = "grey88") +
+    geom_sf_text(data = cz_centroids, aes(label = cz_label),
+                 size = 2.2, lineheight = 0.85, color = "black",
+                 inherit.aes = FALSE)
+
+  # ── 8. Fiscal inset plots (optional) ──────────────────────────────────────
+  # For each non-Other CZ, overlay a mini version of the show_fiscal_decomposition
+  # decomp_bars chart: stacked IG (orange) + Local Revenue (green) bars with a
+  # black total-spending-change line on top. Cumulative change from base year.
+  if (show_fiscal_insets && nrow(cz_centroids) > 0) {
+
+    comp_cols <- c("IG Revenue" = "#d95f02", "Local Revenue" = "#1b7837")
+
+    # Inset dimensions in map projection units (fraction of state bounding box)
+    map_bbox <- sf::st_bbox(
+      usmapdata::us_map(regions = "counties", include = include_states)
+    )
+    inset_w <- (map_bbox[["xmax"]] - map_bbox[["xmin"]]) * inset_scale
+    inset_h <- (map_bbox[["ymax"]] - map_bbox[["ymin"]]) * inset_scale
+
+    # Extract centroid x/y in projection coordinates
+    centroid_xy <- cz_centroids %>%
+      mutate(
+        cx = sf::st_coordinates(.)[, 1],
+        cy = sf::st_coordinates(.)[, 2]
+      ) %>%
+      sf::st_drop_geometry()
+
+    for (i in seq_len(nrow(centroid_xy))) {
+      row <- centroid_xy[i, ]
+
+      cz_id_i <- as.numeric(as.character(row$cz_id))
+
+      # Cumulative change from base year in real $ per pupil
+      decomp_data <- df_ivs %>%
+        filter(unit == cz_id_i) %>%
+        arrange(year) %>%
+        mutate(
+          spending_pp = real_Elem_Educ_Total_Exp / Enrollment,
+          ig_pp       = real_Total_IG_Revenue     / Enrollment,
+          local_pp    = spending_pp - ig_pp
+        ) %>%
+        group_by(unit) %>%
+        mutate(
+          delta_spending = spending_pp - spending_pp[year == min(year)],
+          delta_ig       = ig_pp       - ig_pp[year == min(year)],
+          delta_local    = local_pp    - local_pp[year == min(year)]
+        ) %>%
+        ungroup()
+
+      if (nrow(decomp_data) == 0 || all(is.na(decomp_data$delta_spending))) next
+
+      decomp_long <- decomp_data %>%
+        pivot_longer(c(delta_ig, delta_local),
+                     names_to = "component", values_to = "delta") %>%
+        mutate(component = factor(
+          recode(component,
+                 "delta_ig"    = "IG Revenue",
+                 "delta_local" = "Local Revenue"),
+          levels = c("IG Revenue", "Local Revenue")
+        ))
+
+      mini_p <- ggplot() +
+        geom_col(
+          data     = decomp_long %>% filter(delta >= 0),
+          aes(x = year, y = delta, fill = component),
+          position = "stack", width = 0.75, alpha = 0.85
+        ) +
+        geom_col(
+          data     = decomp_long %>% filter(delta < 0),
+          aes(x = year, y = delta, fill = component),
+          position = "stack", width = 0.75, alpha = 0.85
+        ) +
+        geom_line(data  = decomp_data,
+                  aes(x = year, y = delta_spending),
+                  color = "black", linewidth = 0.6) +
+        geom_hline(yintercept = 0, linetype = "dotted",
+                   color = "grey55", linewidth = 0.2) +
+        scale_fill_manual(values = comp_cols) +
+        theme_void() +
+        theme(
+          legend.position  = "none",
+          panel.background = element_rect(fill  = alpha("white", 0.88),
+                                          color = "grey40", linewidth = 0.4),
+          plot.margin      = margin(2, 2, 2, 2)
+        )
+
+      fig <- fig +
+        annotation_custom(
+          grob = ggplotGrob(mini_p),
+          xmin = row$cx - inset_w / 2,
+          xmax = row$cx + inset_w / 2,
+          ymin = row$cy - inset_h / 2,
+          ymax = row$cy + inset_h / 2
+        )
+    }
+  }
 
   print(fig)
   invisible(list(fig = fig, data = classified))
@@ -1331,12 +1559,8 @@ diagnose_no_effect <- function(state_code, exclude_czs = NULL) {
 
   state_nm <- get_state(state_code)
 
-  cz_lbl <- cz_names %>%
-    mutate(cz_label = ifelse(!is.na(descriptor) & descriptor != "",
-                             descriptor, paste0("CZ ", cz_id))) %>%
-    select(cz_id, cz_label)
-
   # State CZ data (use the all-states leverage object)
+  # cz_label is already present from cz_conditional_all_states
   state_czs <- cz_conditional_all_states %>%
     filter(state == state_code) %>%
     { if (!is.null(exclude_czs)) {
@@ -1344,8 +1568,7 @@ diagnose_no_effect <- function(state_code, exclude_czs = NULL) {
       } else {
         .
       }
-    } 
-   # left_join(cz_lbl, by = c("unit" = "cz_id"))
+    }
 
   # National reference: SD of wage growth across CZs, by state
   wage_sd_all <- cz_conditional_all_states %>%
@@ -1406,6 +1629,7 @@ diagnose_no_effect <- function(state_code, exclude_czs = NULL) {
     theme(plot.title = element_text(face = "bold", size = 11),
           legend.position = "bottom")
 
+  print(select(state_czs, contains("cz_label")))
   # ── Panel B: Wage growth vs. IG growth (equalization test) ───────────────
   p_b <- ggplot(state_czs, aes(x = wage_growth_uncond, y = ig_revenue_growth)) +
     geom_hline(yintercept = 0, linetype = "dashed", color = "grey50") +
